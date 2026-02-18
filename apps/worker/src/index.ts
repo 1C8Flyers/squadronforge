@@ -140,6 +140,33 @@ const detectFileByHeader = async (files: string[], requiredColumns: string[]): P
   return undefined;
 };
 
+const detectMembershipFileByHeader = async (files: string[]): Promise<string | undefined> => {
+  for (const file of files) {
+    const text = await fsPromises.readFile(file, 'utf8');
+    const first = text.split(/\r?\n/)[0]?.toLowerCase() ?? '';
+    const hasCapid = first.includes('capid');
+    const hasLast = first.includes('lastname') || first.includes('namelast');
+    const hasFirst = first.includes('firstname') || first.includes('namefirst');
+    if (hasCapid && hasLast && hasFirst) {
+      return file;
+    }
+  }
+  return undefined;
+};
+
+const detectDutyFileByHeader = async (files: string[]): Promise<string | undefined> => {
+  for (const file of files) {
+    const text = await fsPromises.readFile(file, 'utf8');
+    const first = text.split(/\r?\n/)[0]?.toLowerCase() ?? '';
+    const hasCapid = first.includes('capid');
+    const hasDuty = first.includes('dutyname') || first.includes('duty');
+    if (hasCapid && hasDuty) {
+      return file;
+    }
+  }
+  return undefined;
+};
+
 const discoverCapwatchFiles = async (
   extractedDir: string,
   mapping: Record<string, string> | undefined
@@ -152,11 +179,21 @@ const discoverCapwatchFiles = async (
   const mappedMembership = mapping?.membership ? lowerMap.get(mapping.membership.toLowerCase()) : undefined;
   const mappedDuty = mapping?.dutyPosition ? lowerMap.get(mapping.dutyPosition.toLowerCase()) : undefined;
 
-  const membershipByHeuristic = files[relativeFiles.findIndex((file) => /member|mbr|membership/.test(file.toLowerCase()))];
-  const dutyByHeuristic = files[relativeFiles.findIndex((file) => /duty|dutyposition|duty_position/.test(file.toLowerCase()))];
+  const preferredMembership = lowerMap.get('member.txt') ?? lowerMap.get('membership.txt');
+  const preferredDuty = lowerMap.get('dutyposition.txt') ?? lowerMap.get('cadetdutypositions.txt');
 
-  const membership = mappedMembership ?? membershipByHeuristic ?? (await detectFileByHeader(files, ['capid', 'lastname']));
-  const dutyPosition = mappedDuty ?? dutyByHeuristic ?? (await detectFileByHeader(files, ['capid', 'duty']));
+  const membershipByHeuristic = files.find((fullPath) => {
+    const name = path.basename(fullPath).toLowerCase();
+    return /^member(\b|[_.-])/.test(name) || name === 'member.txt' || name.includes('membership');
+  });
+
+  const dutyByHeuristic = files.find((fullPath) => {
+    const name = path.basename(fullPath).toLowerCase();
+    return name.includes('dutyposition') || /^duty(\b|[_.-])/.test(name);
+  });
+
+  const membership = mappedMembership ?? preferredMembership ?? membershipByHeuristic ?? (await detectMembershipFileByHeader(files));
+  const dutyPosition = mappedDuty ?? preferredDuty ?? dutyByHeuristic ?? (await detectDutyFileByHeader(files));
 
   return { organization, membership, dutyPosition, files: relativeFiles };
 };
@@ -182,6 +219,14 @@ const parseDateSafe = (value: string | undefined): Date | undefined => {
   return d;
 };
 
+const normalizeCell = (value: string | undefined): string => {
+  const trimmed = (value ?? '').trim();
+  if (trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    return trimmed.slice(1, -1).replaceAll('""', '"').trim();
+  }
+  return trimmed;
+};
+
 const parseMembershipFile = async (membershipFile: string): Promise<ParsedMember[]> => {
   const raw = await fsPromises.readFile(membershipFile, 'utf8');
   const lines = raw.split(/\r?\n/).filter((line) => line.trim().length > 0);
@@ -191,18 +236,18 @@ const parseMembershipFile = async (membershipFile: string): Promise<ParsedMember
 
   const delimiter = detectDelimiter(lines[0]);
   const header = lines[0].split(delimiter).map((c) => c.trim().toLowerCase());
-  const indexOf = (name: string): number => header.findIndex((h) => h === name);
+  const indexOfAny = (...names: string[]): number => header.findIndex((h) => names.includes(h));
 
   const idx = {
-    capid: indexOf('capid'),
-    firstName: indexOf('firstname'),
-    lastName: indexOf('lastname'),
-    memberType: indexOf('membertype'),
-    status: indexOf('status'),
-    email: indexOf('email'),
-    unitCharter: indexOf('unitcharter'),
-    orgid: indexOf('orgid'),
-    expirationDate: indexOf('expirationdate')
+    capid: indexOfAny('capid'),
+    firstName: indexOfAny('firstname', 'namefirst'),
+    lastName: indexOfAny('lastname', 'namelast'),
+    memberType: indexOfAny('membertype', 'type'),
+    status: indexOfAny('status', 'mbrstatus'),
+    email: indexOfAny('email'),
+    unitCharter: indexOfAny('unitcharter', 'unit'),
+    orgid: indexOfAny('orgid'),
+    expirationDate: indexOfAny('expirationdate', 'expiration')
   };
 
   if (idx.capid < 0 || idx.lastName < 0 || idx.firstName < 0) {
@@ -210,7 +255,7 @@ const parseMembershipFile = async (membershipFile: string): Promise<ParsedMember
   }
 
   const members = lines.slice(1).map((line) => {
-    const cols = line.split(delimiter).map((v) => v.trim());
+    const cols = line.split(delimiter).map((v) => normalizeCell(v));
     return {
       capid: cols[idx.capid] ?? '',
       firstName: cols[idx.firstName] ?? '',
@@ -236,14 +281,14 @@ const parseDutyPositionFile = async (dutyFile: string): Promise<ParsedDutyPositi
 
   const delimiter = detectDelimiter(lines[0]);
   const header = lines[0].split(delimiter).map((h) => h.trim().toLowerCase());
-  const indexOf = (name: string): number => header.findIndex((h) => h === name);
+  const indexOfAny = (...names: string[]): number => header.findIndex((h) => names.includes(h));
 
   const idx = {
-    capid: indexOf('capid'),
-    dutyName: indexOf('dutyname'),
-    dutyCode: indexOf('dutycode'),
-    startDate: indexOf('startdate'),
-    endDate: indexOf('enddate')
+    capid: indexOfAny('capid'),
+    dutyName: indexOfAny('dutyname', 'duty'),
+    dutyCode: indexOfAny('dutycode', 'functarea'),
+    startDate: indexOfAny('startdate', 'datemod'),
+    endDate: indexOfAny('enddate')
   };
 
   if (idx.capid < 0 || idx.dutyName < 0) {
@@ -251,7 +296,7 @@ const parseDutyPositionFile = async (dutyFile: string): Promise<ParsedDutyPositi
   }
 
   const rows = lines.slice(1).map((line) => {
-    const cols = line.split(delimiter).map((v) => v.trim());
+    const cols = line.split(delimiter).map((v) => normalizeCell(v));
     return {
       capid: cols[idx.capid] ?? '',
       dutyName: cols[idx.dutyName] ?? '',
