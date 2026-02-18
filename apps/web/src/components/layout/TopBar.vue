@@ -71,7 +71,7 @@ const signOut = async () => {
       <div class="ml-auto flex min-w-0 items-center gap-2 sm:gap-3">
         <select
           :value="selectedTenantSlug"
-          class="max-w-[11rem] rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs dark:border-slate-700 dark:bg-slate-800 sm:max-w-none sm:px-3 sm:text-sm"
+          class="max-w-[11rem] min-h-11 rounded-lg border border-slate-300 bg-white px-2 py-2 text-base dark:border-slate-700 dark:bg-slate-800 sm:max-w-none sm:px-3 sm:text-sm"
           @change="setTenantSlug(($event.target as HTMLSelectElement).value)"
         >
           <option v-for="tenant in tenants" :key="tenant.id" :value="tenant.slug">{{ tenant.name }}</option>
@@ -79,7 +79,7 @@ const signOut = async () => {
 
         <button
           v-if="canInstall"
-          class="rounded-lg border border-slate-200 px-2 py-2 text-xs hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800 sm:px-3 sm:text-sm"
+          class="min-h-11 rounded-lg border border-slate-200 px-2 py-2 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800 sm:px-3"
           @click="installApp"
         >
           <span class="inline-flex items-center gap-1">

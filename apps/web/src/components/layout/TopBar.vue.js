@@ -120,16 +120,17 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.select, __VLS_intrinsics.select)({
             [setTenantSlug,];
         } },
     value: (__VLS_ctx.selectedTenantSlug),
-    ...{ class: "max-w-[11rem] rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs dark:border-slate-700 dark:bg-slate-800 sm:max-w-none sm:px-3 sm:text-sm" },
+    ...{ class: "max-w-[11rem] min-h-11 rounded-lg border border-slate-300 bg-white px-2 py-2 text-base dark:border-slate-700 dark:bg-slate-800 sm:max-w-none sm:px-3 sm:text-sm" },
 });
 /** @type {__VLS_StyleScopedClasses['max-w-[11rem]']} */ ;
+/** @type {__VLS_StyleScopedClasses['min-h-11']} */ ;
 /** @type {__VLS_StyleScopedClasses['rounded-lg']} */ ;
 /** @type {__VLS_StyleScopedClasses['border']} */ ;
 /** @type {__VLS_StyleScopedClasses['border-slate-300']} */ ;
 /** @type {__VLS_StyleScopedClasses['bg-white']} */ ;
 /** @type {__VLS_StyleScopedClasses['px-2']} */ ;
 /** @type {__VLS_StyleScopedClasses['py-2']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-base']} */ ;
 /** @type {__VLS_StyleScopedClasses['dark:border-slate-700']} */ ;
 /** @type {__VLS_StyleScopedClasses['dark:bg-slate-800']} */ ;
 /** @type {__VLS_StyleScopedClasses['sm:max-w-none']} */ ;
@@ -147,19 +148,19 @@ for (const [tenant] of __VLS_vFor((__VLS_ctx.tenants))) {
 if (__VLS_ctx.canInstall) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
         ...{ onClick: (__VLS_ctx.installApp) },
-        ...{ class: "rounded-lg border border-slate-200 px-2 py-2 text-xs hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800 sm:px-3 sm:text-sm" },
+        ...{ class: "min-h-11 rounded-lg border border-slate-200 px-2 py-2 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800 sm:px-3" },
     });
+    /** @type {__VLS_StyleScopedClasses['min-h-11']} */ ;
     /** @type {__VLS_StyleScopedClasses['rounded-lg']} */ ;
     /** @type {__VLS_StyleScopedClasses['border']} */ ;
     /** @type {__VLS_StyleScopedClasses['border-slate-200']} */ ;
     /** @type {__VLS_StyleScopedClasses['px-2']} */ ;
     /** @type {__VLS_StyleScopedClasses['py-2']} */ ;
-    /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
     /** @type {__VLS_StyleScopedClasses['hover:bg-slate-100']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:border-slate-700']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:hover:bg-slate-800']} */ ;
     /** @type {__VLS_StyleScopedClasses['sm:px-3']} */ ;
-    /** @type {__VLS_StyleScopedClasses['sm:text-sm']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
         ...{ class: "inline-flex items-center gap-1" },
     });
