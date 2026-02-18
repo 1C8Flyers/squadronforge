@@ -2,6 +2,16 @@
 
 Multi-tenant CAPWATCH ingestion platform with Vue 3 + Express + Prisma + BullMQ.
 
+## Latest Update (2026-02-18)
+
+- Events module is live with tenant-scoped event CRUD + RSVP (`yes` / `no` / `maybe`).
+- Recurrence is live for create/edit (daily, weekly, monthly) with interval, until date, and occurrence count.
+- Events UX now uses a list-first flow:
+   - New Event form is behind a button.
+   - Per-event edit actions are available from the list.
+   - Mobile cards include inline RSVP actions for faster response.
+- Production deployment currently runs web on `:5173` and API on `:4400` on NAS (`enterprise.local`).
+
 ## Monorepo Layout
 
 - `apps/web` - Vue 3 + Vite + Tailwind (TailAdmin-style layout scaffold)
@@ -42,6 +52,10 @@ Services:
 - `db` PostgreSQL
 - `redis`
 - `worker`
+
+Note:
+- Local default API port remains `4000`.
+- Current NAS deployment uses API host port `4400` and builds web with `VITE_API_URL=http://enterprise.local:4400`.
 
 Docker smoke test (PowerShell):
 

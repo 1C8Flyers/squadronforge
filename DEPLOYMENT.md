@@ -1,5 +1,12 @@
 # Deployment Guide (NAS)
 
+Current known deployment target:
+- Host: `enterprise.local`
+- Deploy path: `/backup-8tb/Docker/squadronforge/squadronforge`
+- Web host port: `5173`
+- API host port: `4400`
+- Required web build env: `VITE_API_URL=http://enterprise.local:4400`
+
 Set these values for your environment:
 - `<DEPLOY_USER>@<DEPLOY_HOST>`
 - `<DEPLOY_PATH>` (example: `/srv/docker/squadronforge`)
@@ -10,7 +17,7 @@ Set these values for your environment:
 2. Ensure the deploy user can run Docker.
 3. Open only required ports on LAN/firewall:
    - `5173` (web)
-   - `4000` (api, optional if proxied)
+   - `4000` or `4400` (api, optional if proxied)
 
 ## 2) Clone repository on NAS
 
@@ -35,7 +42,7 @@ Set strong values in `.env`:
 - `JWT_REFRESH_SECRET`
 - `SEED_ADMIN_EMAIL`
 - `SEED_ADMIN_PASSWORD`
-- `API_HOST_PORT` (optional override if `4000` is in use)
+- `API_HOST_PORT` (optional override if `4000` is in use; current production uses `4400`)
 - `WEB_HOST_PORT` (optional override if `5173` is in use)
 - `VITE_API_URL` (URL browsers should use for API, e.g. `http://<DEPLOY_HOST>:<API_HOST_PORT>`)
 - `DATABASE_URL` (if not using default compose network config)
@@ -71,8 +78,8 @@ docker compose up -d --build
 
 ```bash
 docker compose ps
-curl -fsS http://localhost:4000/health
-curl -fsS http://localhost:4000/metrics
+curl -fsS http://localhost:4400/health
+curl -fsS http://localhost:4400/metrics
 ```
 
 Optional full smoke test:
@@ -93,7 +100,19 @@ Then create/update tenants in Admin and set each tenant `credentialsRef` to matc
 ```bash
 cd <DEPLOY_PATH>
 git pull
-docker compose up -d --build
+VITE_API_URL=http://<DEPLOY_HOST>:<API_HOST_PORT> docker compose up -d --build web
+docker compose up -d --build api worker
+```
+
+For current production target (`enterprise.local`):
+
+```bash
+cd /backup-8tb/Docker/squadronforge/squadronforge
+git pull
+VITE_API_URL=http://enterprise.local:4400 docker compose up -d --build web
+docker compose up -d --build api worker
+docker compose ps
+curl -fsS http://localhost:4400/health
 ```
 
 ## 9) Shutdown / rollback

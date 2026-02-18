@@ -1,6 +1,6 @@
 # Event Calendar / RSVP / Notifications Build Plan
 
-Status: In progress (Phase A delivered, recurrence delivered, notifications/sync pending)
+Status: In progress (Phase A delivered, recurrence delivered, mobile RSVP UX delivered, notifications/sync pending)
 Date: 2026-02-18
 Owner: SquadronForge
 
@@ -12,7 +12,10 @@ Completed:
 - ✅ Events page in web app with filters, list/detail workflow, and attendance counters
 - ✅ Event-centric UX: RSVP actions and edit controls live within selected event detail
 - ✅ Separate “New event” form
+- ✅ List-first events UX with New button and per-item edit entry
 - ✅ Recurrence support (daily/weekly/monthly) with interval/until/occurrence-based generation
+- ✅ Recurrence helper labels/instructions in create/edit flows
+- ✅ Mobile inline RSVP actions on event cards (detail panel hidden on small screens)
 
 Not yet completed:
 - ⏳ Notification scheduling and delivery (email/push)
@@ -48,6 +51,12 @@ Deliverables:
 
 Status:
 - ✅ Delivered
+
+Recent UX refinements included in delivered scope:
+- list-first events page flow
+- New Event form toggle
+- per-event edit actions in list
+- mobile inline RSVP controls
 
 Out of scope (still deferred):
 - Google Calendar sync
