@@ -641,6 +641,34 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
   return rows.filter((r) => r.capid.length > 0);
 };
 
+const dedupeCadetPromotionsByCapid = (rows: ParsedCadetPromotion[]): ParsedCadetPromotion[] => {
+  const byCapid = new Map<string, ParsedCadetPromotion>();
+
+  const score = (row: ParsedCadetPromotion): number => {
+    const eligibleScore = row.datePromotionEligible ? row.datePromotionEligible.getTime() / 1_000_000_000 : 0;
+    return (
+      (row.ready ? 1_000_000_000 : 0) +
+      (row.inactive ? 0 : 100_000_000) +
+      (row.sourceRow ?? 0) +
+      eligibleScore
+    );
+  };
+
+  for (const row of rows) {
+    const existing = byCapid.get(row.capid);
+    if (!existing) {
+      byCapid.set(row.capid, row);
+      continue;
+    }
+
+    if (score(row) >= score(existing)) {
+      byCapid.set(row.capid, row);
+    }
+  }
+
+  return [...byCapid.values()];
+};
+
 const setRunStage = async (runId: string, stage: string) => {
   await prisma.syncRun.update({
     where: { id: runId },
@@ -728,7 +756,8 @@ new Worker(
       const dutyPositions = discovery.dutyPosition ? await parseDutyPositionFile(discovery.dutyPosition) : [];
       const memberContacts = discovery.memberContact ? await parseMemberContactFile(discovery.memberContact) : [];
       const memberAddresses = discovery.memberAddress ? await parseMemberAddressFile(discovery.memberAddress) : [];
-      const cadetPromotions = discovery.cadetPromotion ? await parseCadetPromotionFile(discovery.cadetPromotion) : [];
+      const cadetPromotionsRaw = discovery.cadetPromotion ? await parseCadetPromotionFile(discovery.cadetPromotion) : [];
+      const cadetPromotions = dedupeCadetPromotionsByCapid(cadetPromotionsRaw);
       let upsertCount = 0;
       let activeCount = 0;
       let dutyUpserted = 0;
@@ -827,6 +856,7 @@ new Worker(
         await tx.cadetPromotion.deleteMany({ where: { tenantId } });
         if (cadetPromotions.length > 0) {
           await tx.cadetPromotion.createMany({
+            skipDuplicates: true,
             data: cadetPromotions.map((item) => ({
               tenantId,
               capid: item.capid,
