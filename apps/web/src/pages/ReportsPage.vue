@@ -69,6 +69,78 @@ const sortLabel = (column: 'memberName' | 'rank' | 'capid' | 'achievementName') 
 
 const needsFor = (row: PromotionNeedsRow): string[] => row.needs ?? [];
 
+const escapeHtml = (value: string): string =>
+  value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+
+const exportPdf = () => {
+  const generatedAt = new Date().toLocaleString();
+  const rowsHtml = items.value
+    .map((row) => {
+      const needs = needsFor(row);
+      const needsText = needs.length ? needs.join('; ') : 'No blockers found';
+      return `
+        <tr>
+          <td>${escapeHtml(row.memberName ?? 'Unknown cadet')}</td>
+          <td>${escapeHtml(formatRankDisplay(row.rank))}</td>
+          <td>${escapeHtml(row.capid)}</td>
+          <td>${escapeHtml(row.achievementName ?? '—')}</td>
+          <td>${escapeHtml(needsText)}</td>
+        </tr>
+      `;
+    })
+    .join('');
+
+  const popup = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=850');
+  if (!popup) return;
+
+  popup.document.write(`
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Cadet Promotion Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+          h1 { margin: 0 0 8px 0; font-size: 22px; }
+          .meta { margin-bottom: 16px; color: #444; font-size: 12px; }
+          table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+          th, td { border: 1px solid #ddd; padding: 8px; vertical-align: top; font-size: 12px; text-align: left; word-wrap: break-word; }
+          th { background: #f3f4f6; }
+        </style>
+      </head>
+      <body>
+        <h1>Cadet Next Promotion Needs</h1>
+        <div class="meta">
+          <div>Generated: ${escapeHtml(generatedAt)}</div>
+          <div>Search: ${escapeHtml(query.value.trim() || 'None')}</div>
+          <div>Ready filter: ${escapeHtml(includeReady.value === 'false' ? 'Not-ready only' : 'All active cadets')}</div>
+          <div>Rows on page: ${escapeHtml(String(items.value.length))} of ${escapeHtml(String(total.value))}</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Rank</th>
+              <th>CAPID</th>
+              <th>Next Achievement</th>
+              <th>Needs for Next Promotion</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml || '<tr><td colspan="5">No cadets matched your report filters.</td></tr>'}</tbody>
+        </table>
+      </body>
+    </html>
+  `);
+  popup.document.close();
+  popup.focus();
+  popup.print();
+};
+
 const readyCount = computed(() => items.value.filter((row) => row.ready).length);
 
 watch([selectedTenantSlug, query, includeReady, reportType], () => {
@@ -82,11 +154,12 @@ onMounted(loadReport);
 <template>
   <PageHeader title="Reports" subtitle="Operational reporting for cadets and staff" />
 
-  <div class="mb-4 grid gap-3 md:grid-cols-4">
+  <div class="mb-4 grid gap-3 md:grid-cols-5">
     <UiSelect v-model="reportType" :options="[{ label: 'Cadet next promotion needs', value: 'next-promotion-needs' }]" />
     <UiInput v-model="query" placeholder="Search name, CAPID, rank, achievement" />
     <UiSelect v-model="includeReady" :options="[{ label: 'Show not-ready only', value: 'false' }, { label: 'Show all active cadets', value: 'true' } ]" />
     <UiButton @click="loadReport">Refresh</UiButton>
+    <UiButton variant="secondary" @click="exportPdf">Export PDF</UiButton>
   </div>
 
   <div class="mb-4 grid gap-3 sm:grid-cols-3">

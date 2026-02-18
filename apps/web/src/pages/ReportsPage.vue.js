@@ -52,6 +52,74 @@ const sortLabel = (column) => {
     return sortDir.value === 'asc' ? ' ▲' : ' ▼';
 };
 const needsFor = (row) => row.needs ?? [];
+const escapeHtml = (value) => value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+const exportPdf = () => {
+    const generatedAt = new Date().toLocaleString();
+    const rowsHtml = items.value
+        .map((row) => {
+        const needs = needsFor(row);
+        const needsText = needs.length ? needs.join('; ') : 'No blockers found';
+        return `
+        <tr>
+          <td>${escapeHtml(row.memberName ?? 'Unknown cadet')}</td>
+          <td>${escapeHtml(formatRankDisplay(row.rank))}</td>
+          <td>${escapeHtml(row.capid)}</td>
+          <td>${escapeHtml(row.achievementName ?? '—')}</td>
+          <td>${escapeHtml(needsText)}</td>
+        </tr>
+      `;
+    })
+        .join('');
+    const popup = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=850');
+    if (!popup)
+        return;
+    popup.document.write(`
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Cadet Promotion Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+          h1 { margin: 0 0 8px 0; font-size: 22px; }
+          .meta { margin-bottom: 16px; color: #444; font-size: 12px; }
+          table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+          th, td { border: 1px solid #ddd; padding: 8px; vertical-align: top; font-size: 12px; text-align: left; word-wrap: break-word; }
+          th { background: #f3f4f6; }
+        </style>
+      </head>
+      <body>
+        <h1>Cadet Next Promotion Needs</h1>
+        <div class="meta">
+          <div>Generated: ${escapeHtml(generatedAt)}</div>
+          <div>Search: ${escapeHtml(query.value.trim() || 'None')}</div>
+          <div>Ready filter: ${escapeHtml(includeReady.value === 'false' ? 'Not-ready only' : 'All active cadets')}</div>
+          <div>Rows on page: ${escapeHtml(String(items.value.length))} of ${escapeHtml(String(total.value))}</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Rank</th>
+              <th>CAPID</th>
+              <th>Next Achievement</th>
+              <th>Needs for Next Promotion</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml || '<tr><td colspan="5">No cadets matched your report filters.</td></tr>'}</tbody>
+        </table>
+      </body>
+    </html>
+  `);
+    popup.document.close();
+    popup.focus();
+    popup.print();
+};
 const readyCount = computed(() => items.value.filter((row) => row.ready).length);
 watch([selectedTenantSlug, query, includeReady, reportType], () => {
     page.value = 1;
@@ -77,12 +145,12 @@ const __VLS_2 = __VLS_1({
     subtitle: "Operational reporting for cadets and staff",
 }, ...__VLS_functionalComponentArgsRest(__VLS_1));
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "mb-4 grid gap-3 md:grid-cols-4" },
+    ...{ class: "mb-4 grid gap-3 md:grid-cols-5" },
 });
 /** @type {__VLS_StyleScopedClasses['mb-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['gap-3']} */ ;
-/** @type {__VLS_StyleScopedClasses['md:grid-cols-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['md:grid-cols-5']} */ ;
 const __VLS_5 = UiSelect;
 // @ts-ignore
 const __VLS_6 = __VLS_asFunctionalComponent1(__VLS_5, new __VLS_5({
@@ -129,6 +197,24 @@ const { default: __VLS_27 } = __VLS_23.slots;
 [reportType, query, includeReady, loadReport,];
 var __VLS_23;
 var __VLS_24;
+const __VLS_28 = UiButton || UiButton;
+// @ts-ignore
+const __VLS_29 = __VLS_asFunctionalComponent1(__VLS_28, new __VLS_28({
+    ...{ 'onClick': {} },
+    variant: "secondary",
+}));
+const __VLS_30 = __VLS_29({
+    ...{ 'onClick': {} },
+    variant: "secondary",
+}, ...__VLS_functionalComponentArgsRest(__VLS_29));
+let __VLS_33;
+const __VLS_34 = ({ click: {} },
+    { onClick: (__VLS_ctx.exportPdf) });
+const { default: __VLS_35 } = __VLS_31.slots;
+// @ts-ignore
+[exportPdf,];
+var __VLS_31;
+var __VLS_32;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "mb-4 grid gap-3 sm:grid-cols-3" },
 });
@@ -301,17 +387,17 @@ if (__VLS_ctx.items.length === 0) {
     /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
 }
-const __VLS_28 = UiTable || UiTable;
+const __VLS_36 = UiTable || UiTable;
 // @ts-ignore
-const __VLS_29 = __VLS_asFunctionalComponent1(__VLS_28, new __VLS_28({
+const __VLS_37 = __VLS_asFunctionalComponent1(__VLS_36, new __VLS_36({
     ...{ class: "hidden md:block" },
 }));
-const __VLS_30 = __VLS_29({
+const __VLS_38 = __VLS_37({
     ...{ class: "hidden md:block" },
-}, ...__VLS_functionalComponentArgsRest(__VLS_29));
+}, ...__VLS_functionalComponentArgsRest(__VLS_37));
 /** @type {__VLS_StyleScopedClasses['hidden']} */ ;
 /** @type {__VLS_StyleScopedClasses['md:block']} */ ;
-const { default: __VLS_33 } = __VLS_31.slots;
+const { default: __VLS_41 } = __VLS_39.slots;
 __VLS_asFunctionalElement1(__VLS_intrinsics.thead, __VLS_intrinsics.thead)({
     ...{ class: "bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/50" },
 });
@@ -469,7 +555,7 @@ if (__VLS_ctx.items.length === 0) {
 }
 // @ts-ignore
 [items,];
-var __VLS_31;
+var __VLS_39;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "mt-4 flex flex-wrap items-center justify-between gap-3 text-sm" },
 });
@@ -493,69 +579,69 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 /** @type {__VLS_StyleScopedClasses['flex']} */ ;
 /** @type {__VLS_StyleScopedClasses['items-center']} */ ;
 /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
-const __VLS_34 = UiSelect;
+const __VLS_42 = UiSelect;
 // @ts-ignore
-const __VLS_35 = __VLS_asFunctionalComponent1(__VLS_34, new __VLS_34({
+const __VLS_43 = __VLS_asFunctionalComponent1(__VLS_42, new __VLS_42({
     modelValue: (__VLS_ctx.pageSize),
     options: ([{ label: '50 / page', value: '50' }, { label: '100 / page', value: '100' }, { label: '200 / page', value: '200' }]),
 }));
-const __VLS_36 = __VLS_35({
+const __VLS_44 = __VLS_43({
     modelValue: (__VLS_ctx.pageSize),
     options: ([{ label: '50 / page', value: '50' }, { label: '100 / page', value: '100' }, { label: '200 / page', value: '200' }]),
-}, ...__VLS_functionalComponentArgsRest(__VLS_35));
-const __VLS_39 = UiButton || UiButton;
-// @ts-ignore
-const __VLS_40 = __VLS_asFunctionalComponent1(__VLS_39, new __VLS_39({
-    ...{ 'onClick': {} },
-    variant: "secondary",
-    disabled: (__VLS_ctx.page <= 1),
-}));
-const __VLS_41 = __VLS_40({
-    ...{ 'onClick': {} },
-    variant: "secondary",
-    disabled: (__VLS_ctx.page <= 1),
-}, ...__VLS_functionalComponentArgsRest(__VLS_40));
-let __VLS_44;
-const __VLS_45 = ({ click: {} },
-    { onClick: (...[$event]) => {
-            __VLS_ctx.page = Math.max(1, __VLS_ctx.page - 1);
-            // @ts-ignore
-            [total, items, pageSize, page, page, page,];
-        } });
-const { default: __VLS_46 } = __VLS_42.slots;
-// @ts-ignore
-[];
-var __VLS_42;
-var __VLS_43;
-__VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-    ...{ class: "px-2" },
-});
-/** @type {__VLS_StyleScopedClasses['px-2']} */ ;
-(__VLS_ctx.page);
+}, ...__VLS_functionalComponentArgsRest(__VLS_43));
 const __VLS_47 = UiButton || UiButton;
 // @ts-ignore
 const __VLS_48 = __VLS_asFunctionalComponent1(__VLS_47, new __VLS_47({
     ...{ 'onClick': {} },
     variant: "secondary",
-    disabled: (__VLS_ctx.page * Number(__VLS_ctx.pageSize) >= __VLS_ctx.total),
+    disabled: (__VLS_ctx.page <= 1),
 }));
 const __VLS_49 = __VLS_48({
     ...{ 'onClick': {} },
     variant: "secondary",
-    disabled: (__VLS_ctx.page * Number(__VLS_ctx.pageSize) >= __VLS_ctx.total),
+    disabled: (__VLS_ctx.page <= 1),
 }, ...__VLS_functionalComponentArgsRest(__VLS_48));
 let __VLS_52;
 const __VLS_53 = ({ click: {} },
     { onClick: (...[$event]) => {
-            __VLS_ctx.page = __VLS_ctx.page + 1;
+            __VLS_ctx.page = Math.max(1, __VLS_ctx.page - 1);
             // @ts-ignore
-            [total, pageSize, page, page, page, page,];
+            [total, items, pageSize, page, page, page,];
         } });
 const { default: __VLS_54 } = __VLS_50.slots;
 // @ts-ignore
 [];
 var __VLS_50;
 var __VLS_51;
+__VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+    ...{ class: "px-2" },
+});
+/** @type {__VLS_StyleScopedClasses['px-2']} */ ;
+(__VLS_ctx.page);
+const __VLS_55 = UiButton || UiButton;
+// @ts-ignore
+const __VLS_56 = __VLS_asFunctionalComponent1(__VLS_55, new __VLS_55({
+    ...{ 'onClick': {} },
+    variant: "secondary",
+    disabled: (__VLS_ctx.page * Number(__VLS_ctx.pageSize) >= __VLS_ctx.total),
+}));
+const __VLS_57 = __VLS_56({
+    ...{ 'onClick': {} },
+    variant: "secondary",
+    disabled: (__VLS_ctx.page * Number(__VLS_ctx.pageSize) >= __VLS_ctx.total),
+}, ...__VLS_functionalComponentArgsRest(__VLS_56));
+let __VLS_60;
+const __VLS_61 = ({ click: {} },
+    { onClick: (...[$event]) => {
+            __VLS_ctx.page = __VLS_ctx.page + 1;
+            // @ts-ignore
+            [total, pageSize, page, page, page, page,];
+        } });
+const { default: __VLS_62 } = __VLS_58.slots;
+// @ts-ignore
+[];
+var __VLS_58;
+var __VLS_59;
 // @ts-ignore
 [];
 const __VLS_export = (await import('vue')).defineComponent({});
