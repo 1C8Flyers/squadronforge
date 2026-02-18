@@ -148,13 +148,17 @@ onMounted(loadMembers);
       <div class="flex items-start justify-between gap-3">
         <div>
           <button class="text-left text-base font-semibold hover:underline" @click="loadMemberDetail(row.capid)">
-            {{ row.grade ? `${row.grade} ` : '' }}{{ row.lastName }}, {{ row.firstName }}
+            {{ row.lastName }}, {{ row.firstName }}
           </button>
           <p class="text-xs text-slate-500 dark:text-slate-400">CAPID {{ row.capid }}</p>
         </div>
         <UiBadge :tone="row.status === 'ACTIVE' ? 'success' : 'warn'">{{ row.status }}</UiBadge>
       </div>
       <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Rank</p>
+          <p>{{ row.grade ?? '—' }}</p>
+        </div>
         <div>
           <p class="text-xs text-slate-500 dark:text-slate-400">Type</p>
           <p>{{ row.memberType }}</p>
@@ -173,14 +177,15 @@ onMounted(loadMembers);
   <UiTable class="hidden md:block">
     <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/50">
       <tr>
-        <th class="px-4 py-3">CAPID</th><th class="px-4 py-3">Name</th><th class="px-4 py-3">Type</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Unit</th>
+        <th class="px-4 py-3">CAPID</th><th class="px-4 py-3">Rank</th><th class="px-4 py-3">Name</th><th class="px-4 py-3">Type</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Unit</th>
       </tr>
     </thead>
     <tbody>
       <tr v-for="row in members" :key="row.capid" class="border-t border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40">
         <td class="px-4 py-3 font-medium">{{ row.capid }}</td>
+        <td class="px-4 py-3">{{ row.grade ?? '—' }}</td>
         <td class="px-4 py-3">
-          <button class="text-left hover:underline" @click="loadMemberDetail(row.capid)">{{ row.grade ? `${row.grade} ` : '' }}{{ row.lastName }}, {{ row.firstName }}</button>
+          <button class="text-left hover:underline" @click="loadMemberDetail(row.capid)">{{ row.lastName }}, {{ row.firstName }}</button>
         </td>
         <td class="px-4 py-3">{{ row.memberType }}</td>
         <td class="px-4 py-3"><UiBadge tone="success">{{ row.status }}</UiBadge></td>
