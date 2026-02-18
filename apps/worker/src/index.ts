@@ -373,6 +373,98 @@ const parseBooleanToken = (value: string | undefined): boolean | undefined => {
   return undefined;
 };
 
+const parseCompletionToken = (value: string | undefined): boolean | undefined => {
+  const normalized = normalizeCell(value).toLowerCase();
+  if (!normalized || normalized === 'none' || normalized === 'na' || normalized === 'n/a') {
+    return undefined;
+  }
+
+  const bool = parseBooleanToken(value);
+  if (bool !== undefined) {
+    return bool;
+  }
+
+  if (parseDateOrUndefined(value)) {
+    return true;
+  }
+
+  return true;
+};
+
+const isNotApplicableToken = (value: string | undefined): boolean => {
+  const normalized = normalizeCell(value).toLowerCase();
+  return normalized === 'na' || normalized === 'n/a';
+};
+
+const normalizeStatusValue = (value: string | undefined): string | undefined => {
+  const normalized = normalizeCell(value);
+  return normalized.length > 0 ? normalized : undefined;
+};
+
+const deriveLeadOrAeStatus = (
+  explicitStatus: string | undefined,
+  rawA: string | undefined,
+  rawB: string | undefined,
+  completedA: boolean,
+  completedB: boolean
+): string | undefined => {
+  if (explicitStatus) {
+    return explicitStatus;
+  }
+
+  if (isNotApplicableToken(rawA) && isNotApplicableToken(rawB)) {
+    return 'N/A';
+  }
+
+  if (completedA && completedB) {
+    return '★';
+  }
+
+  if (completedA || completedB) {
+    return 'X';
+  }
+
+  return undefined;
+};
+
+const derivePtStatus = (explicitStatus: string | undefined, lastPtDate: Date | undefined): string | undefined => {
+  if (explicitStatus) {
+    return explicitStatus;
+  }
+
+  if (!lastPtDate) {
+    return undefined;
+  }
+
+  const expiration = new Date(lastPtDate);
+  expiration.setDate(expiration.getDate() + 182);
+  return expiration > new Date() ? 'X' : undefined;
+};
+
+const computeReadyFromSheetLogic = (
+  inactive: boolean,
+  ptStatus: string | undefined,
+  leadStatus: string | undefined,
+  aeStatus: string | undefined,
+  drillStatus: string | undefined,
+  cdStatus: string | undefined,
+  sdaStatus: string | undefined
+): boolean => {
+  const required = inactive
+    ? [ptStatus, leadStatus, aeStatus, drillStatus, cdStatus, sdaStatus]
+    : [ptStatus, leadStatus, aeStatus, drillStatus, cdStatus];
+
+  if (required.some((status) => !normalizeStatusValue(status))) {
+    return false;
+  }
+
+  if (normalizeStatusValue(cdStatus)?.toUpperCase() === 'WC') {
+    return false;
+  }
+
+  return true;
+};
+
 const normalizeCell = (value: string | undefined): string => {
   const trimmed = (value ?? '').trim();
   if (trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')) {
@@ -594,20 +686,58 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
   const rows = lines.slice(1).map((line) => {
     const cols = splitDelimitedLine(line, delimiter).map((v) => normalizeCell(v));
     const capid = cols[idx.capid] ?? '';
-    const leadershipTest = idx.leadershipTestCompleted >= 0 ? parseBooleanToken(cols[idx.leadershipTestCompleted]) : undefined;
-    const leadershipModule = idx.leadershipModuleCompleted >= 0 ? parseBooleanToken(cols[idx.leadershipModuleCompleted]) : undefined;
-    const aeTest = idx.aeTestCompleted >= 0 ? parseBooleanToken(cols[idx.aeTestCompleted]) : undefined;
-    const aeModule = idx.aeModuleCompleted >= 0 ? parseBooleanToken(cols[idx.aeModuleCompleted]) : undefined;
-    const chief = idx.chiefSpeechEssayCompleted >= 0 ? parseBooleanToken(cols[idx.chiefSpeechEssayCompleted]) : undefined;
-    const sda = idx.sdaCompleted >= 0 ? parseBooleanToken(cols[idx.sdaCompleted]) : undefined;
+    const leadershipTestRaw = idx.leadershipTestCompleted >= 0 ? cols[idx.leadershipTestCompleted] : undefined;
+    const leadershipModuleRaw = idx.leadershipModuleCompleted >= 0 ? cols[idx.leadershipModuleCompleted] : undefined;
+    const aeTestRaw = idx.aeTestCompleted >= 0 ? cols[idx.aeTestCompleted] : undefined;
+    const aeModuleRaw = idx.aeModuleCompleted >= 0 ? cols[idx.aeModuleCompleted] : undefined;
+    const chiefRaw = idx.chiefSpeechEssayCompleted >= 0 ? cols[idx.chiefSpeechEssayCompleted] : undefined;
+    const sdaRaw = idx.sdaCompleted >= 0 ? cols[idx.sdaCompleted] : undefined;
+
+    const leadershipTest = parseCompletionToken(leadershipTestRaw);
+    const leadershipModule = parseCompletionToken(leadershipModuleRaw);
+    const aeTest = parseCompletionToken(aeTestRaw);
+    const aeModule = parseCompletionToken(aeModuleRaw);
+    const chief = parseCompletionToken(chiefRaw);
+    const sda = parseCompletionToken(sdaRaw);
+
     const eligibleDate = idx.promotionEligible >= 0 ? parseDateOrUndefined(cols[idx.promotionEligible]) : undefined;
     const isInactive = idx.inactive >= 0 ? parseBooleanToken(cols[idx.inactive]) === true : false;
     const readyFlag = idx.ready >= 0 ? parseBooleanToken(cols[idx.ready]) : undefined;
-    const readyStatus = idx.ready >= 0 ? cols[idx.ready] || undefined : undefined;
+    const readyStatus = idx.ready >= 0 ? normalizeStatusValue(cols[idx.ready]) : undefined;
 
-    // CAPWATCH rows can be sparse and achievement-dependent; inferred readiness can produce false positives.
-    // Only treat as ready when an explicit source flag is present.
-    const ready = !isInactive && readyFlag === true;
+    const lastPtDate = idx.lastPtDate >= 0 ? parseDateOrUndefined(cols[idx.lastPtDate]) : undefined;
+    const explicitPtStatus = idx.ptStatus >= 0 ? normalizeStatusValue(cols[idx.ptStatus]) : undefined;
+    const explicitLeadStatus = idx.leadStatus >= 0 ? normalizeStatusValue(cols[idx.leadStatus]) : undefined;
+    const explicitAeStatus = idx.aeStatus >= 0 ? normalizeStatusValue(cols[idx.aeStatus]) : undefined;
+    const drillStatus = idx.drillStatus >= 0 ? normalizeStatusValue(cols[idx.drillStatus]) : undefined;
+    const explicitCdStatus = idx.cdStatus >= 0 ? normalizeStatusValue(cols[idx.cdStatus]) : undefined;
+    const explicitSdaStatus = idx.sdaStatus >= 0 ? normalizeStatusValue(cols[idx.sdaStatus]) : undefined;
+
+    const ptStatus = derivePtStatus(explicitPtStatus, lastPtDate);
+    const leadStatus = deriveLeadOrAeStatus(
+      explicitLeadStatus,
+      leadershipTestRaw,
+      leadershipModuleRaw,
+      leadershipTest ?? false,
+      leadershipModule ?? false
+    );
+    const aeStatus = deriveLeadOrAeStatus(
+      explicitAeStatus,
+      aeTestRaw,
+      aeModuleRaw,
+      aeTest ?? false,
+      aeModule ?? false
+    );
+    const cdStatus = explicitCdStatus ?? (chief ? 'X' : undefined);
+    const sdaStatus = explicitSdaStatus ?? (sda ? 'X' : undefined);
+
+    const hasSheetStatusColumns = [ptStatus, leadStatus, aeStatus, drillStatus, cdStatus, sdaStatus].some(
+      (status) => normalizeStatusValue(status) !== undefined
+    );
+
+    const ready = hasSheetStatusColumns
+      ? computeReadyFromSheetLogic(isInactive, ptStatus, leadStatus, aeStatus, drillStatus, cdStatus, sdaStatus)
+      : !isInactive && readyFlag === true;
 
     return {
       capid,
@@ -615,7 +745,7 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
       rank: idx.rank >= 0 ? cols[idx.rank] || undefined : undefined,
       achievementName: idx.achievementName >= 0 ? cols[idx.achievementName] || undefined : undefined,
       datePromotionEligible: eligibleDate,
-      lastPtDate: idx.lastPtDate >= 0 ? parseDateOrUndefined(cols[idx.lastPtDate]) : undefined,
+      lastPtDate,
       inactive: isInactive,
       ready,
       readyStatus,
@@ -625,12 +755,12 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
       aeModuleCompleted: aeModule,
       chiefSpeechEssayCompleted: chief ?? false,
       sdaCompleted: sda ?? false,
-      ptStatus: idx.ptStatus >= 0 ? cols[idx.ptStatus] || undefined : undefined,
-      leadStatus: idx.leadStatus >= 0 ? cols[idx.leadStatus] || undefined : undefined,
-      aeStatus: idx.aeStatus >= 0 ? cols[idx.aeStatus] || undefined : undefined,
-      drillStatus: idx.drillStatus >= 0 ? cols[idx.drillStatus] || undefined : undefined,
-      cdStatus: idx.cdStatus >= 0 ? cols[idx.cdStatus] || undefined : undefined,
-      sdaStatus: idx.sdaStatus >= 0 ? cols[idx.sdaStatus] || undefined : undefined,
+      ptStatus,
+      leadStatus,
+      aeStatus,
+      drillStatus,
+      cdStatus,
+      sdaStatus,
       comments: idx.comments >= 0 ? cols[idx.comments] || undefined : undefined,
       sourceRow: idx.sourceRow >= 0 ? Number(cols[idx.sourceRow]) || undefined : undefined
     } satisfies ParsedCadetPromotion;
