@@ -25,8 +25,6 @@ const orgid = ref('1092');
 const unitOnly = ref('1');
 const timezone = ref('America/Chicago');
 const cron = ref('0 */4 * * *');
-const membershipFilename = ref('');
-const dutyPositionFilename = ref('');
 const saving = ref(false);
 const runningSync = ref(false);
 const actionMessage = ref('');
@@ -178,30 +176,19 @@ const loadSettings = async () => {
   unitOnly.value = data.unitOnly ? '1' : '0';
   timezone.value = data.timezone;
   cron.value = data.syncScheduleCron;
-  const fileMapping = (data.fileMappingJson ?? {}) as Record<string, string>;
-  membershipFilename.value = fileMapping.membership ?? '';
-  dutyPositionFilename.value = fileMapping.dutyPosition ?? '';
 };
 
 const saveSettings = async () => {
   if (!selectedTenantSlug.value) return;
   saving.value = true;
   actionMessage.value = '';
-  const fileMappingJson: Record<string, string> = {};
-  if (membershipFilename.value.trim()) {
-    fileMappingJson.membership = membershipFilename.value.trim();
-  }
-  if (dutyPositionFilename.value.trim()) {
-    fileMappingJson.dutyPosition = dutyPositionFilename.value.trim();
-  }
 
   try {
     await api.patch(`/tenant/${selectedTenantSlug.value}/settings`, {
       orgid: Number(orgid.value),
       unitOnly: unitOnly.value === '1',
       timezone: timezone.value,
-      syncScheduleCron: cron.value,
-      fileMappingJson
+      syncScheduleCron: cron.value
     });
     actionMessage.value = 'Settings saved.';
   } finally {
@@ -272,7 +259,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <PageHeader title="Tenant Settings" subtitle="Sync schedule and file mapping overrides" />
+  <PageHeader title="Tenant Settings" subtitle="Sync schedule and pull controls" />
   <div class="mb-4 flex flex-wrap gap-2">
     <UiButton :variant="activeTab === 'settings' ? 'primary' : 'secondary'" @click="activeTab = 'settings'">Settings</UiButton>
     <UiButton :variant="activeTab === 'sync-log' ? 'primary' : 'secondary'" @click="activeTab = 'sync-log'">Sync Log</UiButton>
@@ -296,14 +283,6 @@ onUnmounted(() => {
         <label class="mb-1 block text-sm">Cron schedule</label>
         <UiInput v-model="cron" />
         <p class="mt-1 text-xs text-slate-500">{{ cronHumanized }}</p>
-      </div>
-      <div>
-        <label class="mb-1 block text-sm">Membership filename override</label>
-        <UiInput v-model="membershipFilename" placeholder="e.g., MbrContact.txt" />
-      </div>
-      <div>
-        <label class="mb-1 block text-sm">Duty-position filename override</label>
-        <UiInput v-model="dutyPositionFilename" placeholder="e.g., DutyPosition.txt" />
       </div>
       <div class="md:col-span-2 flex flex-wrap items-center gap-3">
         <UiButton type="submit" :disabled="saving">{{ saving ? 'Saving...' : 'Save settings' }}</UiButton>
