@@ -110,16 +110,29 @@ onMounted(async () => {
 
   <section class="grid gap-4 lg:grid-cols-3">
     <div class="card">
-      <h3 class="mb-3 text-lg font-semibold">Tenants</h3>
+      <div class="mb-3 flex items-center justify-between gap-2">
+        <div>
+          <h3 class="text-lg font-semibold">Tenants</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Create and maintain tenant workspaces</p>
+        </div>
+        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">{{ tenants.length }}</span>
+      </div>
       <form class="mb-4 grid gap-2" @submit.prevent="createTenant">
+        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Tenant name</label>
         <UiInput v-model="newTenant.name" placeholder="Tenant name" />
+        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Tenant slug</label>
         <UiInput v-model="newTenant.slug" placeholder="tenant-slug" />
         <div class="grid gap-2 sm:grid-cols-2">
+          <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">ORGID</label>
+          <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Scope</label>
           <UiInput v-model="newTenant.orgid" placeholder="ORGID" />
           <UiSelect v-model="newTenant.unitOnly" :options="[{ label: 'Unit only', value: '1' }, { label: 'Wing level', value: '0' }]" />
         </div>
+        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Timezone</label>
         <UiInput v-model="newTenant.timezone" placeholder="America/Chicago" />
+        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Sync schedule (cron)</label>
         <UiInput v-model="newTenant.syncScheduleCron" placeholder="0 */4 * * *" />
+        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Credentials reference</label>
         <UiInput v-model="newTenant.credentialsRef" placeholder="credentialsRef (optional)" />
         <UiButton type="submit">Create tenant</UiButton>
       </form>
@@ -127,19 +140,31 @@ onMounted(async () => {
         <li v-for="tenant in tenants" :key="tenant.id" class="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="min-w-0 break-words">
-              {{ tenant.name }} <span class="text-slate-500">({{ tenant.slug }})</span>
+              {{ tenant.name }} <span class="text-slate-500 dark:text-slate-400">({{ tenant.slug }})</span>
             </div>
             <UiButton variant="danger" @click="removeTenant(tenant.id)">Delete</UiButton>
           </div>
+        </li>
+        <li v-if="tenants.length === 0" class="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-center text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          No tenants yet.
         </li>
       </ul>
     </div>
 
     <div class="card">
-      <h3 class="mb-3 text-lg font-semibold">Users</h3>
+      <div class="mb-3 flex items-center justify-between gap-2">
+        <div>
+          <h3 class="text-lg font-semibold">Users</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Create system users and admin access</p>
+        </div>
+        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">{{ users.length }}</span>
+      </div>
       <form class="mb-4 grid gap-2" @submit.prevent="createUser">
+        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Email</label>
         <UiInput v-model="newUser.email" placeholder="user@example.com" />
+        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Password</label>
         <UiInput v-model="newUser.password" type="password" placeholder="Password (min 8)" />
+        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">System role</label>
         <UiSelect v-model="newUser.systemRole" :options="[{ label: 'User', value: 'user' }, { label: 'System Admin', value: 'systemAdmin' }]" />
         <UiButton type="submit">Create user</UiButton>
       </form>
@@ -147,19 +172,28 @@ onMounted(async () => {
         <li v-for="user in users" :key="user.id" class="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="min-w-0 break-words">
-              {{ user.email }} <span class="text-slate-500">({{ user.systemRole }})</span>
+              {{ user.email }} <span class="text-slate-500 dark:text-slate-400">({{ user.systemRole }})</span>
             </div>
             <UiButton variant="danger" @click="removeUser(user.id)">Delete</UiButton>
           </div>
+        </li>
+        <li v-if="users.length === 0" class="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-center text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          No users yet.
         </li>
       </ul>
     </div>
 
     <div class="card">
-      <h3 class="mb-3 text-lg font-semibold">Assignments</h3>
+      <div class="mb-3">
+        <h3 class="text-lg font-semibold">Assignments</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Link users to tenants with scoped permissions</p>
+      </div>
       <form class="mb-4 grid gap-2" @submit.prevent="assignUser">
+        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Tenant</label>
         <UiSelect v-model="assignment.tenantId" :options="tenantOptions" />
+        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">User</label>
         <UiSelect v-model="assignment.userId" :options="userOptions" />
+        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Tenant role</label>
         <UiSelect v-model="assignment.role" :options="[{ label: 'Tenant Viewer', value: 'tenantViewer' }, { label: 'Tenant Admin', value: 'tenantAdmin' }]" />
         <UiButton type="submit">Assign role</UiButton>
       </form>
@@ -172,6 +206,7 @@ onMounted(async () => {
               <span class="min-w-0 break-words">{{ link.tenant.name }} - {{ link.role }}</span>
               <UiButton variant="ghost" @click="removeAssignment(link.tenant.id, user.id)">Remove</UiButton>
             </li>
+            <li v-if="user.tenants.length === 0" class="text-slate-500 dark:text-slate-400">No assignments.</li>
           </ul>
         </div>
       </div>

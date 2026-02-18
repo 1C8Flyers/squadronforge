@@ -130,12 +130,39 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "card" },
 });
 /** @type {__VLS_StyleScopedClasses['card']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.h3, __VLS_intrinsics.h3)({
-    ...{ class: "mb-3 text-lg font-semibold" },
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "mb-3 flex items-center justify-between gap-2" },
 });
 /** @type {__VLS_StyleScopedClasses['mb-3']} */ ;
+/** @type {__VLS_StyleScopedClasses['flex']} */ ;
+/** @type {__VLS_StyleScopedClasses['items-center']} */ ;
+/** @type {__VLS_StyleScopedClasses['justify-between']} */ ;
+/** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+__VLS_asFunctionalElement1(__VLS_intrinsics.h3, __VLS_intrinsics.h3)({
+    ...{ class: "text-lg font-semibold" },
+});
 /** @type {__VLS_StyleScopedClasses['text-lg']} */ ;
 /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+    ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+    ...{ class: "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200" },
+});
+/** @type {__VLS_StyleScopedClasses['rounded-full']} */ ;
+/** @type {__VLS_StyleScopedClasses['bg-slate-100']} */ ;
+/** @type {__VLS_StyleScopedClasses['px-2.5']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-1']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-700']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:bg-slate-800']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-200']} */ ;
+(__VLS_ctx.tenants.length);
 __VLS_asFunctionalElement1(__VLS_intrinsics.form, __VLS_intrinsics.form)({
     ...{ onSubmit: (__VLS_ctx.createTenant) },
     ...{ class: "mb-4 grid gap-2" },
@@ -143,6 +170,15 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.form, __VLS_intrinsics.form)({
 /** @type {__VLS_StyleScopedClasses['mb-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+    ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
 const __VLS_14 = UiInput;
 // @ts-ignore
 const __VLS_15 = __VLS_asFunctionalComponent1(__VLS_14, new __VLS_14({
@@ -153,6 +189,15 @@ const __VLS_16 = __VLS_15({
     modelValue: (__VLS_ctx.newTenant.name),
     placeholder: "Tenant name",
 }, ...__VLS_functionalComponentArgsRest(__VLS_15));
+__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+    ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
 const __VLS_19 = UiInput;
 // @ts-ignore
 const __VLS_20 = __VLS_asFunctionalComponent1(__VLS_19, new __VLS_19({
@@ -169,6 +214,24 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 /** @type {__VLS_StyleScopedClasses['grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
 /** @type {__VLS_StyleScopedClasses['sm:grid-cols-2']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+    ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+    ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
 const __VLS_24 = UiInput;
 // @ts-ignore
 const __VLS_25 = __VLS_asFunctionalComponent1(__VLS_24, new __VLS_24({
@@ -189,6 +252,15 @@ const __VLS_31 = __VLS_30({
     modelValue: (__VLS_ctx.newTenant.unitOnly),
     options: ([{ label: 'Unit only', value: '1' }, { label: 'Wing level', value: '0' }]),
 }, ...__VLS_functionalComponentArgsRest(__VLS_30));
+__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+    ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
 const __VLS_34 = UiInput;
 // @ts-ignore
 const __VLS_35 = __VLS_asFunctionalComponent1(__VLS_34, new __VLS_34({
@@ -199,6 +271,15 @@ const __VLS_36 = __VLS_35({
     modelValue: (__VLS_ctx.newTenant.timezone),
     placeholder: "America/Chicago",
 }, ...__VLS_functionalComponentArgsRest(__VLS_35));
+__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+    ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
 const __VLS_39 = UiInput;
 // @ts-ignore
 const __VLS_40 = __VLS_asFunctionalComponent1(__VLS_39, new __VLS_39({
@@ -209,6 +290,15 @@ const __VLS_41 = __VLS_40({
     modelValue: (__VLS_ctx.newTenant.syncScheduleCron),
     placeholder: "0 */4 * * *",
 }, ...__VLS_functionalComponentArgsRest(__VLS_40));
+__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+    ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
 const __VLS_44 = UiInput;
 // @ts-ignore
 const __VLS_45 = __VLS_asFunctionalComponent1(__VLS_44, new __VLS_44({
@@ -229,7 +319,7 @@ const __VLS_51 = __VLS_50({
 }, ...__VLS_functionalComponentArgsRest(__VLS_50));
 const { default: __VLS_54 } = __VLS_52.slots;
 // @ts-ignore
-[createTenant, newTenant, newTenant, newTenant, newTenant, newTenant, newTenant, newTenant,];
+[tenants, createTenant, newTenant, newTenant, newTenant, newTenant, newTenant, newTenant, newTenant,];
 var __VLS_52;
 __VLS_asFunctionalElement1(__VLS_intrinsics.ul, __VLS_intrinsics.ul)({
     ...{ class: "space-y-2 text-sm" },
@@ -262,9 +352,10 @@ for (const [tenant] of __VLS_vFor((__VLS_ctx.tenants))) {
     /** @type {__VLS_StyleScopedClasses['break-words']} */ ;
     (tenant.name);
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-        ...{ class: "text-slate-500" },
+        ...{ class: "text-slate-500 dark:text-slate-400" },
     });
     /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
     (tenant.slug);
     const __VLS_55 = UiButton || UiButton;
     // @ts-ignore
@@ -291,16 +382,58 @@ for (const [tenant] of __VLS_vFor((__VLS_ctx.tenants))) {
     // @ts-ignore
     [];
 }
+if (__VLS_ctx.tenants.length === 0) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({
+        ...{ class: "rounded-lg border border-dashed border-slate-300 px-3 py-4 text-center text-slate-500 dark:border-slate-700 dark:text-slate-400" },
+    });
+    /** @type {__VLS_StyleScopedClasses['rounded-lg']} */ ;
+    /** @type {__VLS_StyleScopedClasses['border']} */ ;
+    /** @type {__VLS_StyleScopedClasses['border-dashed']} */ ;
+    /** @type {__VLS_StyleScopedClasses['border-slate-300']} */ ;
+    /** @type {__VLS_StyleScopedClasses['px-3']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-center']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:border-slate-700']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+}
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "card" },
 });
 /** @type {__VLS_StyleScopedClasses['card']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.h3, __VLS_intrinsics.h3)({
-    ...{ class: "mb-3 text-lg font-semibold" },
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "mb-3 flex items-center justify-between gap-2" },
 });
 /** @type {__VLS_StyleScopedClasses['mb-3']} */ ;
+/** @type {__VLS_StyleScopedClasses['flex']} */ ;
+/** @type {__VLS_StyleScopedClasses['items-center']} */ ;
+/** @type {__VLS_StyleScopedClasses['justify-between']} */ ;
+/** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+__VLS_asFunctionalElement1(__VLS_intrinsics.h3, __VLS_intrinsics.h3)({
+    ...{ class: "text-lg font-semibold" },
+});
 /** @type {__VLS_StyleScopedClasses['text-lg']} */ ;
 /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+    ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+    ...{ class: "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200" },
+});
+/** @type {__VLS_StyleScopedClasses['rounded-full']} */ ;
+/** @type {__VLS_StyleScopedClasses['bg-slate-100']} */ ;
+/** @type {__VLS_StyleScopedClasses['px-2.5']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-1']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-700']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:bg-slate-800']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-200']} */ ;
+(__VLS_ctx.users.length);
 __VLS_asFunctionalElement1(__VLS_intrinsics.form, __VLS_intrinsics.form)({
     ...{ onSubmit: (__VLS_ctx.createUser) },
     ...{ class: "mb-4 grid gap-2" },
@@ -308,6 +441,15 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.form, __VLS_intrinsics.form)({
 /** @type {__VLS_StyleScopedClasses['mb-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+    ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
 const __VLS_63 = UiInput;
 // @ts-ignore
 const __VLS_64 = __VLS_asFunctionalComponent1(__VLS_63, new __VLS_63({
@@ -318,6 +460,15 @@ const __VLS_65 = __VLS_64({
     modelValue: (__VLS_ctx.newUser.email),
     placeholder: "user@example.com",
 }, ...__VLS_functionalComponentArgsRest(__VLS_64));
+__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+    ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
 const __VLS_68 = UiInput;
 // @ts-ignore
 const __VLS_69 = __VLS_asFunctionalComponent1(__VLS_68, new __VLS_68({
@@ -330,6 +481,15 @@ const __VLS_70 = __VLS_69({
     type: "password",
     placeholder: "Password (min 8)",
 }, ...__VLS_functionalComponentArgsRest(__VLS_69));
+__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+    ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
 const __VLS_73 = UiSelect;
 // @ts-ignore
 const __VLS_74 = __VLS_asFunctionalComponent1(__VLS_73, new __VLS_73({
@@ -350,7 +510,7 @@ const __VLS_80 = __VLS_79({
 }, ...__VLS_functionalComponentArgsRest(__VLS_79));
 const { default: __VLS_83 } = __VLS_81.slots;
 // @ts-ignore
-[createUser, newUser, newUser, newUser,];
+[tenants, users, createUser, newUser, newUser, newUser,];
 var __VLS_81;
 __VLS_asFunctionalElement1(__VLS_intrinsics.ul, __VLS_intrinsics.ul)({
     ...{ class: "space-y-2 text-sm" },
@@ -383,9 +543,10 @@ for (const [user] of __VLS_vFor((__VLS_ctx.users))) {
     /** @type {__VLS_StyleScopedClasses['break-words']} */ ;
     (user.email);
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-        ...{ class: "text-slate-500" },
+        ...{ class: "text-slate-500 dark:text-slate-400" },
     });
     /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
     (user.systemRole);
     const __VLS_84 = UiButton || UiButton;
     // @ts-ignore
@@ -412,16 +573,40 @@ for (const [user] of __VLS_vFor((__VLS_ctx.users))) {
     // @ts-ignore
     [];
 }
+if (__VLS_ctx.users.length === 0) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({
+        ...{ class: "rounded-lg border border-dashed border-slate-300 px-3 py-4 text-center text-slate-500 dark:border-slate-700 dark:text-slate-400" },
+    });
+    /** @type {__VLS_StyleScopedClasses['rounded-lg']} */ ;
+    /** @type {__VLS_StyleScopedClasses['border']} */ ;
+    /** @type {__VLS_StyleScopedClasses['border-dashed']} */ ;
+    /** @type {__VLS_StyleScopedClasses['border-slate-300']} */ ;
+    /** @type {__VLS_StyleScopedClasses['px-3']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-center']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:border-slate-700']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+}
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "card" },
 });
 /** @type {__VLS_StyleScopedClasses['card']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.h3, __VLS_intrinsics.h3)({
-    ...{ class: "mb-3 text-lg font-semibold" },
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "mb-3" },
 });
 /** @type {__VLS_StyleScopedClasses['mb-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.h3, __VLS_intrinsics.h3)({
+    ...{ class: "text-lg font-semibold" },
+});
 /** @type {__VLS_StyleScopedClasses['text-lg']} */ ;
 /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+    ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.form, __VLS_intrinsics.form)({
     ...{ onSubmit: (__VLS_ctx.assignUser) },
     ...{ class: "mb-4 grid gap-2" },
@@ -429,6 +614,15 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.form, __VLS_intrinsics.form)({
 /** @type {__VLS_StyleScopedClasses['mb-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+    ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
 const __VLS_92 = UiSelect;
 // @ts-ignore
 const __VLS_93 = __VLS_asFunctionalComponent1(__VLS_92, new __VLS_92({
@@ -439,6 +633,15 @@ const __VLS_94 = __VLS_93({
     modelValue: (__VLS_ctx.assignment.tenantId),
     options: (__VLS_ctx.tenantOptions),
 }, ...__VLS_functionalComponentArgsRest(__VLS_93));
+__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+    ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
 const __VLS_97 = UiSelect;
 // @ts-ignore
 const __VLS_98 = __VLS_asFunctionalComponent1(__VLS_97, new __VLS_97({
@@ -449,6 +652,15 @@ const __VLS_99 = __VLS_98({
     modelValue: (__VLS_ctx.assignment.userId),
     options: (__VLS_ctx.userOptions),
 }, ...__VLS_functionalComponentArgsRest(__VLS_98));
+__VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+    ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+});
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
 const __VLS_102 = UiSelect;
 // @ts-ignore
 const __VLS_103 = __VLS_asFunctionalComponent1(__VLS_102, new __VLS_102({
@@ -469,7 +681,7 @@ const __VLS_109 = __VLS_108({
 }, ...__VLS_functionalComponentArgsRest(__VLS_108));
 const { default: __VLS_112 } = __VLS_110.slots;
 // @ts-ignore
-[assignUser, assignment, assignment, assignment, tenantOptions, userOptions,];
+[users, assignUser, assignment, assignment, assignment, tenantOptions, userOptions,];
 var __VLS_110;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "space-y-3 text-sm" },
@@ -539,6 +751,13 @@ for (const [user] of __VLS_vFor((__VLS_ctx.users))) {
         var __VLS_117;
         // @ts-ignore
         [];
+    }
+    if (user.tenants.length === 0) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({
+            ...{ class: "text-slate-500 dark:text-slate-400" },
+        });
+        /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+        /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
     }
     // @ts-ignore
     [];
