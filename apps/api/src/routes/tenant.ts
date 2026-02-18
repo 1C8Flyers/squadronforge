@@ -319,7 +319,60 @@ tenantRouter.get('/:slug/cadet-promotions', async (req, res) => {
     inactive: [{ inactive: q.sortDir }, { memberName: 'asc' }]
   };
 
-  const [items, total, readyCount, inactiveCount] = await Promise.all([
+  const hasValue = (value: string | null | undefined): boolean => {
+    const normalized = (value ?? '').trim();
+    return normalized.length > 0;
+  };
+
+  const formatReadyDate = (value: Date | null): string | null => {
+    if (!value) return null;
+    const d = new Date(value);
+    d.setDate(d.getDate() + 1);
+    return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+  };
+
+  const deriveReadyStatus = (item: {
+    readyStatus: string | null;
+    ready: boolean;
+    inactive: boolean;
+    datePromotionEligible: Date | null;
+    ptStatus: string | null;
+    cdStatus: string | null;
+  }): string | null => {
+    if (hasValue(item.readyStatus)) {
+      return item.readyStatus;
+    }
+
+    if (item.ready && !item.inactive) {
+      return 'Yes';
+    }
+
+    const cd = (item.cdStatus ?? '').trim().toUpperCase();
+    const hasPt = hasValue(item.ptStatus);
+    if (!item.inactive && hasPt && cd !== 'WC') {
+      return formatReadyDate(item.datePromotionEligible);
+    }
+
+    return null;
+  };
+
+  const isReadyForUi = (item: {
+    ready: boolean;
+    inactive: boolean;
+    readyStatus: string | null;
+    datePromotionEligible: Date | null;
+    ptStatus: string | null;
+    cdStatus: string | null;
+  }): boolean => {
+    if (item.ready && !item.inactive) {
+      return true;
+    }
+
+    const derived = deriveReadyStatus(item);
+    return hasValue(derived);
+  };
+
+  const [items, total, inactiveCount, allForReadySummary] = await Promise.all([
     scoped.cadetPromotion.findMany({
       where,
       orderBy: orderByMap[q.sortBy],
@@ -327,11 +380,23 @@ tenantRouter.get('/:slug/cadet-promotions', async (req, res) => {
       take: q.pageSize
     }),
     scoped.cadetPromotion.count({ where }),
-    scoped.cadetPromotion.count({ where: { tenantId, ready: true } }),
-    scoped.cadetPromotion.count({ where: { tenantId, inactive: true } })
+    scoped.cadetPromotion.count({ where: { tenantId, inactive: true } }),
+    scoped.cadetPromotion.findMany({
+      where: { tenantId },
+      select: {
+        ready: true,
+        inactive: true,
+        readyStatus: true,
+        datePromotionEligible: true,
+        ptStatus: true,
+        cdStatus: true
+      }
+    })
   ]);
 
-  const capids = [...new Set(items.map((item) => item.capid).filter(Boolean))];
+  const readyCount = allForReadySummary.filter((item: any) => isReadyForUi(item)).length;
+
+  const capids = [...new Set(items.map((item: any) => item.capid).filter(Boolean))];
   const membersByCapid = new Map<string, { firstName: string; lastName: string; grade: string | null }>();
 
   if (capids.length > 0) {
@@ -345,12 +410,17 @@ tenantRouter.get('/:slug/cadet-promotions', async (req, res) => {
     }
   }
 
-  const enrichedItems = items.map((item) => {
+  const enrichedItems = items.map((item: any) => {
     const member = membersByCapid.get(item.capid);
+    const resolvedReadyStatus = deriveReadyStatus(item);
+    const resolvedReady = isReadyForUi(item);
+
     return {
       ...item,
       memberName: item.memberName ?? (member ? `${member.lastName}, ${member.firstName}` : null),
-      rank: item.rank ?? member?.grade ?? null
+      rank: item.rank ?? member?.grade ?? null,
+      ready: resolvedReady,
+      readyStatus: resolvedReadyStatus
     };
   });
 
