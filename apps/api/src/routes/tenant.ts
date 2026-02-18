@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { Queue } from 'bullmq';
 import { CronExpressionParser } from 'cron-parser';
 import { requireAuth } from '../middleware/require-auth.js';
@@ -54,6 +55,26 @@ const csvEscape = (value: string | number | null | undefined): string => {
     return `"${text.replaceAll('"', '""')}"`;
   }
   return text;
+};
+
+const ensureTenantAdminAccess = async (tenantId: string, auth: { userId: string; systemRole: 'systemAdmin' | 'user' }) => {
+  if (auth.systemRole === 'systemAdmin') {
+    return;
+  }
+
+  const assignment = await prisma.tenantUser.findUnique({
+    where: {
+      tenantId_userId: {
+        tenantId,
+        userId: auth.userId
+      }
+    },
+    select: { role: true }
+  });
+
+  if (assignment?.role !== 'tenantAdmin') {
+    throw new Error('Tenant admin required');
+  }
 };
 
 tenantRouter.get('/:slug/dashboard', async (req, res) => {
@@ -331,7 +352,7 @@ tenantRouter.get('/:slug/cadet-promotions', async (req, res) => {
     scoped.cadetPromotion.findMany({ where: { tenantId } })
   ]);
 
-  const capids = [...new Set(rawItems.map((item) => item.capid).filter(Boolean))];
+  const capids = [...new Set(rawItems.map((item: any) => item.capid).filter(Boolean))];
   const membersByCapid = new Map<string, { firstName: string; lastName: string; grade: string | null }>();
 
   if (capids.length > 0) {
@@ -400,7 +421,7 @@ tenantRouter.get('/:slug/cadet-promotions', async (req, res) => {
   const enrichedItems = rawItems.map(decorate);
   const enrichedAll = allTenantRows.map(decorate);
 
-  const readyFiltered = q.ready === undefined ? enrichedItems : enrichedItems.filter((item) => item.ready === q.ready);
+  const readyFiltered = q.ready === undefined ? enrichedItems : enrichedItems.filter((item: any) => item.ready === q.ready);
 
   const compareText = (a: string | null | undefined, b: string | null | undefined) =>
     (a ?? '').localeCompare(b ?? '', undefined, { sensitivity: 'base', numeric: true });
@@ -454,10 +475,352 @@ tenantRouter.get('/:slug/cadet-promotions', async (req, res) => {
   const start = (q.page - 1) * q.pageSize;
   const pagedItems = sorted.slice(start, start + q.pageSize);
 
-  const readyCount = enrichedAll.filter((item) => item.ready).length;
-  const inactiveCount = enrichedAll.filter((item) => item.inactive).length;
+  const readyCount = enrichedAll.filter((item: any) => item.ready).length;
+  const inactiveCount = enrichedAll.filter((item: any) => item.inactive).length;
 
   res.json({ items: pagedItems, total, page: q.page, pageSize: q.pageSize, summary: { readyCount, inactiveCount } });
+});
+
+tenantRouter.get('/:slug/events', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+  const q = z
+    .object({
+      page: z.coerce.number().int().min(1).default(1),
+      pageSize: z.coerce.number().int().min(1).max(200).default(25),
+      q: z.string().optional(),
+      from: z.coerce.date().optional(),
+      to: z.coerce.date().optional(),
+      status: z.enum(['active', 'cancelled', 'all']).default('active'),
+      memberType: z.enum(['CADET', 'SENIOR', 'UNKNOWN']).optional(),
+      sortBy: z.enum(['startsAt', 'title', 'updatedAt', 'createdAt']).default('startsAt'),
+      sortDir: z.enum(['asc', 'desc']).default('asc')
+    })
+    .parse(req.query);
+
+  const where = {
+    tenantId,
+    ...(q.status === 'all' ? {} : { isCancelled: q.status === 'cancelled' }),
+    ...(q.q
+      ? {
+          OR: [
+            { title: { contains: q.q, mode: 'insensitive' as const } },
+            { description: { contains: q.q, mode: 'insensitive' as const } },
+            { location: { contains: q.q, mode: 'insensitive' as const } }
+          ]
+        }
+      : {}),
+    ...(q.from || q.to
+      ? {
+          startsAt: {
+            ...(q.from ? { gte: q.from } : {}),
+            ...(q.to ? { lte: q.to } : {})
+          }
+        }
+      : {}),
+    ...(q.memberType
+      ? {
+          OR: [{ audienceRules: { none: {} } }, { audienceRules: { some: { memberType: q.memberType } } }]
+        }
+      : {})
+  };
+
+  const [events, total] = await Promise.all([
+    prisma.event.findMany({
+      where,
+      orderBy: [{ [q.sortBy]: q.sortDir }, { createdAt: 'desc' }],
+      skip: (q.page - 1) * q.pageSize,
+      take: q.pageSize,
+      include: {
+        audienceRules: true,
+        rsvps: {
+          select: { userId: true, status: true }
+        }
+      }
+    }),
+    prisma.event.count({ where })
+  ]);
+
+  const items = events.map((event: (typeof events)[number]) => {
+    const yesCount = event.rsvps.filter((rsvp: { status: string }) => rsvp.status === 'yes').length;
+    const noCount = event.rsvps.filter((rsvp: { status: string }) => rsvp.status === 'no').length;
+    const maybeCount = event.rsvps.filter((rsvp: { status: string }) => rsvp.status === 'maybe').length;
+    const myRsvp = event.rsvps.find((rsvp: { userId: string | null; status: string }) => rsvp.userId === req.auth!.userId)?.status ?? null;
+
+    return {
+      ...event,
+      rsvps: undefined,
+      counts: { yes: yesCount, no: noCount, maybe: maybeCount, total: event.rsvps.length },
+      myRsvp
+    };
+  });
+
+  res.json({ items, total, page: q.page, pageSize: q.pageSize });
+});
+
+tenantRouter.post('/:slug/events', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+  await ensureTenantAdminAccess(tenantId, req.auth!);
+
+  const body = z
+    .object({
+      title: z.string().min(1),
+      description: z.string().optional(),
+      location: z.string().optional(),
+      startsAt: z.coerce.date(),
+      endsAt: z.coerce.date(),
+      allDay: z.boolean().default(false),
+      visibility: z.enum(['tenant', 'audience']).default('tenant'),
+      audienceRules: z
+        .array(
+          z.object({
+            memberType: z.enum(['CADET', 'SENIOR', 'UNKNOWN']).optional(),
+            unitCharter: z.string().optional()
+          })
+        )
+        .default([])
+    })
+    .parse(req.body);
+
+  if (body.endsAt < body.startsAt) {
+    throw new Error('Event end must be after start');
+  }
+
+  const normalizedRules = body.visibility === 'tenant' ? [] : body.audienceRules;
+
+  const created = await prisma.event.create({
+    data: {
+      tenantId,
+      title: body.title,
+      description: body.description,
+      location: body.location,
+      startsAt: body.startsAt,
+      endsAt: body.endsAt,
+      allDay: body.allDay,
+      visibility: body.visibility,
+      createdByUserId: req.auth!.userId,
+      audienceRules: {
+        create: normalizedRules.map((rule) => ({
+          tenantId,
+          memberType: rule.memberType,
+          unitCharter: rule.unitCharter
+        }))
+      }
+    },
+    include: { audienceRules: true }
+  });
+
+  res.status(201).json(created);
+});
+
+tenantRouter.get('/:slug/events/:eventId', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+  const eventId = z.string().min(1).parse(req.params.eventId);
+
+  const event = await prisma.event.findFirst({
+    where: { tenantId, id: eventId },
+    include: {
+      audienceRules: true,
+      rsvps: {
+        orderBy: { respondedAt: 'desc' },
+        include: {
+          user: {
+            select: { id: true, email: true }
+          }
+        }
+      }
+    }
+  });
+
+  if (!event) {
+    return res.status(404).json({ error: 'Event not found' });
+  }
+
+  const yesCount = event.rsvps.filter((rsvp: { status: string }) => rsvp.status === 'yes').length;
+  const noCount = event.rsvps.filter((rsvp: { status: string }) => rsvp.status === 'no').length;
+  const maybeCount = event.rsvps.filter((rsvp: { status: string }) => rsvp.status === 'maybe').length;
+  const myRsvp = event.rsvps.find((rsvp: { userId: string | null; status: string }) => rsvp.userId === req.auth!.userId)?.status ?? null;
+
+  res.json({
+    ...event,
+    counts: { yes: yesCount, no: noCount, maybe: maybeCount, total: event.rsvps.length },
+    myRsvp
+  });
+});
+
+tenantRouter.patch('/:slug/events/:eventId', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+  await ensureTenantAdminAccess(tenantId, req.auth!);
+  const eventId = z.string().min(1).parse(req.params.eventId);
+
+  const body = z
+    .object({
+      title: z.string().min(1).optional(),
+      description: z.string().nullable().optional(),
+      location: z.string().nullable().optional(),
+      startsAt: z.coerce.date().optional(),
+      endsAt: z.coerce.date().optional(),
+      allDay: z.boolean().optional(),
+      visibility: z.enum(['tenant', 'audience']).optional(),
+      isCancelled: z.boolean().optional(),
+      cancelReason: z.string().nullable().optional(),
+      audienceRules: z
+        .array(
+          z.object({
+            memberType: z.enum(['CADET', 'SENIOR', 'UNKNOWN']).optional(),
+            unitCharter: z.string().optional()
+          })
+        )
+        .optional()
+    })
+    .parse(req.body);
+
+  const existing = await prisma.event.findFirst({ where: { tenantId, id: eventId } });
+  if (!existing) {
+    return res.status(404).json({ error: 'Event not found' });
+  }
+
+  const startsAt = body.startsAt ?? existing.startsAt;
+  const endsAt = body.endsAt ?? existing.endsAt;
+  if (endsAt < startsAt) {
+    throw new Error('Event end must be after start');
+  }
+
+  const visibility = body.visibility ?? existing.visibility;
+
+  const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    if (body.audienceRules || visibility === 'tenant') {
+      await tx.eventAudienceRule.deleteMany({ where: { tenantId, eventId } });
+      const nextRules = visibility === 'tenant' ? [] : (body.audienceRules ?? []);
+      if (nextRules.length > 0) {
+        await tx.eventAudienceRule.createMany({
+          data: nextRules.map((rule) => ({
+            tenantId,
+            eventId,
+            memberType: rule.memberType,
+            unitCharter: rule.unitCharter
+          }))
+        });
+      }
+    }
+
+    return tx.event.update({
+      where: { id: eventId },
+      data: {
+        ...(body.title !== undefined ? { title: body.title } : {}),
+        ...(body.description !== undefined ? { description: body.description } : {}),
+        ...(body.location !== undefined ? { location: body.location } : {}),
+        ...(body.startsAt !== undefined ? { startsAt: body.startsAt } : {}),
+        ...(body.endsAt !== undefined ? { endsAt: body.endsAt } : {}),
+        ...(body.allDay !== undefined ? { allDay: body.allDay } : {}),
+        ...(body.visibility !== undefined ? { visibility: body.visibility } : {}),
+        ...(body.isCancelled !== undefined ? { isCancelled: body.isCancelled } : {}),
+        ...(body.cancelReason !== undefined ? { cancelReason: body.cancelReason } : {}),
+        updatedByUserId: req.auth!.userId
+      },
+      include: { audienceRules: true }
+    });
+  });
+
+  res.json(updated);
+});
+
+tenantRouter.delete('/:slug/events/:eventId', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+  await ensureTenantAdminAccess(tenantId, req.auth!);
+  const eventId = z.string().min(1).parse(req.params.eventId);
+
+  const existing = await prisma.event.findFirst({ where: { tenantId, id: eventId }, select: { id: true } });
+  if (!existing) {
+    return res.status(404).json({ error: 'Event not found' });
+  }
+
+  await prisma.event.update({
+    where: { id: eventId },
+    data: {
+      isCancelled: true,
+      updatedByUserId: req.auth!.userId
+    }
+  });
+
+  res.status(204).send();
+});
+
+tenantRouter.get('/:slug/events/:eventId/rsvps', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+  const eventId = z.string().min(1).parse(req.params.eventId);
+
+  const event = await prisma.event.findFirst({ where: { tenantId, id: eventId }, select: { id: true } });
+  if (!event) {
+    return res.status(404).json({ error: 'Event not found' });
+  }
+
+  const q = z
+    .object({
+      status: z.enum(['yes', 'no', 'maybe']).optional()
+    })
+    .parse(req.query);
+
+  const rsvps = await prisma.eventRsvp.findMany({
+    where: {
+      tenantId,
+      eventId,
+      ...(q.status ? { status: q.status } : {})
+    },
+    orderBy: { respondedAt: 'desc' },
+    include: {
+      user: {
+        select: { id: true, email: true }
+      }
+    }
+  });
+
+  res.json(rsvps);
+});
+
+tenantRouter.put('/:slug/events/:eventId/rsvp', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+  const eventId = z.string().min(1).parse(req.params.eventId);
+  const body = z
+    .object({
+      status: z.enum(['yes', 'no', 'maybe']),
+      note: z.string().max(500).optional()
+    })
+    .parse(req.body);
+
+  const event = await prisma.event.findFirst({ where: { tenantId, id: eventId }, select: { id: true, isCancelled: true } });
+  if (!event) {
+    return res.status(404).json({ error: 'Event not found' });
+  }
+  if (event.isCancelled) {
+    throw new Error('Cannot RSVP to cancelled event');
+  }
+
+  const rsvp = await prisma.eventRsvp.upsert({
+    where: {
+      tenantId_eventId_userId: {
+        tenantId,
+        eventId,
+        userId: req.auth!.userId
+      }
+    },
+    create: {
+      tenantId,
+      eventId,
+      userId: req.auth!.userId,
+      status: body.status,
+      note: body.note,
+      source: 'web',
+      respondedAt: new Date()
+    },
+    update: {
+      status: body.status,
+      note: body.note,
+      source: 'web',
+      respondedAt: new Date()
+    }
+  });
+
+  res.json(rsvp);
 });
 
 tenantRouter.get('/:slug/settings', async (req, res) => {

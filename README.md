@@ -127,7 +127,7 @@ This initial scaffold includes:
    - stream ZIP download
    - content-type/size validation
    - ZIP extraction + file discovery heuristics
-   - tenant filename override support (`fileMappingJson.membership`, `fileMappingJson.dutyPosition`)
+   - merged duty ingestion from both `DutyPosition` and `CadetDutyPositions` files (deduped)
    - transactional member upsert
    - optional duty-position ingestion (`DutyPosition` table)
    - `SyncRun` status/checksum/file metadata persistence
@@ -140,7 +140,10 @@ This initial scaffold includes:
 - Integration tests for tenant members/duty-position pagination and members CSV export headers/content
 - Tenant dashboard includes computed next-run time from tenant cron + timezone
 - Duty positions page scaffold wired to `/tenant/:slug/duty-positions`
+- Cadet promotions page powered by backend-computed readiness/needs/explain logic
+- Reports page with "Cadet next promotion needs" report
 - Mobile-first table fallbacks (stacked cards) for members, sync runs, and duty positions
+- Installable PWA support (manifest + service worker + mobile install metadata)
 - Auth/session hardening basics:
    - `/auth/logout` endpoint
    - `/auth/refresh` endpoint with refresh-token rotation and DB revocation
@@ -149,6 +152,7 @@ This initial scaffold includes:
    - safe user payloads (no password hash in API responses)
 - Tenant-scoped Prisma helper used in tenant routes to enforce `tenantId` filtering at data-access layer
 - Pagination controls on members and duty positions pages (wired to API pagination)
+- Sync Runs moved into Settings as the "Sync Log" tab
 - `/metrics` includes per-tenant last sync timestamps/status
 
 Additional API endpoints now available:
@@ -157,6 +161,7 @@ Additional API endpoints now available:
 - `PATCH /tenant/:slug/settings`
 - `GET /tenant/:slug/members/export.csv`
 - `GET /tenant/:slug/duty-positions`
+- `GET /tenant/:slug/cadet-promotions`
 - `POST /auth/refresh`
 - `POST /auth/logout`
 - `GET /admin/tenants`, `POST /admin/tenants`, `PATCH /admin/tenants/:id`, `DELETE /admin/tenants/:id`

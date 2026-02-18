@@ -11,8 +11,6 @@ const orgid = ref('1092');
 const unitOnly = ref('1');
 const timezone = ref('America/Chicago');
 const cron = ref('0 */4 * * *');
-const membershipFilename = ref('');
-const dutyPositionFilename = ref('');
 const saving = ref(false);
 const runningSync = ref(false);
 const actionMessage = ref('');
@@ -146,29 +144,18 @@ const loadSettings = async () => {
     unitOnly.value = data.unitOnly ? '1' : '0';
     timezone.value = data.timezone;
     cron.value = data.syncScheduleCron;
-    const fileMapping = (data.fileMappingJson ?? {});
-    membershipFilename.value = fileMapping.membership ?? '';
-    dutyPositionFilename.value = fileMapping.dutyPosition ?? '';
 };
 const saveSettings = async () => {
     if (!selectedTenantSlug.value)
         return;
     saving.value = true;
     actionMessage.value = '';
-    const fileMappingJson = {};
-    if (membershipFilename.value.trim()) {
-        fileMappingJson.membership = membershipFilename.value.trim();
-    }
-    if (dutyPositionFilename.value.trim()) {
-        fileMappingJson.dutyPosition = dutyPositionFilename.value.trim();
-    }
     try {
         await api.patch(`/tenant/${selectedTenantSlug.value}/settings`, {
             orgid: Number(orgid.value),
             unitOnly: unitOnly.value === '1',
             timezone: timezone.value,
-            syncScheduleCron: cron.value,
-            fileMappingJson
+            syncScheduleCron: cron.value
         });
         actionMessage.value = 'Settings saved.';
     }
@@ -242,11 +229,11 @@ const __VLS_0 = PageHeader;
 // @ts-ignore
 const __VLS_1 = __VLS_asFunctionalComponent1(__VLS_0, new __VLS_0({
     title: "Tenant Settings",
-    subtitle: "Sync schedule and file mapping overrides",
+    subtitle: "Sync schedule and pull controls",
 }));
 const __VLS_2 = __VLS_1({
     title: "Tenant Settings",
-    subtitle: "Sync schedule and file mapping overrides",
+    subtitle: "Sync schedule and pull controls",
 }, ...__VLS_functionalComponentArgsRest(__VLS_1));
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "mb-4 flex flex-wrap gap-2" },
@@ -377,40 +364,6 @@ if (__VLS_ctx.activeTab === 'settings') {
     /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
     /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
     (__VLS_ctx.cronHumanized);
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
-    __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
-        ...{ class: "mb-1 block text-sm" },
-    });
-    /** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
-    /** @type {__VLS_StyleScopedClasses['block']} */ ;
-    /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
-    const __VLS_41 = UiInput;
-    // @ts-ignore
-    const __VLS_42 = __VLS_asFunctionalComponent1(__VLS_41, new __VLS_41({
-        modelValue: (__VLS_ctx.membershipFilename),
-        placeholder: "e.g., MbrContact.txt",
-    }));
-    const __VLS_43 = __VLS_42({
-        modelValue: (__VLS_ctx.membershipFilename),
-        placeholder: "e.g., MbrContact.txt",
-    }, ...__VLS_functionalComponentArgsRest(__VLS_42));
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
-    __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
-        ...{ class: "mb-1 block text-sm" },
-    });
-    /** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
-    /** @type {__VLS_StyleScopedClasses['block']} */ ;
-    /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
-    const __VLS_46 = UiInput;
-    // @ts-ignore
-    const __VLS_47 = __VLS_asFunctionalComponent1(__VLS_46, new __VLS_46({
-        modelValue: (__VLS_ctx.dutyPositionFilename),
-        placeholder: "e.g., DutyPosition.txt",
-    }));
-    const __VLS_48 = __VLS_47({
-        modelValue: (__VLS_ctx.dutyPositionFilename),
-        placeholder: "e.g., DutyPosition.txt",
-    }, ...__VLS_functionalComponentArgsRest(__VLS_47));
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "md:col-span-2 flex flex-wrap items-center gap-3" },
     });
@@ -419,42 +372,42 @@ if (__VLS_ctx.activeTab === 'settings') {
     /** @type {__VLS_StyleScopedClasses['flex-wrap']} */ ;
     /** @type {__VLS_StyleScopedClasses['items-center']} */ ;
     /** @type {__VLS_StyleScopedClasses['gap-3']} */ ;
-    const __VLS_51 = UiButton || UiButton;
+    const __VLS_41 = UiButton || UiButton;
     // @ts-ignore
-    const __VLS_52 = __VLS_asFunctionalComponent1(__VLS_51, new __VLS_51({
+    const __VLS_42 = __VLS_asFunctionalComponent1(__VLS_41, new __VLS_41({
         type: "submit",
         disabled: (__VLS_ctx.saving),
     }));
-    const __VLS_53 = __VLS_52({
+    const __VLS_43 = __VLS_42({
         type: "submit",
         disabled: (__VLS_ctx.saving),
-    }, ...__VLS_functionalComponentArgsRest(__VLS_52));
-    const { default: __VLS_56 } = __VLS_54.slots;
+    }, ...__VLS_functionalComponentArgsRest(__VLS_42));
+    const { default: __VLS_46 } = __VLS_44.slots;
     (__VLS_ctx.saving ? 'Saving...' : 'Save settings');
     // @ts-ignore
-    [activeTab, saveSettings, orgid, unitOnly, timezone, cron, cronHumanized, membershipFilename, dutyPositionFilename, saving, saving,];
-    var __VLS_54;
-    const __VLS_57 = UiButton || UiButton;
+    [activeTab, saveSettings, orgid, unitOnly, timezone, cron, cronHumanized, saving, saving,];
+    var __VLS_44;
+    const __VLS_47 = UiButton || UiButton;
     // @ts-ignore
-    const __VLS_58 = __VLS_asFunctionalComponent1(__VLS_57, new __VLS_57({
+    const __VLS_48 = __VLS_asFunctionalComponent1(__VLS_47, new __VLS_47({
         ...{ 'onClick': {} },
         variant: "secondary",
         disabled: (__VLS_ctx.runningSync),
     }));
-    const __VLS_59 = __VLS_58({
+    const __VLS_49 = __VLS_48({
         ...{ 'onClick': {} },
         variant: "secondary",
         disabled: (__VLS_ctx.runningSync),
-    }, ...__VLS_functionalComponentArgsRest(__VLS_58));
-    let __VLS_62;
-    const __VLS_63 = ({ click: {} },
+    }, ...__VLS_functionalComponentArgsRest(__VLS_48));
+    let __VLS_52;
+    const __VLS_53 = ({ click: {} },
         { onClick: (__VLS_ctx.pullNow) });
-    const { default: __VLS_64 } = __VLS_60.slots;
+    const { default: __VLS_54 } = __VLS_50.slots;
     (__VLS_ctx.runningSync ? 'Queueing...' : 'Pull now');
     // @ts-ignore
     [runningSync, runningSync, pullNow,];
-    var __VLS_60;
-    var __VLS_61;
+    var __VLS_50;
+    var __VLS_51;
     if (__VLS_ctx.actionMessage) {
         __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
             ...{ class: "text-sm text-slate-500" },
@@ -593,19 +546,19 @@ else {
         /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
         /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
         (new Date(run.startedAt).toLocaleString());
-        const __VLS_65 = UiBadge || UiBadge;
+        const __VLS_55 = UiBadge || UiBadge;
         // @ts-ignore
-        const __VLS_66 = __VLS_asFunctionalComponent1(__VLS_65, new __VLS_65({
+        const __VLS_56 = __VLS_asFunctionalComponent1(__VLS_55, new __VLS_55({
             tone: (run.status === 'success' ? 'success' : 'warn'),
         }));
-        const __VLS_67 = __VLS_66({
+        const __VLS_57 = __VLS_56({
             tone: (run.status === 'success' ? 'success' : 'warn'),
-        }, ...__VLS_functionalComponentArgsRest(__VLS_66));
-        const { default: __VLS_70 } = __VLS_68.slots;
+        }, ...__VLS_functionalComponentArgsRest(__VLS_56));
+        const { default: __VLS_60 } = __VLS_58.slots;
         (run.status);
         // @ts-ignore
         [];
-        var __VLS_68;
+        var __VLS_58;
         __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
             ...{ class: "mt-2 text-sm text-slate-600 dark:text-slate-300" },
         });
@@ -696,19 +649,19 @@ else {
         });
         /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
         /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
-        const __VLS_71 = UiBadge || UiBadge;
+        const __VLS_61 = UiBadge || UiBadge;
         // @ts-ignore
-        const __VLS_72 = __VLS_asFunctionalComponent1(__VLS_71, new __VLS_71({
+        const __VLS_62 = __VLS_asFunctionalComponent1(__VLS_61, new __VLS_61({
             tone: (run.status === 'success' ? 'success' : 'warn'),
         }));
-        const __VLS_73 = __VLS_72({
+        const __VLS_63 = __VLS_62({
             tone: (run.status === 'success' ? 'success' : 'warn'),
-        }, ...__VLS_functionalComponentArgsRest(__VLS_72));
-        const { default: __VLS_76 } = __VLS_74.slots;
+        }, ...__VLS_functionalComponentArgsRest(__VLS_62));
+        const { default: __VLS_66 } = __VLS_64.slots;
         (run.status);
         // @ts-ignore
         [];
-        var __VLS_74;
+        var __VLS_64;
         __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
             ...{ class: "px-4 py-3" },
         });
