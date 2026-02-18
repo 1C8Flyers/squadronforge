@@ -200,7 +200,7 @@ tenantRouter.get('/:slug/duty-positions', async (req, res) => {
 
   const [allItems, total] = await Promise.all([scoped.dutyPosition.findMany({ where }), scoped.dutyPosition.count({ where })]);
 
-  const capids = [...new Set(allItems.map((item) => item.capid).filter(Boolean))];
+  const capids = [...new Set(allItems.map((item: (typeof allItems)[number]) => item.capid).filter(Boolean))];
   const membersByCapid = new Map<string, { firstName: string; lastName: string; grade: string | null }>();
 
   if (capids.length > 0) {
@@ -214,7 +214,7 @@ tenantRouter.get('/:slug/duty-positions', async (req, res) => {
     }
   }
 
-  const enrichedItems = allItems.map((item) => {
+  const enrichedItems = allItems.map((item: (typeof allItems)[number]) => {
     const member = membersByCapid.get(item.capid);
     return {
       ...item,
@@ -273,6 +273,65 @@ tenantRouter.get('/:slug/duty-positions', async (req, res) => {
   const pagedItems = sorted.slice(start, end);
 
   res.json({ items: pagedItems, total, page: q.page, pageSize: q.pageSize });
+});
+
+tenantRouter.get('/:slug/cadet-promotions', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+  const scoped = tenantScopedDb(tenantId);
+  const q = z
+    .object({
+      page: z.coerce.number().default(1),
+      pageSize: z.coerce.number().default(50),
+      search: z.string().optional(),
+      ready: z.coerce.boolean().optional(),
+      inactive: z.coerce.boolean().optional(),
+      sortBy: z
+        .enum(['memberName', 'rank', 'capid', 'achievementName', 'datePromotionEligible', 'lastPtDate', 'ready', 'inactive'])
+        .default('memberName'),
+      sortDir: z.enum(['asc', 'desc']).default('asc')
+    })
+    .parse(req.query);
+
+  const where = {
+    tenantId,
+    ...(q.search
+      ? {
+          OR: [
+            { memberName: { contains: q.search, mode: 'insensitive' as const } },
+            { capid: { contains: q.search, mode: 'insensitive' as const } },
+            { rank: { contains: q.search, mode: 'insensitive' as const } },
+            { achievementName: { contains: q.search, mode: 'insensitive' as const } }
+          ]
+        }
+      : {}),
+    ...(q.ready === undefined ? {} : { ready: q.ready }),
+    ...(q.inactive === undefined ? {} : { inactive: q.inactive })
+  };
+
+  const orderByMap: Record<string, any[]> = {
+    memberName: [{ memberName: q.sortDir }, { capid: 'asc' }],
+    rank: [{ rank: q.sortDir }, { memberName: 'asc' }],
+    capid: [{ capid: q.sortDir }],
+    achievementName: [{ achievementName: q.sortDir }, { memberName: 'asc' }],
+    datePromotionEligible: [{ datePromotionEligible: q.sortDir }, { memberName: 'asc' }],
+    lastPtDate: [{ lastPtDate: q.sortDir }, { memberName: 'asc' }],
+    ready: [{ ready: q.sortDir }, { memberName: 'asc' }],
+    inactive: [{ inactive: q.sortDir }, { memberName: 'asc' }]
+  };
+
+  const [items, total, readyCount, inactiveCount] = await Promise.all([
+    scoped.cadetPromotion.findMany({
+      where,
+      orderBy: orderByMap[q.sortBy],
+      skip: (q.page - 1) * q.pageSize,
+      take: q.pageSize
+    }),
+    scoped.cadetPromotion.count({ where }),
+    scoped.cadetPromotion.count({ where: { tenantId, ready: true } }),
+    scoped.cadetPromotion.count({ where: { tenantId, inactive: true } })
+  ]);
+
+  res.json({ items, total, page: q.page, pageSize: q.pageSize, summary: { readyCount, inactiveCount } });
 });
 
 tenantRouter.get('/:slug/settings', async (req, res) => {

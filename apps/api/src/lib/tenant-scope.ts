@@ -77,5 +77,23 @@ export const tenantScopedDb = (tenantId: string) => ({
           tenantId
         }
       })
+  },
+  cadetPromotion: {
+    count: (args?: Omit<Prisma.CadetPromotionCountArgs, 'where'> & { where?: Prisma.CadetPromotionWhereInput }) =>
+      prisma.cadetPromotion.count({
+        ...args,
+        where: {
+          ...(args?.where ?? {}),
+          tenantId
+        }
+      }),
+    findMany: (args?: Omit<Prisma.CadetPromotionFindManyArgs, 'where'> & { where?: Prisma.CadetPromotionWhereInput }) =>
+      prisma.cadetPromotion.findMany({
+        ...args,
+        where: {
+          ...(args?.where ?? {}),
+          tenantId
+        }
+      })
   }
 });

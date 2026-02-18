@@ -53,6 +53,7 @@ model Tenant {
   memberContacts   MemberContact[]
   memberAddresses  MemberAddress[]
   dutyPositions    DutyPosition[]
+  cadetPromotions  CadetPromotion[]
   syncRuns         SyncRun[]
 }
 
@@ -160,6 +161,39 @@ model DutyPosition {
 
   @@index([tenantId, capid])
   @@index([tenantId, dutyCode])
+}
+
+model CadetPromotion {
+  id                         String   @id @default(cuid())
+  tenantId                   String
+  tenant                     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  capid                      String
+  memberName                 String?
+  rank                       String?
+  achievementName            String?
+  datePromotionEligible      DateTime?
+  lastPtDate                 DateTime?
+  inactive                   Boolean  @default(false)
+  ready                      Boolean  @default(false)
+  leadershipTestCompleted    Boolean  @default(false)
+  leadershipModuleCompleted  Boolean  @default(false)
+  aeTestCompleted            Boolean?
+  aeModuleCompleted          Boolean?
+  chiefSpeechEssayCompleted  Boolean  @default(false)
+  sdaCompleted               Boolean  @default(false)
+  ptStatus                   String?
+  leadStatus                 String?
+  aeStatus                   String?
+  drillStatus                String?
+  cdStatus                   String?
+  sdaStatus                  String?
+  comments                   String?
+  sourceRow                  Int?
+  updatedAt                  DateTime @updatedAt
+
+  @@unique([tenantId, capid])
+  @@index([tenantId, ready])
+  @@index([tenantId, inactive])
 }
 
 model RefreshToken {

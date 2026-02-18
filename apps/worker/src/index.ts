@@ -58,6 +58,31 @@ type ParsedMemberAddress = {
   longitude?: string;
 };
 
+type ParsedCadetPromotion = {
+  capid: string;
+  memberName?: string;
+  rank?: string;
+  achievementName?: string;
+  datePromotionEligible?: Date;
+  lastPtDate?: Date;
+  inactive: boolean;
+  ready: boolean;
+  leadershipTestCompleted: boolean;
+  leadershipModuleCompleted: boolean;
+  aeTestCompleted?: boolean;
+  aeModuleCompleted?: boolean;
+  chiefSpeechEssayCompleted: boolean;
+  sdaCompleted: boolean;
+  ptStatus?: string;
+  leadStatus?: string;
+  aeStatus?: string;
+  drillStatus?: string;
+  cdStatus?: string;
+  sdaStatus?: string;
+  comments?: string;
+  sourceRow?: number;
+};
+
 const advisoryKeyFromTenantId = (tenantId: string): number => {
   let hash = 0;
   for (let i = 0; i < tenantId.length; i += 1) {
@@ -190,10 +215,24 @@ const detectDutyFileByHeader = async (files: string[]): Promise<string | undefin
   return undefined;
 };
 
+const detectCadetPromotionFileByHeader = async (files: string[]): Promise<string | undefined> => {
+  for (const file of files) {
+    const text = await fsPromises.readFile(file, 'utf8');
+    const first = text.split(/\r?\n/)[0]?.toLowerCase() ?? '';
+    const hasCapid = first.includes('capid');
+    const hasAchievement = first.includes('achvname') || first.includes('achievement');
+    const hasEligibility = first.includes('nextapprovaldate') || first.includes('promotion eligable') || first.includes('promotion eligible');
+    if (hasCapid && hasAchievement && hasEligibility) {
+      return file;
+    }
+  }
+  return undefined;
+};
+
 const discoverCapwatchFiles = async (
   extractedDir: string,
   mapping: Record<string, string> | undefined
-): Promise<{ organization?: string; membership?: string; dutyPosition?: string; memberContact?: string; memberAddress?: string; files: string[] }> => {
+): Promise<{ organization?: string; membership?: string; dutyPosition?: string; memberContact?: string; memberAddress?: string; cadetPromotion?: string; files: string[] }> => {
   const files = await listFilesRecursive(extractedDir);
   const relativeFiles = files.map((f) => path.relative(extractedDir, f));
   const lowerMap = new Map(relativeFiles.map((rf, idx) => [rf.toLowerCase(), files[idx]]));
@@ -203,11 +242,13 @@ const discoverCapwatchFiles = async (
   const mappedDuty = mapping?.dutyPosition ? lowerMap.get(mapping.dutyPosition.toLowerCase()) : undefined;
   const mappedMemberContact = mapping?.memberContact ? lowerMap.get(mapping.memberContact.toLowerCase()) : undefined;
   const mappedMemberAddress = mapping?.memberAddress ? lowerMap.get(mapping.memberAddress.toLowerCase()) : undefined;
+  const mappedCadetPromotion = mapping?.cadetPromotion ? lowerMap.get(mapping.cadetPromotion.toLowerCase()) : undefined;
 
   const preferredMembership = lowerMap.get('member.txt') ?? lowerMap.get('membership.txt');
   const preferredDuty = lowerMap.get('dutyposition.txt') ?? lowerMap.get('cadetdutypositions.txt');
   const preferredMemberContact = lowerMap.get('mbrcontact.txt');
   const preferredMemberAddress = lowerMap.get('mbraddresses.txt');
+  const preferredCadetPromotion = lowerMap.get('cadetachvfullreport.txt');
 
   const membershipByHeuristic = files.find((fullPath) => {
     const name = path.basename(fullPath).toLowerCase();
@@ -229,12 +270,18 @@ const discoverCapwatchFiles = async (
     return name.includes('mbraddress') || (name.includes('address') && name.includes('mbr'));
   });
 
+  const cadetPromotionByHeuristic = files.find((fullPath) => {
+    const name = path.basename(fullPath).toLowerCase();
+    return name.includes('cadetachvfullreport') || name.includes('cadetachv');
+  });
+
   const membership = mappedMembership ?? preferredMembership ?? membershipByHeuristic ?? (await detectMembershipFileByHeader(files));
   const dutyPosition = mappedDuty ?? preferredDuty ?? dutyByHeuristic ?? (await detectDutyFileByHeader(files));
   const memberContact = mappedMemberContact ?? preferredMemberContact ?? memberContactByHeuristic;
   const memberAddress = mappedMemberAddress ?? preferredMemberAddress ?? memberAddressByHeuristic;
+  const cadetPromotion = mappedCadetPromotion ?? preferredCadetPromotion ?? cadetPromotionByHeuristic ?? (await detectCadetPromotionFileByHeader(files));
 
-  return { organization, membership, dutyPosition, memberContact, memberAddress, files: relativeFiles };
+  return { organization, membership, dutyPosition, memberContact, memberAddress, cadetPromotion, files: relativeFiles };
 };
 
 const normalizeMemberType = (value: string): ParsedMember['memberType'] => {
@@ -258,6 +305,73 @@ const parseDateSafe = (value: string | undefined): Date | undefined => {
   return d;
 };
 
+const splitDelimitedLine = (line: string, delimiter: string): string[] => {
+  if (delimiter !== ',') {
+    return line.split(delimiter);
+  }
+
+  const cells: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+
+    if (char === '"') {
+      const nextChar = line[i + 1];
+      if (inQuotes && nextChar === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === delimiter && !inQuotes) {
+      cells.push(current);
+      current = '';
+      continue;
+    }
+
+    current += char;
+  }
+
+  cells.push(current);
+  return cells;
+};
+
+const parseDateOrUndefined = (value: string | undefined): Date | undefined => {
+  const normalized = normalizeCell(value);
+  if (!normalized || normalized.toLowerCase() === 'none' || normalized.toLowerCase() === 'n/a') {
+    return undefined;
+  }
+
+  const parsed = parseDateSafe(normalized);
+  if (!parsed) {
+    return undefined;
+  }
+
+  if (parsed.getFullYear() <= 1900) {
+    return undefined;
+  }
+  return parsed;
+};
+
+const parseBooleanToken = (value: string | undefined): boolean | undefined => {
+  const normalized = normalizeCell(value).toLowerCase();
+  if (!normalized || normalized === 'n/a' || normalized === 'na' || normalized === 'none') {
+    return undefined;
+  }
+  if (['true', 'yes', 'y', '1', 'x', '★'].includes(normalized)) {
+    return true;
+  }
+  if (['false', 'no', 'n', '0'].includes(normalized)) {
+    return false;
+  }
+  return undefined;
+};
+
 const normalizeCell = (value: string | undefined): string => {
   const trimmed = (value ?? '').trim();
   if (trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')) {
@@ -274,7 +388,7 @@ const parseMembershipFile = async (membershipFile: string): Promise<ParsedMember
   }
 
   const delimiter = detectDelimiter(lines[0]);
-  const header = lines[0].split(delimiter).map((c) => c.trim().toLowerCase());
+  const header = splitDelimitedLine(lines[0], delimiter).map((c) => c.trim().toLowerCase());
   const indexOfAny = (...names: string[]): number => header.findIndex((h) => names.includes(h));
 
   const idx = {
@@ -295,7 +409,7 @@ const parseMembershipFile = async (membershipFile: string): Promise<ParsedMember
   }
 
   const members = lines.slice(1).map((line) => {
-    const cols = line.split(delimiter).map((v) => normalizeCell(v));
+    const cols = splitDelimitedLine(line, delimiter).map((v) => normalizeCell(v));
     return {
       capid: cols[idx.capid] ?? '',
       firstName: cols[idx.firstName] ?? '',
@@ -321,7 +435,7 @@ const parseDutyPositionFile = async (dutyFile: string): Promise<ParsedDutyPositi
   }
 
   const delimiter = detectDelimiter(lines[0]);
-  const header = lines[0].split(delimiter).map((h) => h.trim().toLowerCase());
+  const header = splitDelimitedLine(lines[0], delimiter).map((h) => h.trim().toLowerCase());
   const indexOfAny = (...names: string[]): number => header.findIndex((h) => names.includes(h));
 
   const idx = {
@@ -337,7 +451,7 @@ const parseDutyPositionFile = async (dutyFile: string): Promise<ParsedDutyPositi
   }
 
   const rows = lines.slice(1).map((line) => {
-    const cols = line.split(delimiter).map((v) => normalizeCell(v));
+    const cols = splitDelimitedLine(line, delimiter).map((v) => normalizeCell(v));
     return {
       capid: cols[idx.capid] ?? '',
       dutyName: cols[idx.dutyName] ?? '',
@@ -358,7 +472,7 @@ const parseMemberContactFile = async (contactFile: string): Promise<ParsedMember
   }
 
   const delimiter = detectDelimiter(lines[0]);
-  const header = lines[0].split(delimiter).map((h) => h.trim().toLowerCase());
+  const header = splitDelimitedLine(lines[0], delimiter).map((h) => h.trim().toLowerCase());
   const indexOfAny = (...names: string[]): number => header.findIndex((h) => names.includes(h));
 
   const idx = {
@@ -375,7 +489,7 @@ const parseMemberContactFile = async (contactFile: string): Promise<ParsedMember
   }
 
   const rows = lines.slice(1).map((line) => {
-    const cols = line.split(delimiter).map((v) => normalizeCell(v));
+    const cols = splitDelimitedLine(line, delimiter).map((v) => normalizeCell(v));
     return {
       capid: cols[idx.capid] ?? '',
       type: cols[idx.type] ?? '',
@@ -397,7 +511,7 @@ const parseMemberAddressFile = async (addressFile: string): Promise<ParsedMember
   }
 
   const delimiter = detectDelimiter(lines[0]);
-  const header = lines[0].split(delimiter).map((h) => h.trim().toLowerCase());
+  const header = splitDelimitedLine(lines[0], delimiter).map((h) => h.trim().toLowerCase());
   const indexOfAny = (...names: string[]): number => header.findIndex((h) => names.includes(h));
 
   const idx = {
@@ -418,7 +532,7 @@ const parseMemberAddressFile = async (addressFile: string): Promise<ParsedMember
   }
 
   const rows = lines.slice(1).map((line) => {
-    const cols = line.split(delimiter).map((v) => normalizeCell(v));
+    const cols = splitDelimitedLine(line, delimiter).map((v) => normalizeCell(v));
     return {
       capid: cols[idx.capid] ?? '',
       type: cols[idx.type] ?? '',
@@ -434,6 +548,97 @@ const parseMemberAddressFile = async (addressFile: string): Promise<ParsedMember
   });
 
   return rows.filter((r) => r.capid.length > 0 && r.type.length > 0);
+};
+
+const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<ParsedCadetPromotion[]> => {
+  const raw = await fsPromises.readFile(cadetPromotionFile, 'utf8');
+  const lines = raw.split(/\r?\n/).filter((line) => line.trim().length > 0);
+  if (lines.length < 2) {
+    return [];
+  }
+
+  const delimiter = detectDelimiter(lines[0]);
+  const header = splitDelimitedLine(lines[0], delimiter).map((h) => h.trim().toLowerCase());
+  const indexOfAny = (...names: string[]): number => header.findIndex((h) => names.includes(h));
+
+  const idx = {
+    sourceRow: indexOfAny('source row #'),
+    achievementName: indexOfAny('achievement id', 'achvname', 'achievement'),
+    promotionEligible: indexOfAny('date promotion eligable', 'date promotion eligible', 'nextapprovaldate'),
+    lastPtDate: indexOfAny('last pt date', 'phyfittest'),
+    inactive: indexOfAny('inactive?'),
+    ready: indexOfAny('ready?'),
+    leadershipTestCompleted: indexOfAny('leadership test completed', 'leadlabdatep'),
+    leadershipModuleCompleted: indexOfAny('leadership module completed', 'leadershipinteractivedate'),
+    aeTestCompleted: indexOfAny('ae test completed', 'aedatep'),
+    aeModuleCompleted: indexOfAny('ae module completed', 'aeinteractivedate'),
+    chiefSpeechEssayCompleted: indexOfAny('chief speech / essay completed', 'speechdate', 'essaydate', 'oralpresentationdate'),
+    sdaCompleted: indexOfAny('sda completed', 'technicalwritingassignmentdate'),
+    memberName: indexOfAny('name'),
+    capid: indexOfAny('capid'),
+    rank: indexOfAny('rank'),
+    ptStatus: indexOfAny('pt'),
+    leadStatus: indexOfAny('lead'),
+    aeStatus: indexOfAny('ae'),
+    drillStatus: indexOfAny('drill'),
+    cdStatus: indexOfAny('cd'),
+    sdaStatus: indexOfAny('sda'),
+    comments: indexOfAny('comments')
+  };
+
+  if (idx.capid < 0) {
+    return [];
+  }
+
+  const rows = lines.slice(1).map((line) => {
+    const cols = splitDelimitedLine(line, delimiter).map((v) => normalizeCell(v));
+    const capid = cols[idx.capid] ?? '';
+    const leadershipTest = idx.leadershipTestCompleted >= 0 ? parseBooleanToken(cols[idx.leadershipTestCompleted]) : undefined;
+    const leadershipModule = idx.leadershipModuleCompleted >= 0 ? parseBooleanToken(cols[idx.leadershipModuleCompleted]) : undefined;
+    const aeTest = idx.aeTestCompleted >= 0 ? parseBooleanToken(cols[idx.aeTestCompleted]) : undefined;
+    const aeModule = idx.aeModuleCompleted >= 0 ? parseBooleanToken(cols[idx.aeModuleCompleted]) : undefined;
+    const chief = idx.chiefSpeechEssayCompleted >= 0 ? parseBooleanToken(cols[idx.chiefSpeechEssayCompleted]) : undefined;
+    const sda = idx.sdaCompleted >= 0 ? parseBooleanToken(cols[idx.sdaCompleted]) : undefined;
+    const eligibleDate = idx.promotionEligible >= 0 ? parseDateOrUndefined(cols[idx.promotionEligible]) : undefined;
+    const isInactive = idx.inactive >= 0 ? parseBooleanToken(cols[idx.inactive]) === true : false;
+    const readyFlag = idx.ready >= 0 ? parseBooleanToken(cols[idx.ready]) : undefined;
+
+    let ready = readyFlag === true;
+    if (readyFlag === undefined) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const eligible = !eligibleDate || eligibleDate.getTime() <= today.getTime();
+      const checks = [leadershipTest ?? true, leadershipModule ?? true, chief ?? true, sda ?? true, aeTest ?? true, aeModule ?? true];
+      ready = !isInactive && eligible && checks.every(Boolean);
+    }
+
+    return {
+      capid,
+      memberName: idx.memberName >= 0 ? cols[idx.memberName] || undefined : undefined,
+      rank: idx.rank >= 0 ? cols[idx.rank] || undefined : undefined,
+      achievementName: idx.achievementName >= 0 ? cols[idx.achievementName] || undefined : undefined,
+      datePromotionEligible: eligibleDate,
+      lastPtDate: idx.lastPtDate >= 0 ? parseDateOrUndefined(cols[idx.lastPtDate]) : undefined,
+      inactive: isInactive,
+      ready,
+      leadershipTestCompleted: leadershipTest ?? false,
+      leadershipModuleCompleted: leadershipModule ?? false,
+      aeTestCompleted: aeTest,
+      aeModuleCompleted: aeModule,
+      chiefSpeechEssayCompleted: chief ?? false,
+      sdaCompleted: sda ?? false,
+      ptStatus: idx.ptStatus >= 0 ? cols[idx.ptStatus] || undefined : undefined,
+      leadStatus: idx.leadStatus >= 0 ? cols[idx.leadStatus] || undefined : undefined,
+      aeStatus: idx.aeStatus >= 0 ? cols[idx.aeStatus] || undefined : undefined,
+      drillStatus: idx.drillStatus >= 0 ? cols[idx.drillStatus] || undefined : undefined,
+      cdStatus: idx.cdStatus >= 0 ? cols[idx.cdStatus] || undefined : undefined,
+      sdaStatus: idx.sdaStatus >= 0 ? cols[idx.sdaStatus] || undefined : undefined,
+      comments: idx.comments >= 0 ? cols[idx.comments] || undefined : undefined,
+      sourceRow: idx.sourceRow >= 0 ? Number(cols[idx.sourceRow]) || undefined : undefined
+    } satisfies ParsedCadetPromotion;
+  });
+
+  return rows.filter((r) => r.capid.length > 0);
 };
 
 const setRunStage = async (runId: string, stage: string) => {
@@ -523,11 +728,13 @@ new Worker(
       const dutyPositions = discovery.dutyPosition ? await parseDutyPositionFile(discovery.dutyPosition) : [];
       const memberContacts = discovery.memberContact ? await parseMemberContactFile(discovery.memberContact) : [];
       const memberAddresses = discovery.memberAddress ? await parseMemberAddressFile(discovery.memberAddress) : [];
+      const cadetPromotions = discovery.cadetPromotion ? await parseCadetPromotionFile(discovery.cadetPromotion) : [];
       let upsertCount = 0;
       let activeCount = 0;
       let dutyUpserted = 0;
       let memberContactsImported = 0;
       let memberAddressesImported = 0;
+      let cadetPromotionsImported = 0;
 
       await setRunStage(run.id, 'importing');
 
@@ -616,6 +823,38 @@ new Worker(
           });
         }
         memberAddressesImported = memberAddresses.length;
+
+        await tx.cadetPromotion.deleteMany({ where: { tenantId } });
+        if (cadetPromotions.length > 0) {
+          await tx.cadetPromotion.createMany({
+            data: cadetPromotions.map((item) => ({
+              tenantId,
+              capid: item.capid,
+              memberName: item.memberName,
+              rank: item.rank,
+              achievementName: item.achievementName,
+              datePromotionEligible: item.datePromotionEligible,
+              lastPtDate: item.lastPtDate,
+              inactive: item.inactive,
+              ready: item.ready,
+              leadershipTestCompleted: item.leadershipTestCompleted,
+              leadershipModuleCompleted: item.leadershipModuleCompleted,
+              aeTestCompleted: item.aeTestCompleted,
+              aeModuleCompleted: item.aeModuleCompleted,
+              chiefSpeechEssayCompleted: item.chiefSpeechEssayCompleted,
+              sdaCompleted: item.sdaCompleted,
+              ptStatus: item.ptStatus,
+              leadStatus: item.leadStatus,
+              aeStatus: item.aeStatus,
+              drillStatus: item.drillStatus,
+              cdStatus: item.cdStatus,
+              sdaStatus: item.sdaStatus,
+              comments: item.comments,
+              sourceRow: item.sourceRow
+            }))
+          });
+        }
+        cadetPromotionsImported = cadetPromotions.length;
       });
       await prisma.syncRun.update({
         where: { id: run.id },
@@ -632,9 +871,11 @@ new Worker(
             dutyPositionFile: discovery.dutyPosition ? path.relative(extracted, discovery.dutyPosition) : null,
             memberContactFile: discovery.memberContact ? path.relative(extracted, discovery.memberContact) : null,
             memberAddressFile: discovery.memberAddress ? path.relative(extracted, discovery.memberAddress) : null,
+            cadetPromotionFile: discovery.cadetPromotion ? path.relative(extracted, discovery.cadetPromotion) : null,
             dutyPositionsUpserted: dutyUpserted,
             memberContactsImported,
             memberAddressesImported,
+            cadetPromotionsImported,
             downloadSizeBytes: download.size
           },
           checksum: download.checksum
