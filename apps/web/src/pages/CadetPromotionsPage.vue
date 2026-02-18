@@ -89,17 +89,21 @@ const formatDate = (value: string | null): string => (value ? new Date(value).to
 
 const rowStatusText = (row: CadetPromotion): string => {
   if (row.inactive) return 'Inactive';
-  if (row.ready) return 'Ready';
+  if (isChecklistReady(row)) return 'Ready';
   return 'Pending';
 };
 
 const rowStatusTone = (row: CadetPromotion): 'neutral' | 'success' | 'warn' => {
   if (row.inactive) return 'warn';
-  if (row.ready) return 'success';
+  if (isChecklistReady(row)) return 'success';
   return 'neutral';
 };
 
 const readyDisplay = (row: CadetPromotion): string => {
+  if (!isChecklistReady(row)) {
+    return 'No';
+  }
+
   const raw = row.readyStatus?.trim();
   if (raw && raw.length > 0) {
     const parsed = new Date(raw);
@@ -108,7 +112,7 @@ const readyDisplay = (row: CadetPromotion): string => {
     }
     return raw;
   }
-  return row.ready ? 'Yes' : 'No';
+  return 'Yes';
 };
 
 const readyTone = (row: CadetPromotion): 'neutral' | 'success' => {
@@ -218,6 +222,10 @@ const completedList = (row: CadetPromotion): string[] => {
 
   return completed;
 };
+
+function isChecklistReady(row: CadetPromotion): boolean {
+  return !row.inactive && needsList(row).length === 0;
+}
 
 const toggleNeeds = (id: string) => {
   expandedNeedId.value = expandedNeedId.value === id ? null : id;

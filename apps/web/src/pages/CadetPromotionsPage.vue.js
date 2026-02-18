@@ -61,18 +61,21 @@ const formatDate = (value) => (value ? new Date(value).toLocaleDateString() : 'â
 const rowStatusText = (row) => {
     if (row.inactive)
         return 'Inactive';
-    if (row.ready)
+    if (isChecklistReady(row))
         return 'Ready';
     return 'Pending';
 };
 const rowStatusTone = (row) => {
     if (row.inactive)
         return 'warn';
-    if (row.ready)
+    if (isChecklistReady(row))
         return 'success';
     return 'neutral';
 };
 const readyDisplay = (row) => {
+    if (!isChecklistReady(row)) {
+        return 'No';
+    }
     const raw = row.readyStatus?.trim();
     if (raw && raw.length > 0) {
         const parsed = new Date(raw);
@@ -81,7 +84,7 @@ const readyDisplay = (row) => {
         }
         return raw;
     }
-    return row.ready ? 'Yes' : 'No';
+    return 'Yes';
 };
 const readyTone = (row) => {
     const value = readyDisplay(row).toLowerCase();
@@ -185,6 +188,9 @@ const completedList = (row) => {
     }
     return completed;
 };
+function isChecklistReady(row) {
+    return !row.inactive && needsList(row).length === 0;
+}
 const toggleNeeds = (id) => {
     expandedNeedId.value = expandedNeedId.value === id ? null : id;
 };
