@@ -7,7 +7,7 @@ import { api } from '@/lib';
 import { useSession } from '@/state/session';
 const router = useRouter();
 const { hydrateSession } = useSession();
-const email = ref('admin@example.com');
+const email = ref('');
 const password = ref('');
 const error = ref('');
 const login = async () => {
@@ -111,10 +111,12 @@ const __VLS_6 = UiInput;
 const __VLS_7 = __VLS_asFunctionalComponent1(__VLS_6, new __VLS_6({
     modelValue: (__VLS_ctx.email),
     type: "email",
+    placeholder: "admin@example.com",
 }));
 const __VLS_8 = __VLS_7({
     modelValue: (__VLS_ctx.email),
     type: "email",
+    placeholder: "admin@example.com",
 }, ...__VLS_functionalComponentArgsRest(__VLS_7));
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
 __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({

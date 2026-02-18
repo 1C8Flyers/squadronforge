@@ -545,6 +545,18 @@ if (__VLS_ctx.showNewEventForm) {
             options: ([{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]),
         }, ...__VLS_functionalComponentArgsRest(__VLS_85));
     }
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+    __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+        ...{ class: "mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+    });
+    /** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
+    /** @type {__VLS_StyleScopedClasses['block']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+    /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+    /** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+    /** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
     const __VLS_89 = UiSelect;
     // @ts-ignore
     const __VLS_90 = __VLS_asFunctionalComponent1(__VLS_89, new __VLS_89({
@@ -555,45 +567,90 @@ if (__VLS_ctx.showNewEventForm) {
         modelValue: (__VLS_ctx.newRecurrenceFrequency),
         options: ([{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]),
     }, ...__VLS_functionalComponentArgsRest(__VLS_90));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+    __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+        ...{ class: "mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+    });
+    /** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
+    /** @type {__VLS_StyleScopedClasses['block']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+    /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+    /** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+    /** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
     const __VLS_94 = UiInput;
     // @ts-ignore
     const __VLS_95 = __VLS_asFunctionalComponent1(__VLS_94, new __VLS_94({
         modelValue: (__VLS_ctx.newRecurrenceInterval),
         type: "number",
-        placeholder: "Repeat interval (e.g. 1)",
+        placeholder: "1 = every week/day/month",
     }));
     const __VLS_96 = __VLS_95({
         modelValue: (__VLS_ctx.newRecurrenceInterval),
         type: "number",
-        placeholder: "Repeat interval (e.g. 1)",
+        placeholder: "1 = every week/day/month",
     }, ...__VLS_functionalComponentArgsRest(__VLS_95));
     if (__VLS_ctx.newRecurrenceFrequency !== 'none') {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+        __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+            ...{ class: "mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+        });
+        /** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
+        /** @type {__VLS_StyleScopedClasses['block']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+        /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+        /** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+        /** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+        /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
         const __VLS_99 = UiInput;
         // @ts-ignore
         const __VLS_100 = __VLS_asFunctionalComponent1(__VLS_99, new __VLS_99({
             modelValue: (__VLS_ctx.newRecurrenceOccurrences),
             type: "number",
-            placeholder: "Occurrences (e.g. 10)",
+            placeholder: "How many events to create (e.g. 10)",
         }));
         const __VLS_101 = __VLS_100({
             modelValue: (__VLS_ctx.newRecurrenceOccurrences),
             type: "number",
-            placeholder: "Occurrences (e.g. 10)",
+            placeholder: "How many events to create (e.g. 10)",
         }, ...__VLS_functionalComponentArgsRest(__VLS_100));
     }
     if (__VLS_ctx.newRecurrenceFrequency !== 'none') {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+        __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+            ...{ class: "mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+        });
+        /** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
+        /** @type {__VLS_StyleScopedClasses['block']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+        /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+        /** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+        /** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+        /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
         const __VLS_104 = UiInput;
         // @ts-ignore
         const __VLS_105 = __VLS_asFunctionalComponent1(__VLS_104, new __VLS_104({
             modelValue: (__VLS_ctx.newRecurrenceUntil),
             type: "datetime-local",
-            placeholder: "Until (optional)",
+            placeholder: "Stop date for recurrence",
         }));
         const __VLS_106 = __VLS_105({
             modelValue: (__VLS_ctx.newRecurrenceUntil),
             type: "datetime-local",
-            placeholder: "Until (optional)",
+            placeholder: "Stop date for recurrence",
         }, ...__VLS_functionalComponentArgsRest(__VLS_105));
+    }
+    if (__VLS_ctx.newRecurrenceFrequency !== 'none') {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+            ...{ class: "md:col-span-2 text-xs text-slate-500 dark:text-slate-400" },
+        });
+        /** @type {__VLS_StyleScopedClasses['md:col-span-2']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+        /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
     }
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "md:col-span-2 flex flex-wrap gap-2" },
@@ -615,7 +672,7 @@ if (__VLS_ctx.showNewEventForm) {
     const { default: __VLS_114 } = __VLS_112.slots;
     (__VLS_ctx.saving ? 'Saving...' : 'Create event');
     // @ts-ignore
-    [createEvent, newTitle, newTitle, newLocation, newDescription, newStartsAt, newStartsAt, newEndsAt, newEndsAt, newVisibility, newVisibility, newAudienceMemberType, newRecurrenceFrequency, newRecurrenceFrequency, newRecurrenceFrequency, newRecurrenceInterval, newRecurrenceOccurrences, newRecurrenceUntil, saving, saving,];
+    [createEvent, newTitle, newTitle, newLocation, newDescription, newStartsAt, newStartsAt, newEndsAt, newEndsAt, newVisibility, newVisibility, newAudienceMemberType, newRecurrenceFrequency, newRecurrenceFrequency, newRecurrenceFrequency, newRecurrenceFrequency, newRecurrenceInterval, newRecurrenceOccurrences, newRecurrenceUntil, saving, saving,];
     var __VLS_112;
 }
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
@@ -1257,6 +1314,18 @@ if (__VLS_ctx.selectedEvent) {
                 options: ([{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]),
             }, ...__VLS_functionalComponentArgsRest(__VLS_213));
         }
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+        __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+            ...{ class: "mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+        });
+        /** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
+        /** @type {__VLS_StyleScopedClasses['block']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+        /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+        /** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+        /** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+        /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
         const __VLS_217 = UiSelect;
         // @ts-ignore
         const __VLS_218 = __VLS_asFunctionalComponent1(__VLS_217, new __VLS_217({
@@ -1267,30 +1336,54 @@ if (__VLS_ctx.selectedEvent) {
             modelValue: (__VLS_ctx.editRecurrenceFrequency),
             options: ([{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]),
         }, ...__VLS_functionalComponentArgsRest(__VLS_218));
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+        __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+            ...{ class: "mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+        });
+        /** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
+        /** @type {__VLS_StyleScopedClasses['block']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+        /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+        /** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+        /** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+        /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
         const __VLS_222 = UiInput;
         // @ts-ignore
         const __VLS_223 = __VLS_asFunctionalComponent1(__VLS_222, new __VLS_222({
             modelValue: (__VLS_ctx.editRecurrenceInterval),
             type: "number",
-            placeholder: "Repeat interval",
+            placeholder: "1 = every week/day/month",
         }));
         const __VLS_224 = __VLS_223({
             modelValue: (__VLS_ctx.editRecurrenceInterval),
             type: "number",
-            placeholder: "Repeat interval",
+            placeholder: "1 = every week/day/month",
         }, ...__VLS_functionalComponentArgsRest(__VLS_223));
         if (__VLS_ctx.editRecurrenceFrequency !== 'none') {
+            __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+            __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+                ...{ class: "mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+            });
+            /** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
+            /** @type {__VLS_StyleScopedClasses['block']} */ ;
+            /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+            /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+            /** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+            /** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+            /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+            /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
             const __VLS_227 = UiInput;
             // @ts-ignore
             const __VLS_228 = __VLS_asFunctionalComponent1(__VLS_227, new __VLS_227({
                 modelValue: (__VLS_ctx.editRecurrenceUntil),
                 type: "datetime-local",
-                placeholder: "Recurrence until (optional)",
+                placeholder: "Stop date for recurrence",
             }));
             const __VLS_229 = __VLS_228({
                 modelValue: (__VLS_ctx.editRecurrenceUntil),
                 type: "datetime-local",
-                placeholder: "Recurrence until (optional)",
+                placeholder: "Stop date for recurrence",
             }, ...__VLS_functionalComponentArgsRest(__VLS_228));
         }
         __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({

@@ -374,11 +374,27 @@ const startEditingEvent = (eventId: string) => {
         :options="[{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]"
       />
 
-      <UiSelect v-model="newRecurrenceFrequency" :options="[{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]" />
-      <UiInput v-model="newRecurrenceInterval" type="number" placeholder="Repeat interval (e.g. 1)" />
+      <div>
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Repeat</label>
+        <UiSelect v-model="newRecurrenceFrequency" :options="[{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]" />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Interval</label>
+        <UiInput v-model="newRecurrenceInterval" type="number" placeholder="1 = every week/day/month" />
+      </div>
 
-      <UiInput v-if="newRecurrenceFrequency !== 'none'" v-model="newRecurrenceOccurrences" type="number" placeholder="Occurrences (e.g. 10)" />
-      <UiInput v-if="newRecurrenceFrequency !== 'none'" v-model="newRecurrenceUntil" type="datetime-local" placeholder="Until (optional)" />
+      <div v-if="newRecurrenceFrequency !== 'none'">
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Occurrences</label>
+        <UiInput v-model="newRecurrenceOccurrences" type="number" placeholder="How many events to create (e.g. 10)" />
+      </div>
+      <div v-if="newRecurrenceFrequency !== 'none'">
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Until (optional)</label>
+        <UiInput v-model="newRecurrenceUntil" type="datetime-local" placeholder="Stop date for recurrence" />
+      </div>
+
+      <p v-if="newRecurrenceFrequency !== 'none'" class="md:col-span-2 text-xs text-slate-500 dark:text-slate-400">
+        Example: Weekly + Interval 1 + Occurrences 10 creates 10 weekly events.
+      </p>
 
       <div class="md:col-span-2 flex flex-wrap gap-2">
         <UiButton type="submit" :disabled="saving || !newTitle || !newStartsAt || !newEndsAt">{{ saving ? 'Saving...' : 'Create event' }}</UiButton>
@@ -491,9 +507,18 @@ const startEditingEvent = (eventId: string) => {
               v-model="editAudienceMemberType"
               :options="[{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]"
             />
-            <UiSelect v-model="editRecurrenceFrequency" :options="[{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]" />
-            <UiInput v-model="editRecurrenceInterval" type="number" placeholder="Repeat interval" />
-            <UiInput v-if="editRecurrenceFrequency !== 'none'" v-model="editRecurrenceUntil" type="datetime-local" placeholder="Recurrence until (optional)" />
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Repeat</label>
+              <UiSelect v-model="editRecurrenceFrequency" :options="[{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Interval</label>
+              <UiInput v-model="editRecurrenceInterval" type="number" placeholder="1 = every week/day/month" />
+            </div>
+            <div v-if="editRecurrenceFrequency !== 'none'">
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Until (optional)</label>
+              <UiInput v-model="editRecurrenceUntil" type="datetime-local" placeholder="Stop date for recurrence" />
+            </div>
 
             <div class="mt-2 flex flex-wrap gap-2">
               <UiButton type="submit" :disabled="saving">{{ saving ? 'Saving...' : 'Update selected' }}</UiButton>
