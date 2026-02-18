@@ -35,6 +35,8 @@ Set strong values in `.env`:
 - `JWT_REFRESH_SECRET`
 - `SEED_ADMIN_EMAIL`
 - `SEED_ADMIN_PASSWORD`
+- `API_HOST_PORT` (optional override if `4000` is in use)
+- `WEB_HOST_PORT` (optional override if `5173` is in use)
 - `DATABASE_URL` (if not using default compose network config)
 - `REDIS_URL` (if not using default compose network config)
 

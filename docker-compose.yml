@@ -31,7 +31,7 @@ services:
     volumes:
       - ./docker/secrets:/run/secrets:ro
     ports:
-      - "4000:4000"
+      - "${API_HOST_PORT:-4000}:4000"
 
   worker:
     build:
@@ -57,7 +57,7 @@ services:
     depends_on:
       - api
     ports:
-      - "5173:80"
+      - "${WEB_HOST_PORT:-5173}:80"
 
 volumes:
   pg_data:
