@@ -12,6 +12,7 @@ type DutyPosition = {
   id: string;
   capid: string;
   memberName: string | null;
+  memberGrade: string | null;
   memberFirstName: string | null;
   memberLastName: string | null;
   dutyName: string;
@@ -63,7 +64,7 @@ onMounted(loadDutyPositions);
       <div class="flex items-start justify-between gap-2">
         <div>
           <p class="text-base font-semibold">{{ row.dutyName }}</p>
-          <p class="text-sm text-slate-600 dark:text-slate-300">{{ row.memberName ?? 'Unknown member' }}</p>
+          <p class="text-sm text-slate-600 dark:text-slate-300">{{ row.memberName ? `${row.memberGrade ? `${row.memberGrade} ` : ''}${row.memberName}` : 'Unknown member' }}</p>
           <p class="text-xs text-slate-500 dark:text-slate-400">CAPID {{ row.capid }}</p>
         </div>
         <span class="rounded-full bg-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200">{{ row.dutyCode ?? '—' }}</span>
@@ -94,7 +95,7 @@ onMounted(loadDutyPositions);
     </thead>
     <tbody>
       <tr v-for="row in items" :key="row.id" class="border-t border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40">
-        <td class="px-4 py-3">{{ row.memberName ?? 'Unknown member' }}</td>
+        <td class="px-4 py-3">{{ row.memberName ? `${row.memberGrade ? `${row.memberGrade} ` : ''}${row.memberName}` : 'Unknown member' }}</td>
         <td class="px-4 py-3 font-medium">{{ row.capid }}</td>
         <td class="px-4 py-3">{{ row.dutyName }}</td>
         <td class="px-4 py-3">{{ row.dutyCode ?? '—' }}</td>

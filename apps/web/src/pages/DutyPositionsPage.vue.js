@@ -125,7 +125,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
     /** @type {__VLS_StyleScopedClasses['text-slate-600']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-300']} */ ;
-    (row.memberName ?? 'Unknown member');
+    (row.memberName ? `${row.memberGrade ? `${row.memberGrade} ` : ''}${row.memberName}` : 'Unknown member');
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
         ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
     });
@@ -243,7 +243,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     });
     /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
     /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
-    (row.memberName ?? 'Unknown member');
+    (row.memberName ? `${row.memberGrade ? `${row.memberGrade} ` : ''}${row.memberName}` : 'Unknown member');
     __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
         ...{ class: "px-4 py-3 font-medium" },
     });

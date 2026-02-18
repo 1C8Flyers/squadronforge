@@ -103,13 +103,14 @@ tenantRouter.get('/:slug/members/export.csv', async (req, res) => {
     orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
   });
 
-  const headers = ['capid', 'firstName', 'lastName', 'memberType', 'status', 'email', 'unitCharter', 'orgid', 'expirationDate'];
+  const headers = ['capid', 'firstName', 'lastName', 'grade', 'memberType', 'status', 'email', 'unitCharter', 'orgid', 'expirationDate'];
   const body = rows
     .map((row: (typeof rows)[number]) =>
       [
         csvEscape(row.capid),
         csvEscape(row.firstName),
         csvEscape(row.lastName),
+        csvEscape(row.grade),
         csvEscape(row.memberType),
         csvEscape(row.status),
         csvEscape(row.email),
@@ -195,16 +196,16 @@ tenantRouter.get('/:slug/duty-positions', async (req, res) => {
   ]);
 
   const capids = [...new Set(items.map((item) => item.capid).filter(Boolean))];
-  const membersByCapid = new Map<string, { firstName: string; lastName: string }>();
+  const membersByCapid = new Map<string, { firstName: string; lastName: string; grade: string | null }>();
 
   if (capids.length > 0) {
     const members = await scoped.member.findMany({
       where: { capid: { in: capids } },
-      select: { capid: true, firstName: true, lastName: true }
+      select: { capid: true, firstName: true, lastName: true, grade: true }
     });
 
     for (const member of members) {
-      membersByCapid.set(member.capid, { firstName: member.firstName, lastName: member.lastName });
+      membersByCapid.set(member.capid, { firstName: member.firstName, lastName: member.lastName, grade: member.grade });
     }
   }
 
@@ -214,6 +215,7 @@ tenantRouter.get('/:slug/duty-positions', async (req, res) => {
       ...item,
       memberFirstName: member?.firstName ?? null,
       memberLastName: member?.lastName ?? null,
+      memberGrade: member?.grade ?? null,
       memberName: member ? `${member.lastName}, ${member.firstName}` : null
     };
   });

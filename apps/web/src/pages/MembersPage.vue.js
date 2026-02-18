@@ -196,6 +196,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.members))) {
     /** @type {__VLS_StyleScopedClasses['text-base']} */ ;
     /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
     /** @type {__VLS_StyleScopedClasses['hover:underline']} */ ;
+    (row.grade ? `${row.grade} ` : '');
     (row.lastName);
     (row.firstName);
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
@@ -353,6 +354,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.members))) {
     });
     /** @type {__VLS_StyleScopedClasses['text-left']} */ ;
     /** @type {__VLS_StyleScopedClasses['hover:underline']} */ ;
+    (row.grade ? `${row.grade} ` : '');
     (row.lastName);
     (row.firstName);
     __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
@@ -552,6 +554,7 @@ else if (__VLS_ctx.memberDetail) {
     });
     /** @type {__VLS_StyleScopedClasses['text-lg']} */ ;
     /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+    (__VLS_ctx.memberDetail.member.grade ? `${__VLS_ctx.memberDetail.member.grade} ` : '');
     (__VLS_ctx.memberDetail.member.lastName);
     (__VLS_ctx.memberDetail.member.firstName);
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
@@ -577,7 +580,7 @@ else if (__VLS_ctx.memberDetail) {
     const { default: __VLS_89 } = __VLS_87.slots;
     (__VLS_ctx.memberDetail.member.status);
     // @ts-ignore
-    [detailsLoading, detailsError, detailsError, memberDetail, memberDetail, memberDetail, memberDetail, memberDetail, memberDetail,];
+    [detailsLoading, detailsError, detailsError, memberDetail, memberDetail, memberDetail, memberDetail, memberDetail, memberDetail, memberDetail, memberDetail,];
     var __VLS_87;
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
         ...{ class: "rounded-full bg-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100" },

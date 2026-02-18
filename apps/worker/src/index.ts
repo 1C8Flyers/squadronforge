@@ -19,6 +19,7 @@ type ParsedMember = {
   capid: string;
   firstName: string;
   lastName: string;
+  grade?: string;
   memberType: 'CADET' | 'SENIOR' | 'UNKNOWN';
   status: 'ACTIVE' | 'INACTIVE' | 'UNKNOWN';
   email?: string;
@@ -280,6 +281,7 @@ const parseMembershipFile = async (membershipFile: string): Promise<ParsedMember
     capid: indexOfAny('capid'),
     firstName: indexOfAny('firstname', 'namefirst'),
     lastName: indexOfAny('lastname', 'namelast'),
+    grade: indexOfAny('grade', 'rank', 'capgrade', 'mbrgrade'),
     memberType: indexOfAny('membertype', 'type'),
     status: indexOfAny('status', 'mbrstatus'),
     email: indexOfAny('email'),
@@ -298,6 +300,7 @@ const parseMembershipFile = async (membershipFile: string): Promise<ParsedMember
       capid: cols[idx.capid] ?? '',
       firstName: cols[idx.firstName] ?? '',
       lastName: cols[idx.lastName] ?? '',
+      grade: idx.grade >= 0 ? cols[idx.grade] || undefined : undefined,
       memberType: normalizeMemberType(cols[idx.memberType] ?? ''),
       status: normalizeStatus(cols[idx.status] ?? ''),
       email: cols[idx.email] || undefined,
@@ -535,6 +538,7 @@ new Worker(
             update: {
               firstName: member.firstName,
               lastName: member.lastName,
+              grade: member.grade,
               memberType: member.memberType,
               email: member.email,
               status: member.status,
@@ -547,6 +551,7 @@ new Worker(
               capid: member.capid,
               firstName: member.firstName,
               lastName: member.lastName,
+              grade: member.grade,
               memberType: member.memberType,
               email: member.email,
               status: member.status,

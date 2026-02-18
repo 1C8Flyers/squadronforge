@@ -15,7 +15,7 @@ const status = ref('all');
 const type = ref('all');
 const { selectedTenantSlug } = useSession();
 
-const members = ref<Array<{ capid: string; firstName: string; lastName: string; memberType: string; status: string; unitCharter?: string }>>([]);
+const members = ref<Array<{ capid: string; firstName: string; lastName: string; grade?: string | null; memberType: string; status: string; unitCharter?: string }>>([]);
 const page = ref(1);
 const pageSize = ref('25');
 const total = ref(0);
@@ -28,6 +28,7 @@ const memberDetail = ref<{
     capid: string;
     firstName: string;
     lastName: string;
+    grade?: string | null;
     memberType: string;
     status: string;
     email?: string | null;
@@ -147,7 +148,7 @@ onMounted(loadMembers);
       <div class="flex items-start justify-between gap-3">
         <div>
           <button class="text-left text-base font-semibold hover:underline" @click="loadMemberDetail(row.capid)">
-            {{ row.lastName }}, {{ row.firstName }}
+            {{ row.grade ? `${row.grade} ` : '' }}{{ row.lastName }}, {{ row.firstName }}
           </button>
           <p class="text-xs text-slate-500 dark:text-slate-400">CAPID {{ row.capid }}</p>
         </div>
@@ -179,7 +180,7 @@ onMounted(loadMembers);
       <tr v-for="row in members" :key="row.capid" class="border-t border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40">
         <td class="px-4 py-3 font-medium">{{ row.capid }}</td>
         <td class="px-4 py-3">
-          <button class="text-left hover:underline" @click="loadMemberDetail(row.capid)">{{ row.lastName }}, {{ row.firstName }}</button>
+          <button class="text-left hover:underline" @click="loadMemberDetail(row.capid)">{{ row.grade ? `${row.grade} ` : '' }}{{ row.lastName }}, {{ row.firstName }}</button>
         </td>
         <td class="px-4 py-3">{{ row.memberType }}</td>
         <td class="px-4 py-3"><UiBadge tone="success">{{ row.status }}</UiBadge></td>
@@ -207,7 +208,7 @@ onMounted(loadMembers);
       <section class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/50">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p class="text-lg font-semibold">{{ memberDetail.member.lastName }}, {{ memberDetail.member.firstName }}</p>
+            <p class="text-lg font-semibold">{{ memberDetail.member.grade ? `${memberDetail.member.grade} ` : '' }}{{ memberDetail.member.lastName }}, {{ memberDetail.member.firstName }}</p>
             <p class="text-slate-500 dark:text-slate-400">CAPID {{ memberDetail.member.capid }}</p>
           </div>
           <div class="flex items-center gap-2">
