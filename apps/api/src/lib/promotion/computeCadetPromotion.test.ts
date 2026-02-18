@@ -54,6 +54,19 @@ describe('computeCadetPromotion', () => {
     expect(both.aeStatus).toBe('★');
   });
 
+  it('Partial lead/AE completion does not add opposite sub-item blockers', () => {
+    const partial = computeCadetPromotion({
+      ...baseInput(),
+      leadershipModuleDate: daysAgo(1),
+      aeModuleDate: daysAgo(1)
+    });
+
+    expect(partial.leadStatus).toBe('X');
+    expect(partial.aeStatus).toBe('X');
+    expect(partial.needs).not.toContain('Leadership: complete leadership test');
+    expect(partial.needs).not.toContain('Aerospace: complete AE test');
+  });
+
   it('Drill required missing is blank; not required is N/A', () => {
     const requiredMissing = computeCadetPromotion({ ...baseInput(), drillNotRequired: false });
     expect(requiredMissing.drillStatus).toBe('');

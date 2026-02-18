@@ -125,16 +125,10 @@ export const computeCadetPromotion = (input: ComputeInputs): ComputeOutputs => {
 
   if (leadStatus === '') {
     needs.push('Leadership: test and interactive module');
-  } else if (leadStatus === 'X') {
-    if (!leadHasTest && !leadTestNA) needs.push('Leadership: complete leadership test');
-    if (!leadHasModule && !leadModuleNA) needs.push('Leadership: complete interactive module');
   }
 
   if (aeStatus === '') {
     needs.push('Aerospace: test and interactive module');
-  } else if (aeStatus === 'X') {
-    if (!aeHasTest && !aeTestNA) needs.push('Aerospace: complete AE test');
-    if (!aeHasModule && !aeModuleNA) needs.push('Aerospace: complete interactive module');
   }
 
   if (drillStatus === '') needs.push('Drill test');
