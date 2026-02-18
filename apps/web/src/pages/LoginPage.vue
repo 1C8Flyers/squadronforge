@@ -9,7 +9,7 @@ import { useSession } from '@/state/session';
 
 const router = useRouter();
 const { hydrateSession } = useSession();
-const email = ref('admin@example.com');
+const email = ref('');
 const password = ref('');
 const error = ref('');
 
@@ -38,7 +38,7 @@ const login = async () => {
       <div class="space-y-4">
         <div>
           <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Email</label>
-          <UiInput v-model="email" type="email" />
+          <UiInput v-model="email" type="email" placeholder="admin@example.com" />
         </div>
         <div>
           <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Password</label>
