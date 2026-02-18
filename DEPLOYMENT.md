@@ -1,8 +1,8 @@
 # Deployment Guide (NAS)
 
-Target host:
-- `nas@enterprise.local`
-- deploy path: `/backup-8tb/Docker/squadronforge`
+Set these values for your environment:
+- `<DEPLOY_USER>@<DEPLOY_HOST>`
+- `<DEPLOY_PATH>` (example: `/srv/docker/squadronforge`)
 
 ## 1) Prepare host
 
@@ -15,9 +15,9 @@ Target host:
 ## 2) Clone repository on NAS
 
 ```bash
-essh nas@enterprise.local
-mkdir -p /backup-8tb/Docker
-cd /backup-8tb/Docker
+ssh <DEPLOY_USER>@<DEPLOY_HOST>
+mkdir -p <DEPLOY_PATH_PARENT>
+cd <DEPLOY_PATH_PARENT>
 git clone https://github.com/1C8Flyers/squadronforge.git
 cd squadronforge
 ```
@@ -81,14 +81,14 @@ pwsh -File ./scripts/docker-smoke.ps1 -MaxWaitSeconds 120
 ## 7) First login
 
 Use the seeded admin credentials from `.env` on:
-- `http://<nas-host>:5173/login`
+- `http://<DEPLOY_HOST>:5173/login`
 
 Then create/update tenants in Admin and set each tenant `credentialsRef` to match provided CAPWATCH keys.
 
 ## 8) Upgrade procedure
 
 ```bash
-cd /backup-8tb/Docker/squadronforge
+cd <DEPLOY_PATH>
 git pull
 docker compose up -d --build
 ```
