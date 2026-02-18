@@ -175,6 +175,7 @@ model CadetPromotion {
   lastPtDate                 DateTime?
   inactive                   Boolean  @default(false)
   ready                      Boolean  @default(false)
+  readyStatus                String?
   leadershipTestCompleted    Boolean  @default(false)
   leadershipModuleCompleted  Boolean  @default(false)
   aeTestCompleted            Boolean?

@@ -19,6 +19,7 @@ type CadetPromotion = {
   lastPtDate: string | null;
   inactive: boolean;
   ready: boolean;
+  readyStatus: string | null;
   leadershipTestCompleted: boolean;
   leadershipModuleCompleted: boolean;
   aeTestCompleted: boolean | null;
@@ -95,6 +96,21 @@ const rowStatusTone = (row: CadetPromotion): 'neutral' | 'success' | 'warn' => {
   if (row.inactive) return 'warn';
   if (row.ready) return 'success';
   return 'neutral';
+};
+
+const readyDisplay = (row: CadetPromotion): string => {
+  const raw = row.readyStatus?.trim();
+  if (raw && raw.length > 0) {
+    return raw;
+  }
+  return row.ready ? 'Yes' : 'No';
+};
+
+const readyTone = (row: CadetPromotion): 'neutral' | 'success' => {
+  const value = readyDisplay(row).toLowerCase();
+  if (value === 'yes') return 'success';
+  if (value === 'no') return 'neutral';
+  return 'success';
 };
 
 const pendingCount = computed(() => Math.max(0, total.value - readyCount.value - inactiveCount.value));
@@ -198,7 +214,7 @@ onMounted(loadCadetPromotions);
         <td class="px-4 py-3">{{ row.achievementName ?? '—' }}</td>
         <td class="px-4 py-3">{{ formatDate(row.datePromotionEligible) }}</td>
         <td class="px-4 py-3">{{ formatDate(row.lastPtDate) }}</td>
-        <td class="px-4 py-3"><UiBadge :tone="row.ready ? 'success' : 'neutral'">{{ row.ready ? 'Yes' : 'No' }}</UiBadge></td>
+        <td class="px-4 py-3"><UiBadge :tone="readyTone(row)">{{ readyDisplay(row) }}</UiBadge></td>
         <td class="px-4 py-3"><UiBadge :tone="row.inactive ? 'warn' : 'neutral'">{{ row.inactive ? 'Yes' : 'No' }}</UiBadge></td>
         <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
           PT {{ row.ptStatus ?? (row.lastPtDate ? '✓' : '—') }} ·

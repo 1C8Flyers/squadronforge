@@ -67,6 +67,7 @@ type ParsedCadetPromotion = {
   lastPtDate?: Date;
   inactive: boolean;
   ready: boolean;
+  readyStatus?: string;
   leadershipTestCompleted: boolean;
   leadershipModuleCompleted: boolean;
   aeTestCompleted?: boolean;
@@ -577,12 +578,12 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
     memberName: indexOfAny('name'),
     capid: indexOfAny('capid'),
     rank: indexOfAny('rank'),
-    ptStatus: indexOfAny('pt'),
-    leadStatus: indexOfAny('lead'),
-    aeStatus: indexOfAny('ae'),
-    drillStatus: indexOfAny('drill'),
-    cdStatus: indexOfAny('cd'),
-    sdaStatus: indexOfAny('sda'),
+    ptStatus: indexOfAny('pt', 'ptstatus', 'physical fitness'),
+    leadStatus: indexOfAny('lead', 'leadstatus', 'leadership'),
+    aeStatus: indexOfAny('ae', 'aestatus', 'aerospace education'),
+    drillStatus: indexOfAny('drill', 'drillstatus'),
+    cdStatus: indexOfAny('cd', 'cdstatus', 'character development'),
+    sdaStatus: indexOfAny('sda', 'sdastatus'),
     comments: indexOfAny('comments')
   };
 
@@ -602,6 +603,7 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
     const eligibleDate = idx.promotionEligible >= 0 ? parseDateOrUndefined(cols[idx.promotionEligible]) : undefined;
     const isInactive = idx.inactive >= 0 ? parseBooleanToken(cols[idx.inactive]) === true : false;
     const readyFlag = idx.ready >= 0 ? parseBooleanToken(cols[idx.ready]) : undefined;
+    const readyStatus = idx.ready >= 0 ? cols[idx.ready] || undefined : undefined;
 
     // CAPWATCH rows can be sparse and achievement-dependent; inferred readiness can produce false positives.
     // Only treat as ready when an explicit source flag is present.
@@ -616,6 +618,7 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
       lastPtDate: idx.lastPtDate >= 0 ? parseDateOrUndefined(cols[idx.lastPtDate]) : undefined,
       inactive: isInactive,
       ready,
+      readyStatus,
       leadershipTestCompleted: leadershipTest ?? false,
       leadershipModuleCompleted: leadershipModule ?? false,
       aeTestCompleted: aeTest,
@@ -869,6 +872,7 @@ new Worker(
               lastPtDate: item.lastPtDate,
               inactive: item.inactive,
               ready: item.ready,
+              readyStatus: item.readyStatus,
               leadershipTestCompleted: item.leadershipTestCompleted,
               leadershipModuleCompleted: item.leadershipModuleCompleted,
               aeTestCompleted: item.aeTestCompleted,

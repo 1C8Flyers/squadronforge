@@ -71,6 +71,21 @@ const rowStatusTone = (row) => {
         return 'success';
     return 'neutral';
 };
+const readyDisplay = (row) => {
+    const raw = row.readyStatus?.trim();
+    if (raw && raw.length > 0) {
+        return raw;
+    }
+    return row.ready ? 'Yes' : 'No';
+};
+const readyTone = (row) => {
+    const value = readyDisplay(row).toLowerCase();
+    if (value === 'yes')
+        return 'success';
+    if (value === 'no')
+        return 'neutral';
+    return 'success';
+};
 const pendingCount = computed(() => Math.max(0, total.value - readyCount.value - inactiveCount.value));
 watch([selectedTenantSlug, query, ready, inactive], () => {
     page.value = 1;
@@ -531,15 +546,15 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     const __VLS_40 = UiBadge || UiBadge;
     // @ts-ignore
     const __VLS_41 = __VLS_asFunctionalComponent1(__VLS_40, new __VLS_40({
-        tone: (row.ready ? 'success' : 'neutral'),
+        tone: (__VLS_ctx.readyTone(row)),
     }));
     const __VLS_42 = __VLS_41({
-        tone: (row.ready ? 'success' : 'neutral'),
+        tone: (__VLS_ctx.readyTone(row)),
     }, ...__VLS_functionalComponentArgsRest(__VLS_41));
     const { default: __VLS_45 } = __VLS_43.slots;
-    (row.ready ? 'Yes' : 'No');
+    (__VLS_ctx.readyDisplay(row));
     // @ts-ignore
-    [items, formatDate, formatDate, sortLabel,];
+    [items, formatDate, formatDate, sortLabel, readyTone, readyDisplay,];
     var __VLS_43;
     __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
         ...{ class: "px-4 py-3" },
