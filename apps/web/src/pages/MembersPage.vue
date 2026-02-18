@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import PageHeader from '@/components/layout/PageHeader.vue';
 import UiInput from '@/components/ui/UiInput.vue';
 import UiSelect from '@/components/ui/UiSelect.vue';
@@ -112,6 +112,17 @@ const loadMemberDetail = async (capid: string) => {
 
 const isParentGuardianType = (typeValue: string): boolean => /parent|guardian/i.test(typeValue);
 
+const parentGuardianContacts = computed(() => memberDetail.value?.contacts.filter((c) => isParentGuardianType(c.type)) ?? []);
+const nonParentContacts = computed(() => memberDetail.value?.contacts.filter((c) => !isParentGuardianType(c.type)) ?? []);
+
+const formatAddress = (address: {
+  addr1?: string | null;
+  addr2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+}) => [address.addr1, address.addr2, address.city, address.state, address.zip].filter(Boolean).join(', ') || 'n/a';
+
 watch([query, status, type, selectedTenantSlug], () => {
   page.value = 1;
   loadMembers();
@@ -193,48 +204,66 @@ onMounted(loadMembers);
       {{ detailsError }}
     </div>
     <div v-else-if="memberDetail" class="space-y-4 text-sm">
-      <div>
-        <p class="text-base font-semibold">{{ memberDetail.member.lastName }}, {{ memberDetail.member.firstName }}</p>
-        <p class="text-slate-500 dark:text-slate-400">CAPID {{ memberDetail.member.capid }} • {{ memberDetail.member.memberType }} • {{ memberDetail.member.status }}</p>
-      </div>
+      <section class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p class="text-lg font-semibold">{{ memberDetail.member.lastName }}, {{ memberDetail.member.firstName }}</p>
+            <p class="text-slate-500 dark:text-slate-400">CAPID {{ memberDetail.member.capid }}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <UiBadge :tone="memberDetail.member.status === 'ACTIVE' ? 'success' : 'warn'">{{ memberDetail.member.status }}</UiBadge>
+            <span class="rounded-full bg-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100">{{ memberDetail.member.memberType }}</span>
+          </div>
+        </div>
+      </section>
 
-      <div>
-        <p class="mb-1 font-medium">Parent/Guardian contacts</p>
-        <ul class="space-y-1">
-          <li v-for="contact in memberDetail.contacts.filter((c) => isParentGuardianType(c.type))" :key="`pg-${contact.type}-${contact.contact}`" class="rounded border border-slate-200 px-2 py-1 dark:border-slate-700">
-            <span class="font-medium">{{ contact.type }}</span>: {{ contact.contact }}
-            <span v-if="contact.contactName" class="text-slate-500"> ({{ contact.contactName }})</span>
-          </li>
-          <li v-if="memberDetail.contacts.filter((c) => isParentGuardianType(c.type)).length === 0" class="text-slate-500 dark:text-slate-400">No parent/guardian contact records.</li>
-        </ul>
-      </div>
+      <section class="grid gap-4 md:grid-cols-2">
+        <div class="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+          <p class="mb-2 text-sm font-semibold">Parent / Guardian</p>
+          <ul class="space-y-2">
+            <li v-for="contact in parentGuardianContacts" :key="`pg-${contact.type}-${contact.contact}`" class="rounded-md border border-slate-200 px-2 py-1 dark:border-slate-700">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ contact.type }}</p>
+              <p class="font-medium">{{ contact.contact }}</p>
+              <p v-if="contact.contactName" class="text-xs text-slate-500 dark:text-slate-400">{{ contact.contactName }}</p>
+            </li>
+            <li v-if="parentGuardianContacts.length === 0" class="text-slate-500 dark:text-slate-400">No parent/guardian contact records.</li>
+          </ul>
+        </div>
 
-      <div>
-        <p class="mb-1 font-medium">All contacts</p>
-        <ul class="space-y-1">
-          <li v-for="contact in memberDetail.contacts" :key="`contact-${contact.type}-${contact.contact}`" class="rounded border border-slate-200 px-2 py-1 dark:border-slate-700">
-            <span class="font-medium">{{ contact.type }}</span>
-            <span v-if="contact.priority"> ({{ contact.priority }})</span>
-            : {{ contact.contact }}
-            <span v-if="contact.contactName" class="text-slate-500"> — {{ contact.contactName }}</span>
-          </li>
-          <li v-if="memberDetail.contacts.length === 0" class="text-slate-500 dark:text-slate-400">No contact records.</li>
-        </ul>
-      </div>
+        <div class="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+          <p class="mb-2 text-sm font-semibold">Addresses</p>
+          <ul class="space-y-2">
+            <li v-for="address in memberDetail.addresses" :key="`addr-${address.type}-${address.addr1}-${address.zip}`" class="rounded-md border border-slate-200 px-2 py-1 dark:border-slate-700">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ address.type }}<span v-if="address.priority"> • {{ address.priority }}</span></p>
+              <p>{{ formatAddress(address) }}</p>
+            </li>
+            <li v-if="memberDetail.addresses.length === 0" class="text-slate-500 dark:text-slate-400">No address records.</li>
+          </ul>
+        </div>
+      </section>
 
-      <div>
-        <p class="mb-1 font-medium">Addresses</p>
-        <ul class="space-y-1">
-          <li v-for="address in memberDetail.addresses" :key="`addr-${address.type}-${address.addr1}-${address.zip}`" class="rounded border border-slate-200 px-2 py-1 dark:border-slate-700">
-            <span class="font-medium">{{ address.type }}</span>
-            <span v-if="address.priority"> ({{ address.priority }})</span>
-            <span>
-              — {{ [address.addr1, address.addr2, address.city, address.state, address.zip].filter(Boolean).join(', ') || 'n/a' }}
-            </span>
+      <section class="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+        <p class="mb-2 text-sm font-semibold">Other contacts</p>
+        <ul class="space-y-2">
+          <li v-for="contact in nonParentContacts" :key="`contact-${contact.type}-${contact.contact}`" class="rounded-md border border-slate-200 px-2 py-1 dark:border-slate-700">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ contact.type }}<span v-if="contact.priority"> • {{ contact.priority }}</span></p>
+            <p>{{ contact.contact }}</p>
+            <p v-if="contact.contactName" class="text-xs text-slate-500 dark:text-slate-400">{{ contact.contactName }}</p>
           </li>
-          <li v-if="memberDetail.addresses.length === 0" class="text-slate-500 dark:text-slate-400">No address records.</li>
+          <li v-if="nonParentContacts.length === 0" class="text-slate-500 dark:text-slate-400">No additional contact records.</li>
         </ul>
-      </div>
+      </section>
+
+      <section class="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+        <p class="mb-2 text-sm font-semibold">Duty assignments</p>
+        <ul class="space-y-1">
+          <li v-for="duty in memberDetail.duties" :key="`duty-${duty.dutyName}-${duty.dutyCode ?? ''}`" class="flex items-center justify-between gap-2 rounded-md border border-slate-200 px-2 py-1 dark:border-slate-700">
+            <span>{{ duty.dutyName }}</span>
+            <span class="text-xs text-slate-500 dark:text-slate-400">{{ duty.dutyCode ?? '—' }}</span>
+          </li>
+          <li v-if="memberDetail.duties.length === 0" class="text-slate-500 dark:text-slate-400">No duty assignments.</li>
+        </ul>
+      </section>
     </div>
   </UiModal>
 </template>
