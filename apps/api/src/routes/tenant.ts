@@ -5,6 +5,7 @@ import { CronExpressionParser } from 'cron-parser';
 import { requireAuth } from '../middleware/require-auth.js';
 import { ensureTenantAccess, tenantScopedDb } from '../lib/tenant-scope.js';
 import { prisma } from '../lib/prisma.js';
+import { computeCadetPromotion } from '../lib/promotion/computeCadetPromotion.js';
 
 const queue = new Queue('capwatch-sync', { connection: { url: process.env.REDIS_URL ?? 'redis://localhost:6379' } });
 
@@ -304,99 +305,15 @@ tenantRouter.get('/:slug/cadet-promotions', async (req, res) => {
           ]
         }
       : {}),
-    ...(q.ready === undefined ? {} : { ready: q.ready }),
     ...(q.inactive === undefined ? {} : { inactive: q.inactive })
   };
 
-  const orderByMap: Record<string, any[]> = {
-    memberName: [{ memberName: q.sortDir }, { capid: 'asc' }],
-    rank: [{ rank: q.sortDir }, { memberName: 'asc' }],
-    capid: [{ capid: q.sortDir }],
-    achievementName: [{ achievementName: q.sortDir }, { memberName: 'asc' }],
-    datePromotionEligible: [{ datePromotionEligible: q.sortDir }, { memberName: 'asc' }],
-    lastPtDate: [{ lastPtDate: q.sortDir }, { memberName: 'asc' }],
-    ready: [{ ready: q.sortDir }, { memberName: 'asc' }],
-    inactive: [{ inactive: q.sortDir }, { memberName: 'asc' }]
-  };
-
-  const hasValue = (value: string | null | undefined): boolean => {
-    const normalized = (value ?? '').trim();
-    return normalized.length > 0;
-  };
-
-  const formatReadyDate = (value: Date | null): string | null => {
-    if (!value) return null;
-    const d = new Date(value);
-    d.setDate(d.getDate() + 1);
-    return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
-  };
-
-  const deriveReadyStatus = (item: {
-    readyStatus: string | null;
-    ready: boolean;
-    inactive: boolean;
-    datePromotionEligible: Date | null;
-    ptStatus: string | null;
-    cdStatus: string | null;
-  }): string | null => {
-    if (hasValue(item.readyStatus)) {
-      return item.readyStatus;
-    }
-
-    if (item.ready && !item.inactive) {
-      return 'Yes';
-    }
-
-    const cd = (item.cdStatus ?? '').trim().toUpperCase();
-    const hasPt = hasValue(item.ptStatus);
-    if (!item.inactive && hasPt && cd !== 'WC') {
-      return formatReadyDate(item.datePromotionEligible);
-    }
-
-    return null;
-  };
-
-  const isReadyForUi = (item: {
-    ready: boolean;
-    inactive: boolean;
-    readyStatus: string | null;
-    datePromotionEligible: Date | null;
-    ptStatus: string | null;
-    cdStatus: string | null;
-  }): boolean => {
-    if (item.ready && !item.inactive) {
-      return true;
-    }
-
-    const derived = deriveReadyStatus(item);
-    return hasValue(derived);
-  };
-
-  const [items, total, inactiveCount, allForReadySummary] = await Promise.all([
-    scoped.cadetPromotion.findMany({
-      where,
-      orderBy: orderByMap[q.sortBy],
-      skip: (q.page - 1) * q.pageSize,
-      take: q.pageSize
-    }),
-    scoped.cadetPromotion.count({ where }),
-    scoped.cadetPromotion.count({ where: { tenantId, inactive: true } }),
-    scoped.cadetPromotion.findMany({
-      where: { tenantId },
-      select: {
-        ready: true,
-        inactive: true,
-        readyStatus: true,
-        datePromotionEligible: true,
-        ptStatus: true,
-        cdStatus: true
-      }
-    })
+  const [rawItems, allTenantRows] = await Promise.all([
+    scoped.cadetPromotion.findMany({ where }),
+    scoped.cadetPromotion.findMany({ where: { tenantId } })
   ]);
 
-  const readyCount = allForReadySummary.filter((item: any) => isReadyForUi(item)).length;
-
-  const capids = [...new Set(items.map((item: any) => item.capid).filter(Boolean))];
+  const capids = [...new Set(rawItems.map((item) => item.capid).filter(Boolean))];
   const membersByCapid = new Map<string, { firstName: string; lastName: string; grade: string | null }>();
 
   if (capids.length > 0) {
@@ -410,21 +327,119 @@ tenantRouter.get('/:slug/cadet-promotions', async (req, res) => {
     }
   }
 
-  const enrichedItems = items.map((item: any) => {
+  const formatReadyDate = (value: Date | null): string | null => {
+    if (!value) return null;
+    const d = new Date(value);
+    d.setDate(d.getDate() + 1);
+    return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+  };
+
+  const decorate = (item: any) => {
     const member = membersByCapid.get(item.capid);
-    const resolvedReadyStatus = deriveReadyStatus(item);
-    const resolvedReady = isReadyForUi(item);
+    const computed = computeCadetPromotion({
+      ptDate: item.ptDate,
+      leadershipTestDate: item.leadershipTestDate,
+      leadershipModuleDate: item.leadershipModuleDate,
+      aeTestDate: item.aeTestDate,
+      aeModuleDate: item.aeModuleDate,
+      drillDate: item.drillDate,
+      moralForumDate: item.moralForumDate,
+      welcomeCourseDate: item.welcomeCourseDate,
+      staffServiceDate: item.staffServiceDate,
+      oralPresentationDate: item.oralPresentationDate,
+      requiresCD: item.requiresCD,
+      requiresSDA: item.requiresSDA,
+      isFirstAchievement: item.isFirstAchievement,
+      leadershipTestNotRequired: item.leadershipTestNotRequired,
+      leadershipModuleNotRequired: item.leadershipModuleNotRequired,
+      aeTestNotRequired: item.aeTestNotRequired,
+      aeModuleNotRequired: item.aeModuleNotRequired,
+      drillNotRequired: item.drillNotRequired,
+      today: new Date()
+    });
+
+    const resolvedReady = !item.inactive && computed.ready;
+    const resolvedReadyStatus = item.readyStatus ?? (resolvedReady ? formatReadyDate(item.datePromotionEligible) ?? 'Yes' : null);
 
     return {
       ...item,
       memberName: item.memberName ?? (member ? `${member.lastName}, ${member.firstName}` : null),
       rank: item.rank ?? member?.grade ?? null,
+      ptStatus: computed.ptStatus,
+      leadStatus: computed.leadStatus,
+      aeStatus: computed.aeStatus,
+      drillStatus: computed.drillStatus,
+      cdStatus: computed.cdStatus,
+      sdaStatus: computed.sdaStatus,
       ready: resolvedReady,
-      readyStatus: resolvedReadyStatus
+      readyStatus: resolvedReadyStatus,
+      missingKeys: computed.missingKeys,
+      needs: computed.needs,
+      explain: computed.explain
     };
+  };
+
+  const enrichedItems = rawItems.map(decorate);
+  const enrichedAll = allTenantRows.map(decorate);
+
+  const readyFiltered = q.ready === undefined ? enrichedItems : enrichedItems.filter((item) => item.ready === q.ready);
+
+  const compareText = (a: string | null | undefined, b: string | null | undefined) =>
+    (a ?? '').localeCompare(b ?? '', undefined, { sensitivity: 'base', numeric: true });
+
+  const compareDate = (a: Date | null | undefined, b: Date | null | undefined) => {
+    const av = a ? new Date(a).getTime() : Number.NEGATIVE_INFINITY;
+    const bv = b ? new Date(b).getTime() : Number.NEGATIVE_INFINITY;
+    return av - bv;
+  };
+
+  const sortFactor = q.sortDir === 'asc' ? 1 : -1;
+  const sorted = [...readyFiltered].sort((a, b) => {
+    let result = 0;
+    switch (q.sortBy) {
+      case 'memberName':
+        result = compareText(a.memberName, b.memberName);
+        break;
+      case 'rank':
+        result = compareText(a.rank, b.rank);
+        break;
+      case 'capid':
+        result = compareText(a.capid, b.capid);
+        break;
+      case 'achievementName':
+        result = compareText(a.achievementName, b.achievementName);
+        break;
+      case 'datePromotionEligible':
+        result = compareDate(a.datePromotionEligible, b.datePromotionEligible);
+        break;
+      case 'lastPtDate':
+        result = compareDate(a.lastPtDate, b.lastPtDate);
+        break;
+      case 'ready':
+        result = Number(a.ready) - Number(b.ready);
+        break;
+      case 'inactive':
+        result = Number(a.inactive) - Number(b.inactive);
+        break;
+      default:
+        result = compareText(a.memberName, b.memberName);
+    }
+
+    if (result === 0) {
+      result = compareText(a.capid, b.capid);
+    }
+
+    return result * sortFactor;
   });
 
-  res.json({ items: enrichedItems, total, page: q.page, pageSize: q.pageSize, summary: { readyCount, inactiveCount } });
+  const total = sorted.length;
+  const start = (q.page - 1) * q.pageSize;
+  const pagedItems = sorted.slice(start, start + q.pageSize);
+
+  const readyCount = enrichedAll.filter((item) => item.ready).length;
+  const inactiveCount = enrichedAll.filter((item) => item.inactive).length;
+
+  res.json({ items: pagedItems, total, page: q.page, pageSize: q.pageSize, summary: { readyCount, inactiveCount } });
 });
 
 tenantRouter.get('/:slug/settings', async (req, res) => {

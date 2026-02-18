@@ -63,8 +63,27 @@ type ParsedCadetPromotion = {
   memberName?: string;
   rank?: string;
   achievementName?: string;
+  achievementCode?: number;
   datePromotionEligible?: Date;
   lastPtDate?: Date;
+  ptDate?: Date;
+  leadershipTestDate?: Date;
+  leadershipModuleDate?: Date;
+  aeTestDate?: Date;
+  aeModuleDate?: Date;
+  drillDate?: Date;
+  moralForumDate?: Date;
+  welcomeCourseDate?: Date;
+  staffServiceDate?: Date;
+  oralPresentationDate?: Date;
+  leadershipTestNotRequired: boolean;
+  leadershipModuleNotRequired: boolean;
+  aeTestNotRequired: boolean;
+  aeModuleNotRequired: boolean;
+  drillNotRequired: boolean;
+  requiresCD: boolean;
+  requiresSDA: boolean;
+  isFirstAchievement: boolean;
   inactive: boolean;
   ready: boolean;
   readyStatus?: string;
@@ -357,6 +376,94 @@ const parseDateOrUndefined = (value: string | undefined): Date | undefined => {
     return undefined;
   }
   return parsed;
+};
+
+const parseCapwatchDate = (value: string | undefined, fieldName: string, capid: string): Date | undefined => {
+  const normalized = normalizeCell(value);
+  if (!normalized || normalized.toLowerCase() === 'none' || normalized.toLowerCase() === 'n/a') {
+    return undefined;
+  }
+
+  const parsed = parseDateSafe(normalized);
+  if (!parsed || parsed.getFullYear() <= 1900) {
+    console.warn(
+      JSON.stringify({
+        level: 'warn',
+        msg: 'invalid_capwatch_date',
+        capid,
+        fieldName,
+        value: normalized
+      })
+    );
+    return undefined;
+  }
+
+  return parsed;
+};
+
+const isNotApplicableValue = (value: string | undefined): boolean => {
+  const normalized = normalizeCell(value).toLowerCase();
+  return normalized === 'n/a' || normalized === 'na';
+};
+
+const ACHIEVEMENT_RULES: Record<number, { requiresCD: boolean; requiresSDA: boolean; isFirstAchievement: boolean }> = {
+  1: { requiresCD: true, requiresSDA: false, isFirstAchievement: true },
+  2: { requiresCD: true, requiresSDA: false, isFirstAchievement: false },
+  3: { requiresCD: true, requiresSDA: false, isFirstAchievement: false },
+  4: { requiresCD: false, requiresSDA: false, isFirstAchievement: false },
+  5: { requiresCD: true, requiresSDA: false, isFirstAchievement: false },
+  6: { requiresCD: true, requiresSDA: false, isFirstAchievement: false },
+  7: { requiresCD: true, requiresSDA: false, isFirstAchievement: false },
+  8: { requiresCD: false, requiresSDA: false, isFirstAchievement: false },
+  9: { requiresCD: true, requiresSDA: true, isFirstAchievement: false },
+  10: { requiresCD: true, requiresSDA: true, isFirstAchievement: false },
+  11: { requiresCD: false, requiresSDA: true, isFirstAchievement: false },
+  12: { requiresCD: true, requiresSDA: true, isFirstAchievement: false },
+  13: { requiresCD: false, requiresSDA: true, isFirstAchievement: false },
+  14: { requiresCD: true, requiresSDA: true, isFirstAchievement: false },
+  15: { requiresCD: true, requiresSDA: true, isFirstAchievement: false },
+  16: { requiresCD: false, requiresSDA: true, isFirstAchievement: false }
+};
+
+const parseAchievementCode = (value: string | undefined): number | undefined => {
+  const normalized = normalizeCell(value).toLowerCase();
+  if (!normalized) return undefined;
+
+  const directNumber = Number(normalized);
+  if (Number.isInteger(directNumber) && directNumber > 0) {
+    return directNumber;
+  }
+
+  const match = normalized.match(/achievement\s*(\d+)/i);
+  if (match) {
+    return Number(match[1]);
+  }
+
+  if (normalized.includes('wright')) return 4;
+  if (normalized.includes('mitchell')) return 8;
+  if (normalized.includes('earhart')) return 11;
+  if (normalized.includes('eaker')) return 13;
+  if (normalized.includes('spaatz')) return 16;
+
+  return undefined;
+};
+
+const getAchievementRules = (achievementCode: number | undefined): { requiresCD: boolean; requiresSDA: boolean; isFirstAchievement: boolean } => {
+  if (achievementCode && ACHIEVEMENT_RULES[achievementCode]) {
+    return ACHIEVEMENT_RULES[achievementCode];
+  }
+
+  if (achievementCode === undefined) {
+    console.warn(JSON.stringify({ level: 'warn', msg: 'unknown_achievement_code', fallback: true }));
+  } else {
+    console.warn(JSON.stringify({ level: 'warn', msg: 'unmapped_achievement_code', achievementCode, fallback: true }));
+  }
+
+  return {
+    requiresCD: true,
+    requiresSDA: true,
+    isFirstAchievement: false
+  };
 };
 
 const parseBooleanToken = (value: string | undefined): boolean | undefined => {
@@ -659,15 +766,21 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
     achievementName: indexOfAny('achievement id', 'achvname', 'achievement'),
     promotionEligible: indexOfAny('date promotion eligable', 'date promotion eligible', 'nextapprovaldate'),
     lastPtDate: indexOfAny('last pt date', 'phyfittest'),
+    ptDate: indexOfAny('phyfittest', 'last pt date'),
     inactive: indexOfAny('inactive?'),
     ready: indexOfAny('ready?', 'ready'),
     readyDate: indexOfAny('ready date', 'date ready', 'dateready', 'date when ready', 'projected ready date'),
-    leadershipTestCompleted: indexOfAny('leadership test completed', 'leadlabdatep'),
+    leadershipTestCompleted: indexOfAny('leadership test completed', 'leadlabdatep', 'leadlabdate'),
     leadershipModuleCompleted: indexOfAny('leadership module completed', 'leadershipinteractivedate'),
-    aeTestCompleted: indexOfAny('ae test completed', 'aedatep'),
+    aeTestCompleted: indexOfAny('ae test completed', 'aedatep', 'aedate'),
     aeModuleCompleted: indexOfAny('ae module completed', 'aeinteractivedate'),
+    drillDate: indexOfAny('drilldate', 'drill date'),
+    moralForumDate: indexOfAny('moraldatep', 'moral date', 'characterdevelopmentdate'),
+    welcomeCourseDate: indexOfAny('welcomecoursedate', 'welcome course date'),
+    staffServiceDate: indexOfAny('staffservicedate', 'staff service date'),
+    oralPresentationDate: indexOfAny('oralpresentationdate', 'oral presentation date', 'speechdate', 'essaydate'),
     chiefSpeechEssayCompleted: indexOfAny('chief speech / essay completed', 'speechdate', 'essaydate', 'oralpresentationdate'),
-    sdaCompleted: indexOfAny('sda completed', 'technicalwritingassignmentdate'),
+    sdaCompleted: indexOfAny('sda completed', 'technicalwritingassignmentdate', 'staffservicedate', 'oralpresentationdate'),
     memberName: indexOfAny('name'),
     capid: indexOfAny('capid'),
     rank: indexOfAny('rank'),
@@ -701,6 +814,10 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
     const chief = parseCompletionToken(chiefRaw);
     const sda = parseCompletionToken(sdaRaw);
 
+    const achievementName = idx.achievementName >= 0 ? cols[idx.achievementName] || undefined : undefined;
+    const achievementCode = parseAchievementCode(achievementName);
+    const rules = getAchievementRules(achievementCode);
+
     const eligibleDate = idx.promotionEligible >= 0 ? parseDateOrUndefined(cols[idx.promotionEligible]) : undefined;
     const isInactive = idx.inactive >= 0 ? parseBooleanToken(cols[idx.inactive]) === true : false;
     const readyFlag = idx.ready >= 0 ? parseBooleanToken(cols[idx.ready]) : undefined;
@@ -709,6 +826,21 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
     const readyStatus = readyDateToken ?? readyToken;
 
     const lastPtDate = idx.lastPtDate >= 0 ? parseDateOrUndefined(cols[idx.lastPtDate]) : undefined;
+    const ptDate = idx.ptDate >= 0 ? parseCapwatchDate(cols[idx.ptDate], 'PhyFitTest', capid) : undefined;
+    const leadershipTestDate = idx.leadershipTestCompleted >= 0 ? parseCapwatchDate(leadershipTestRaw, 'LeadLabDateP', capid) : undefined;
+    const leadershipModuleDate = idx.leadershipModuleCompleted >= 0 ? parseCapwatchDate(leadershipModuleRaw, 'LeadershipInteractiveDate', capid) : undefined;
+    const aeTestDate = idx.aeTestCompleted >= 0 ? parseCapwatchDate(aeTestRaw, 'AEDateP', capid) : undefined;
+    const aeModuleDate = idx.aeModuleCompleted >= 0 ? parseCapwatchDate(aeModuleRaw, 'AEInteractiveDate', capid) : undefined;
+    const drillDateRaw = idx.drillDate >= 0 ? cols[idx.drillDate] : undefined;
+    const drillDate = idx.drillDate >= 0 ? parseCapwatchDate(drillDateRaw, 'DrillDate', capid) : undefined;
+    const moralForumRaw = idx.moralForumDate >= 0 ? cols[idx.moralForumDate] : undefined;
+    const moralForumDate = idx.moralForumDate >= 0 ? parseCapwatchDate(moralForumRaw, 'MoralDateP', capid) : undefined;
+    const welcomeCourseRaw = idx.welcomeCourseDate >= 0 ? cols[idx.welcomeCourseDate] : undefined;
+    const welcomeCourseDate = idx.welcomeCourseDate >= 0 ? parseCapwatchDate(welcomeCourseRaw, 'WelcomeCourseDate', capid) : undefined;
+    const staffServiceRaw = idx.staffServiceDate >= 0 ? cols[idx.staffServiceDate] : undefined;
+    const staffServiceDate = idx.staffServiceDate >= 0 ? parseCapwatchDate(staffServiceRaw, 'StaffServiceDate', capid) : undefined;
+    const oralPresentationRaw = idx.oralPresentationDate >= 0 ? cols[idx.oralPresentationDate] : undefined;
+    const oralPresentationDate = idx.oralPresentationDate >= 0 ? parseCapwatchDate(oralPresentationRaw, 'OralPresentationDate', capid) : undefined;
     const explicitPtStatus = idx.ptStatus >= 0 ? normalizeStatusValue(cols[idx.ptStatus]) : undefined;
     const explicitLeadStatus = idx.leadStatus >= 0 ? normalizeStatusValue(cols[idx.leadStatus]) : undefined;
     const explicitAeStatus = idx.aeStatus >= 0 ? normalizeStatusValue(cols[idx.aeStatus]) : undefined;
@@ -746,9 +878,28 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
       capid,
       memberName: idx.memberName >= 0 ? cols[idx.memberName] || undefined : undefined,
       rank: idx.rank >= 0 ? cols[idx.rank] || undefined : undefined,
-      achievementName: idx.achievementName >= 0 ? cols[idx.achievementName] || undefined : undefined,
+      achievementName,
+      achievementCode,
       datePromotionEligible: eligibleDate,
       lastPtDate,
+      ptDate,
+      leadershipTestDate,
+      leadershipModuleDate,
+      aeTestDate,
+      aeModuleDate,
+      drillDate,
+      moralForumDate,
+      welcomeCourseDate,
+      staffServiceDate,
+      oralPresentationDate,
+      leadershipTestNotRequired: isNotApplicableValue(leadershipTestRaw),
+      leadershipModuleNotRequired: isNotApplicableValue(leadershipModuleRaw),
+      aeTestNotRequired: isNotApplicableValue(aeTestRaw),
+      aeModuleNotRequired: isNotApplicableValue(aeModuleRaw),
+      drillNotRequired: isNotApplicableValue(drillDateRaw),
+      requiresCD: rules.requiresCD,
+      requiresSDA: rules.requiresSDA,
+      isFirstAchievement: rules.isFirstAchievement,
       inactive: isInactive,
       ready,
       readyStatus,
@@ -1001,8 +1152,27 @@ new Worker(
               memberName: item.memberName ?? memberByCapid.get(item.capid)?.fullName,
               rank: item.rank ?? memberByCapid.get(item.capid)?.grade,
               achievementName: item.achievementName,
+              achievementCode: item.achievementCode,
               datePromotionEligible: item.datePromotionEligible,
               lastPtDate: item.lastPtDate,
+              ptDate: item.ptDate,
+              leadershipTestDate: item.leadershipTestDate,
+              leadershipModuleDate: item.leadershipModuleDate,
+              aeTestDate: item.aeTestDate,
+              aeModuleDate: item.aeModuleDate,
+              drillDate: item.drillDate,
+              moralForumDate: item.moralForumDate,
+              welcomeCourseDate: item.welcomeCourseDate,
+              staffServiceDate: item.staffServiceDate,
+              oralPresentationDate: item.oralPresentationDate,
+              leadershipTestNotRequired: item.leadershipTestNotRequired,
+              leadershipModuleNotRequired: item.leadershipModuleNotRequired,
+              aeTestNotRequired: item.aeTestNotRequired,
+              aeModuleNotRequired: item.aeModuleNotRequired,
+              drillNotRequired: item.drillNotRequired,
+              requiresCD: item.requiresCD,
+              requiresSDA: item.requiresSDA,
+              isFirstAchievement: item.isFirstAchievement,
               inactive: item.inactive,
               ready: item.ready,
               readyStatus: item.readyStatus,

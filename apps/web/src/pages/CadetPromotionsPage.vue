@@ -33,6 +33,9 @@ type CadetPromotion = {
   cdStatus: string | null;
   sdaStatus: string | null;
   comments: string | null;
+  missingKeys?: string[];
+  needs?: string[];
+  explain?: string[];
 };
 
 const { selectedTenantSlug } = useSession();
@@ -89,21 +92,17 @@ const formatDate = (value: string | null): string => (value ? new Date(value).to
 
 const rowStatusText = (row: CadetPromotion): string => {
   if (row.inactive) return 'Inactive';
-  if (isChecklistReady(row)) return 'Ready';
+  if (row.ready) return 'Ready';
   return 'Pending';
 };
 
 const rowStatusTone = (row: CadetPromotion): 'neutral' | 'success' | 'warn' => {
   if (row.inactive) return 'warn';
-  if (isChecklistReady(row)) return 'success';
+  if (row.ready) return 'success';
   return 'neutral';
 };
 
 const readyDisplay = (row: CadetPromotion): string => {
-  if (!isChecklistReady(row)) {
-    return 'No';
-  }
-
   const raw = row.readyStatus?.trim();
   if (raw && raw.length > 0) {
     const parsed = new Date(raw);
@@ -112,7 +111,7 @@ const readyDisplay = (row: CadetPromotion): string => {
     }
     return raw;
   }
-  return 'Yes';
+  return row.ready ? 'Yes' : 'No';
 };
 
 const readyTone = (row: CadetPromotion): 'neutral' | 'success' => {
@@ -141,46 +140,7 @@ const checkProgress = (row: CadetPromotion): { done: number; total: number } => 
   return { done, total: required.length };
 };
 
-const needsList = (row: CadetPromotion): string[] => {
-  const needs: string[] = [];
-
-  if (!normalizeStatus(row.ptStatus)) {
-    needs.push('CPFT within last 182 days');
-  }
-
-  const lead = normalizeStatus(row.leadStatus).toUpperCase();
-  if (!lead) {
-    needs.push('Leadership: test and interactive module');
-  } else if (lead === 'X') {
-    if (!row.leadershipTestCompleted) needs.push('Leadership: complete leadership test');
-    if (!row.leadershipModuleCompleted) needs.push('Leadership: complete interactive module');
-  }
-
-  const ae = normalizeStatus(row.aeStatus).toUpperCase();
-  if (!ae) {
-    needs.push('Aerospace: test and interactive module');
-  } else if (ae === 'X') {
-    if (row.aeTestCompleted !== true) needs.push('Aerospace: complete AE test');
-    if (row.aeModuleCompleted !== true) needs.push('Aerospace: complete interactive module');
-  }
-
-  if (!normalizeStatus(row.drillStatus)) {
-    needs.push('Drill test');
-  }
-
-  const cd = normalizeStatus(row.cdStatus).toUpperCase();
-  if (cd === 'WC') {
-    needs.push('Welcome Course');
-  } else if (!cd) {
-    needs.push('Character Development forum');
-  }
-
-  if (isSdaRequired(row) && !normalizeStatus(row.sdaStatus)) {
-    needs.push('Staff Duty Analysis (SDA)');
-  }
-
-  return needs;
-};
+const needsList = (row: CadetPromotion): string[] => row.needs ?? [];
 
 const completedList = (row: CadetPromotion): string[] => {
   const completed: string[] = [];
@@ -222,10 +182,6 @@ const completedList = (row: CadetPromotion): string[] => {
 
   return completed;
 };
-
-function isChecklistReady(row: CadetPromotion): boolean {
-  return !row.inactive && needsList(row).length === 0;
-}
 
 const toggleNeeds = (id: string) => {
   expandedNeedId.value = expandedNeedId.value === id ? null : id;
@@ -312,6 +268,11 @@ onMounted(loadCadetPromotions);
             <li v-if="needsList(row).length === 0">No blockers found</li>
             <li v-for="need in needsList(row)" :key="`${row.id}-${need}`">{{ need }}</li>
           </ul>
+          <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Explain</p>
+          <ul class="mt-1 list-disc pl-5 text-xs text-slate-500 dark:text-slate-400">
+            <li v-if="(row.explain ?? []).length === 0">No explanation available</li>
+            <li v-for="note in row.explain ?? []" :key="`${row.id}-explain-${note}`">{{ note }}</li>
+          </ul>
           <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Already complete</p>
           <ul class="mt-1 list-disc pl-5 text-xs text-emerald-700 dark:text-emerald-300">
             <li v-if="completedList(row).length === 0">No completed items yet</li>
@@ -365,6 +326,11 @@ onMounted(loadCadetPromotions);
               <ul class="mt-2 list-disc pl-5 text-sm">
                 <li v-if="needsList(row).length === 0">No blockers found</li>
                 <li v-for="need in needsList(row)" :key="`${row.id}-${need}`">{{ need }}</li>
+              </ul>
+              <p class="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Explain</p>
+              <ul class="mt-2 list-disc pl-5 text-sm text-slate-500 dark:text-slate-400">
+                <li v-if="(row.explain ?? []).length === 0">No explanation available</li>
+                <li v-for="note in row.explain ?? []" :key="`${row.id}-explain-${note}`">{{ note }}</li>
               </ul>
               <p class="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Completed</p>
               <ul class="mt-2 list-disc pl-5 text-sm text-emerald-700 dark:text-emerald-300">

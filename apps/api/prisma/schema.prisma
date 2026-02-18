@@ -171,8 +171,27 @@ model CadetPromotion {
   memberName                 String?
   rank                       String?
   achievementName            String?
+  achievementCode            Int?
   datePromotionEligible      DateTime?
   lastPtDate                 DateTime?
+  ptDate                     DateTime?
+  leadershipTestDate         DateTime?
+  leadershipModuleDate       DateTime?
+  aeTestDate                 DateTime?
+  aeModuleDate               DateTime?
+  drillDate                  DateTime?
+  moralForumDate             DateTime?
+  welcomeCourseDate          DateTime?
+  staffServiceDate           DateTime?
+  oralPresentationDate       DateTime?
+  leadershipTestNotRequired  Boolean  @default(false)
+  leadershipModuleNotRequired Boolean @default(false)
+  aeTestNotRequired          Boolean  @default(false)
+  aeModuleNotRequired        Boolean  @default(false)
+  drillNotRequired           Boolean  @default(false)
+  requiresCD                 Boolean  @default(true)
+  requiresSDA                Boolean  @default(true)
+  isFirstAchievement         Boolean  @default(false)
   inactive                   Boolean  @default(false)
   ready                      Boolean  @default(false)
   readyStatus                String?
