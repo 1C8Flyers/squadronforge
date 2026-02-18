@@ -753,6 +753,13 @@ new Worker(
       }
 
       const members = await parseMembershipFile(discovery.membership);
+      const memberByCapid = new Map<string, { fullName: string; grade?: string }>();
+      for (const member of members) {
+        memberByCapid.set(member.capid, {
+          fullName: `${member.lastName}, ${member.firstName}`,
+          grade: member.grade
+        });
+      }
       const dutyPositions = discovery.dutyPosition ? await parseDutyPositionFile(discovery.dutyPosition) : [];
       const memberContacts = discovery.memberContact ? await parseMemberContactFile(discovery.memberContact) : [];
       const memberAddresses = discovery.memberAddress ? await parseMemberAddressFile(discovery.memberAddress) : [];
@@ -860,8 +867,8 @@ new Worker(
             data: cadetPromotions.map((item) => ({
               tenantId,
               capid: item.capid,
-              memberName: item.memberName,
-              rank: item.rank,
+              memberName: item.memberName ?? memberByCapid.get(item.capid)?.fullName,
+              rank: item.rank ?? memberByCapid.get(item.capid)?.grade,
               achievementName: item.achievementName,
               datePromotionEligible: item.datePromotionEligible,
               lastPtDate: item.lastPtDate,

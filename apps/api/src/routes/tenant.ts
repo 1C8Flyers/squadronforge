@@ -331,7 +331,30 @@ tenantRouter.get('/:slug/cadet-promotions', async (req, res) => {
     scoped.cadetPromotion.count({ where: { tenantId, inactive: true } })
   ]);
 
-  res.json({ items, total, page: q.page, pageSize: q.pageSize, summary: { readyCount, inactiveCount } });
+  const capids = [...new Set(items.map((item) => item.capid).filter(Boolean))];
+  const membersByCapid = new Map<string, { firstName: string; lastName: string; grade: string | null }>();
+
+  if (capids.length > 0) {
+    const members = await scoped.member.findMany({
+      where: { capid: { in: capids } },
+      select: { capid: true, firstName: true, lastName: true, grade: true }
+    });
+
+    for (const member of members) {
+      membersByCapid.set(member.capid, { firstName: member.firstName, lastName: member.lastName, grade: member.grade });
+    }
+  }
+
+  const enrichedItems = items.map((item) => {
+    const member = membersByCapid.get(item.capid);
+    return {
+      ...item,
+      memberName: item.memberName ?? (member ? `${member.lastName}, ${member.firstName}` : null),
+      rank: item.rank ?? member?.grade ?? null
+    };
+  });
+
+  res.json({ items: enrichedItems, total, page: q.page, pageSize: q.pageSize, summary: { readyCount, inactiveCount } });
 });
 
 tenantRouter.get('/:slug/settings', async (req, res) => {
