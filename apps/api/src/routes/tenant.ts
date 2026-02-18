@@ -12,6 +12,24 @@ const queue = new Queue('capwatch-sync', { connection: { url: process.env.REDIS_
 export const tenantRouter = Router();
 tenantRouter.use(requireAuth);
 
+const queryBoolean = z.preprocess((value) => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+
+  return value;
+}, z.boolean().optional());
+
 const buildMemberWhere = (tenantId: string, query: { search?: string; status?: 'ACTIVE' | 'INACTIVE' | 'UNKNOWN'; memberType?: 'CADET' | 'SENIOR' | 'UNKNOWN' }) => ({
   tenantId,
   ...(query.search
@@ -284,8 +302,8 @@ tenantRouter.get('/:slug/cadet-promotions', async (req, res) => {
       page: z.coerce.number().default(1),
       pageSize: z.coerce.number().default(50),
       search: z.string().optional(),
-      ready: z.coerce.boolean().optional(),
-      inactive: z.coerce.boolean().optional(),
+      ready: queryBoolean,
+      inactive: queryBoolean,
       sortBy: z
         .enum(['memberName', 'rank', 'capid', 'achievementName', 'datePromotionEligible', 'lastPtDate', 'ready', 'inactive'])
         .default('memberName'),
