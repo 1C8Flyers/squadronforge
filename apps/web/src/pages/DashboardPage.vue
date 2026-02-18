@@ -68,7 +68,7 @@ onMounted(loadDashboard);
     <div class="mt-4 flex flex-wrap gap-3">
       <UiButton @click="runSyncNow">Sync now</UiButton>
       <UiButton variant="secondary" @click="router.push('/members')">Open Members</UiButton>
-      <UiButton variant="ghost" @click="router.push('/sync-runs')">View Sync Runs</UiButton>
+      <UiButton variant="ghost" @click="router.push('/settings?tab=sync-log')">View Sync Log</UiButton>
     </div>
   </section>
 </template>

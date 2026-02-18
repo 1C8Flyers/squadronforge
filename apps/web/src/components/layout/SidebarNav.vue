@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Home, Users, BriefcaseBusiness, Award, ChartColumnIncreasing, RefreshCcw, Settings, Shield, X } from 'lucide-vue-next';
+import { Home, Users, BriefcaseBusiness, Award, ChartColumnIncreasing, Settings, Shield, X } from 'lucide-vue-next';
 
 defineProps<{ open: boolean }>();
 defineEmits<{ close: [] }>();
@@ -10,7 +10,6 @@ const navItems = [
   { label: 'Duty Positions', to: '/duty-positions', icon: BriefcaseBusiness },
   { label: 'Cadet Promotions', to: '/cadet-promotions', icon: Award },
   { label: 'Reports', to: '/reports', icon: ChartColumnIncreasing },
-  { label: 'Sync Runs', to: '/sync-runs', icon: RefreshCcw },
   { label: 'Settings', to: '/settings', icon: Settings },
   { label: 'Admin', to: '/admin', icon: Shield }
 ];

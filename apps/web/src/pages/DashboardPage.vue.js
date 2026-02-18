@@ -207,7 +207,7 @@ const __VLS_47 = __VLS_46({
 let __VLS_50;
 const __VLS_51 = ({ click: {} },
     { onClick: (...[$event]) => {
-            __VLS_ctx.router.push('/sync-runs');
+            __VLS_ctx.router.push('/settings?tab=sync-log');
             // @ts-ignore
             [router,];
         } });
