@@ -13,6 +13,8 @@ const items = ref([]);
 const page = ref(1);
 const pageSize = ref('50');
 const total = ref(0);
+const sortBy = ref('capid');
+const sortDir = ref('asc');
 const loadDutyPositions = async () => {
     if (!selectedTenantSlug.value)
         return;
@@ -21,11 +23,29 @@ const loadDutyPositions = async () => {
         params.capid = capid.value.trim();
     if (dutyCode.value.trim())
         params.dutyCode = dutyCode.value.trim();
+    params.sortBy = sortBy.value;
+    params.sortDir = sortDir.value;
     params.page = String(page.value);
     params.pageSize = pageSize.value;
     const { data } = await api.get(`/tenant/${selectedTenantSlug.value}/duty-positions`, { params });
     items.value = data.items;
     total.value = data.total;
+};
+const toggleSort = (column) => {
+    if (sortBy.value === column) {
+        sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+    }
+    else {
+        sortBy.value = column;
+        sortDir.value = 'asc';
+    }
+    page.value = 1;
+    loadDutyPositions();
+};
+const sortLabel = (column) => {
+    if (sortBy.value !== column)
+        return '';
+    return sortDir.value === 'asc' ? ' ▲' : ' ▼';
 };
 watch([selectedTenantSlug, capid, dutyCode], () => {
     page.value = 1;
@@ -125,7 +145,14 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
     /** @type {__VLS_StyleScopedClasses['text-slate-600']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-300']} */ ;
-    (row.memberName ? `${row.memberGrade ? `${row.memberGrade} ` : ''}${row.memberName}` : 'Unknown member');
+    (row.memberName ?? 'Unknown member');
+    __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+        ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
+    });
+    /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+    (row.memberGrade ?? '—');
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
         ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
     });
@@ -202,31 +229,106 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
 });
 /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+    ...{ onClick: (...[$event]) => {
+            __VLS_ctx.toggleSort('memberName');
+            // @ts-ignore
+            [toggleSort,];
+        } },
+    ...{ class: "hover:underline" },
+});
+/** @type {__VLS_StyleScopedClasses['hover:underline']} */ ;
+(__VLS_ctx.sortLabel('memberName'));
 __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
     ...{ class: "px-4 py-3" },
 });
 /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+    ...{ onClick: (...[$event]) => {
+            __VLS_ctx.toggleSort('memberGrade');
+            // @ts-ignore
+            [toggleSort, sortLabel,];
+        } },
+    ...{ class: "hover:underline" },
+});
+/** @type {__VLS_StyleScopedClasses['hover:underline']} */ ;
+(__VLS_ctx.sortLabel('memberGrade'));
 __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
     ...{ class: "px-4 py-3" },
 });
 /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+    ...{ onClick: (...[$event]) => {
+            __VLS_ctx.toggleSort('capid');
+            // @ts-ignore
+            [toggleSort, sortLabel,];
+        } },
+    ...{ class: "hover:underline" },
+});
+/** @type {__VLS_StyleScopedClasses['hover:underline']} */ ;
+(__VLS_ctx.sortLabel('capid'));
 __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
     ...{ class: "px-4 py-3" },
 });
 /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+    ...{ onClick: (...[$event]) => {
+            __VLS_ctx.toggleSort('dutyName');
+            // @ts-ignore
+            [toggleSort, sortLabel,];
+        } },
+    ...{ class: "hover:underline" },
+});
+/** @type {__VLS_StyleScopedClasses['hover:underline']} */ ;
+(__VLS_ctx.sortLabel('dutyName'));
 __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
     ...{ class: "px-4 py-3" },
 });
 /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+    ...{ onClick: (...[$event]) => {
+            __VLS_ctx.toggleSort('dutyCode');
+            // @ts-ignore
+            [toggleSort, sortLabel,];
+        } },
+    ...{ class: "hover:underline" },
+});
+/** @type {__VLS_StyleScopedClasses['hover:underline']} */ ;
+(__VLS_ctx.sortLabel('dutyCode'));
 __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
     ...{ class: "px-4 py-3" },
 });
 /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+    ...{ onClick: (...[$event]) => {
+            __VLS_ctx.toggleSort('startDate');
+            // @ts-ignore
+            [toggleSort, sortLabel,];
+        } },
+    ...{ class: "hover:underline" },
+});
+/** @type {__VLS_StyleScopedClasses['hover:underline']} */ ;
+(__VLS_ctx.sortLabel('startDate'));
+__VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
+    ...{ class: "px-4 py-3" },
+});
+/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+    ...{ onClick: (...[$event]) => {
+            __VLS_ctx.toggleSort('endDate');
+            // @ts-ignore
+            [toggleSort, sortLabel,];
+        } },
+    ...{ class: "hover:underline" },
+});
+/** @type {__VLS_StyleScopedClasses['hover:underline']} */ ;
+(__VLS_ctx.sortLabel('endDate'));
 __VLS_asFunctionalElement1(__VLS_intrinsics.tbody, __VLS_intrinsics.tbody)({});
 for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.tr, __VLS_intrinsics.tr)({
@@ -243,7 +345,13 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     });
     /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
     /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
-    (row.memberName ? `${row.memberGrade ? `${row.memberGrade} ` : ''}${row.memberName}` : 'Unknown member');
+    (row.memberName ?? 'Unknown member');
+    __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+        ...{ class: "px-4 py-3" },
+    });
+    /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+    (row.memberGrade ?? '—');
     __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
         ...{ class: "px-4 py-3 font-medium" },
     });
@@ -276,7 +384,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
     (row.endDate ? new Date(row.endDate).toLocaleDateString() : '—');
     // @ts-ignore
-    [items,];
+    [items, sortLabel,];
 }
 // @ts-ignore
 [];

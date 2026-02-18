@@ -73,14 +73,25 @@ tenantRouter.get('/:slug/members', async (req, res) => {
       pageSize: z.coerce.number().default(25),
       search: z.string().optional(),
       status: z.enum(['ACTIVE', 'INACTIVE', 'UNKNOWN']).optional(),
-      memberType: z.enum(['CADET', 'SENIOR', 'UNKNOWN']).optional()
+      memberType: z.enum(['CADET', 'SENIOR', 'UNKNOWN']).optional(),
+      sortBy: z.enum(['capid', 'grade', 'lastName', 'memberType', 'status', 'unitCharter']).default('lastName'),
+      sortDir: z.enum(['asc', 'desc']).default('asc')
     })
     .parse(req.query);
 
   const where = buildMemberWhere(tenantId, q);
+  const sortDir = q.sortDir;
+  const memberOrderBy: Record<string, any> = {
+    capid: [{ capid: sortDir }],
+    grade: [{ grade: sortDir }, { lastName: 'asc' }, { firstName: 'asc' }],
+    lastName: [{ lastName: sortDir }, { firstName: sortDir }],
+    memberType: [{ memberType: sortDir }, { lastName: 'asc' }, { firstName: 'asc' }],
+    status: [{ status: sortDir }, { lastName: 'asc' }, { firstName: 'asc' }],
+    unitCharter: [{ unitCharter: sortDir }, { lastName: 'asc' }, { firstName: 'asc' }]
+  };
 
   const [items, total] = await Promise.all([
-    scoped.member.findMany({ where, orderBy: { lastName: 'asc' }, skip: (q.page - 1) * q.pageSize, take: q.pageSize }),
+    scoped.member.findMany({ where, orderBy: memberOrderBy[q.sortBy], skip: (q.page - 1) * q.pageSize, take: q.pageSize }),
     scoped.member.count({ where })
   ]);
 
@@ -175,7 +186,9 @@ tenantRouter.get('/:slug/duty-positions', async (req, res) => {
       capid: z.string().optional(),
       dutyCode: z.string().optional(),
       page: z.coerce.number().default(1),
-      pageSize: z.coerce.number().default(50)
+      pageSize: z.coerce.number().default(50),
+      sortBy: z.enum(['memberName', 'memberGrade', 'capid', 'dutyName', 'dutyCode', 'startDate', 'endDate']).default('capid'),
+      sortDir: z.enum(['asc', 'desc']).default('asc')
     })
     .parse(req.query);
 
@@ -185,17 +198,9 @@ tenantRouter.get('/:slug/duty-positions', async (req, res) => {
     ...(q.dutyCode ? { dutyCode: q.dutyCode } : {})
   };
 
-  const [items, total] = await Promise.all([
-    scoped.dutyPosition.findMany({
-      where,
-      orderBy: [{ capid: 'asc' }, { dutyName: 'asc' }],
-      skip: (q.page - 1) * q.pageSize,
-      take: q.pageSize
-    }),
-    scoped.dutyPosition.count({ where })
-  ]);
+  const [allItems, total] = await Promise.all([scoped.dutyPosition.findMany({ where }), scoped.dutyPosition.count({ where })]);
 
-  const capids = [...new Set(items.map((item) => item.capid).filter(Boolean))];
+  const capids = [...new Set(allItems.map((item) => item.capid).filter(Boolean))];
   const membersByCapid = new Map<string, { firstName: string; lastName: string; grade: string | null }>();
 
   if (capids.length > 0) {
@@ -209,7 +214,7 @@ tenantRouter.get('/:slug/duty-positions', async (req, res) => {
     }
   }
 
-  const enrichedItems = items.map((item) => {
+  const enrichedItems = allItems.map((item) => {
     const member = membersByCapid.get(item.capid);
     return {
       ...item,
@@ -220,7 +225,54 @@ tenantRouter.get('/:slug/duty-positions', async (req, res) => {
     };
   });
 
-  res.json({ items: enrichedItems, total, page: q.page, pageSize: q.pageSize });
+  const sortFactor = q.sortDir === 'asc' ? 1 : -1;
+  const sorted = [...enrichedItems].sort((a, b) => {
+    const compareText = (left?: string | null, right?: string | null): number =>
+      (left ?? '').localeCompare(right ?? '', undefined, { sensitivity: 'base' });
+    const compareDate = (left?: string | Date | null, right?: string | Date | null): number => {
+      const l = left ? new Date(left).getTime() : 0;
+      const r = right ? new Date(right).getTime() : 0;
+      return l - r;
+    };
+
+    let result = 0;
+    switch (q.sortBy) {
+      case 'memberName':
+        result = compareText(a.memberName, b.memberName);
+        break;
+      case 'memberGrade':
+        result = compareText(a.memberGrade, b.memberGrade);
+        break;
+      case 'capid':
+        result = compareText(a.capid, b.capid);
+        break;
+      case 'dutyName':
+        result = compareText(a.dutyName, b.dutyName);
+        break;
+      case 'dutyCode':
+        result = compareText(a.dutyCode, b.dutyCode);
+        break;
+      case 'startDate':
+        result = compareDate(a.startDate, b.startDate);
+        break;
+      case 'endDate':
+        result = compareDate(a.endDate, b.endDate);
+        break;
+      default:
+        result = compareText(a.capid, b.capid);
+    }
+
+    if (result === 0) {
+      result = compareText(a.capid, b.capid);
+    }
+    return result * sortFactor;
+  });
+
+  const start = (q.page - 1) * q.pageSize;
+  const end = start + q.pageSize;
+  const pagedItems = sorted.slice(start, end);
+
+  res.json({ items: pagedItems, total, page: q.page, pageSize: q.pageSize });
 });
 
 tenantRouter.get('/:slug/settings', async (req, res) => {

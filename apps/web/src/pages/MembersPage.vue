@@ -19,6 +19,8 @@ const members = ref<Array<{ capid: string; firstName: string; lastName: string; 
 const page = ref(1);
 const pageSize = ref('25');
 const total = ref(0);
+const sortBy = ref<'capid' | 'grade' | 'lastName' | 'memberType' | 'status' | 'unitCharter'>('lastName');
+const sortDir = ref<'asc' | 'desc'>('asc');
 const detailsOpen = ref(false);
 const detailsLoading = ref(false);
 const detailsError = ref('');
@@ -63,6 +65,8 @@ const loadMembers = async () => {
   if (query.value) params.search = query.value;
   if (status.value !== 'all') params.status = status.value;
   if (type.value !== 'all') params.memberType = type.value;
+  params.sortBy = sortBy.value;
+  params.sortDir = sortDir.value;
   params.page = String(page.value);
   params.pageSize = pageSize.value;
 
@@ -124,6 +128,22 @@ const formatAddress = (address: {
   zip?: string | null;
 }) => [address.addr1, address.addr2, address.city, address.state, address.zip].filter(Boolean).join(', ') || 'n/a';
 
+const toggleSort = (column: 'capid' | 'grade' | 'lastName' | 'memberType' | 'status' | 'unitCharter') => {
+  if (sortBy.value === column) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortBy.value = column;
+    sortDir.value = 'asc';
+  }
+  page.value = 1;
+  loadMembers();
+};
+
+const sortLabel = (column: 'capid' | 'grade' | 'lastName' | 'memberType' | 'status' | 'unitCharter'): string => {
+  if (sortBy.value !== column) return '';
+  return sortDir.value === 'asc' ? ' ▲' : ' ▼';
+};
+
 watch([query, status, type, selectedTenantSlug], () => {
   page.value = 1;
   loadMembers();
@@ -177,7 +197,12 @@ onMounted(loadMembers);
   <UiTable class="hidden md:block">
     <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/50">
       <tr>
-        <th class="px-4 py-3">CAPID</th><th class="px-4 py-3">Rank</th><th class="px-4 py-3">Name</th><th class="px-4 py-3">Type</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Unit</th>
+        <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('capid')">CAPID{{ sortLabel('capid') }}</button></th>
+        <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('grade')">Rank{{ sortLabel('grade') }}</button></th>
+        <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('lastName')">Name{{ sortLabel('lastName') }}</button></th>
+        <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('memberType')">Type{{ sortLabel('memberType') }}</button></th>
+        <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('status')">Status{{ sortLabel('status') }}</button></th>
+        <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('unitCharter')">Unit{{ sortLabel('unitCharter') }}</button></th>
       </tr>
     </thead>
     <tbody>

@@ -28,18 +28,38 @@ const items = ref<DutyPosition[]>([]);
 const page = ref(1);
 const pageSize = ref('50');
 const total = ref(0);
+const sortBy = ref<'memberName' | 'memberGrade' | 'capid' | 'dutyName' | 'dutyCode' | 'startDate' | 'endDate'>('capid');
+const sortDir = ref<'asc' | 'desc'>('asc');
 
 const loadDutyPositions = async () => {
   if (!selectedTenantSlug.value) return;
   const params: Record<string, string> = {};
   if (capid.value.trim()) params.capid = capid.value.trim();
   if (dutyCode.value.trim()) params.dutyCode = dutyCode.value.trim();
+  params.sortBy = sortBy.value;
+  params.sortDir = sortDir.value;
   params.page = String(page.value);
   params.pageSize = pageSize.value;
 
   const { data } = await api.get(`/tenant/${selectedTenantSlug.value}/duty-positions`, { params });
   items.value = data.items;
   total.value = data.total;
+};
+
+const toggleSort = (column: 'memberName' | 'memberGrade' | 'capid' | 'dutyName' | 'dutyCode' | 'startDate' | 'endDate') => {
+  if (sortBy.value === column) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortBy.value = column;
+    sortDir.value = 'asc';
+  }
+  page.value = 1;
+  loadDutyPositions();
+};
+
+const sortLabel = (column: 'memberName' | 'memberGrade' | 'capid' | 'dutyName' | 'dutyCode' | 'startDate' | 'endDate'): string => {
+  if (sortBy.value !== column) return '';
+  return sortDir.value === 'asc' ? ' ▲' : ' ▼';
 };
 
 watch([selectedTenantSlug, capid, dutyCode], () => {
@@ -86,13 +106,13 @@ onMounted(loadDutyPositions);
   <UiTable class="hidden md:block">
     <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/50">
       <tr>
-        <th class="px-4 py-3">Member</th>
-        <th class="px-4 py-3">Rank</th>
-        <th class="px-4 py-3">CAPID</th>
-        <th class="px-4 py-3">Duty Name</th>
-        <th class="px-4 py-3">Duty Code</th>
-        <th class="px-4 py-3">Start</th>
-        <th class="px-4 py-3">End</th>
+        <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('memberName')">Member{{ sortLabel('memberName') }}</button></th>
+        <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('memberGrade')">Rank{{ sortLabel('memberGrade') }}</button></th>
+        <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('capid')">CAPID{{ sortLabel('capid') }}</button></th>
+        <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('dutyName')">Duty Name{{ sortLabel('dutyName') }}</button></th>
+        <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('dutyCode')">Duty Code{{ sortLabel('dutyCode') }}</button></th>
+        <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('startDate')">Start{{ sortLabel('startDate') }}</button></th>
+        <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('endDate')">End{{ sortLabel('endDate') }}</button></th>
       </tr>
     </thead>
     <tbody>
