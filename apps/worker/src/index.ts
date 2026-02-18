@@ -603,14 +603,9 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
     const isInactive = idx.inactive >= 0 ? parseBooleanToken(cols[idx.inactive]) === true : false;
     const readyFlag = idx.ready >= 0 ? parseBooleanToken(cols[idx.ready]) : undefined;
 
-    let ready = readyFlag === true;
-    if (readyFlag === undefined) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const eligible = !eligibleDate || eligibleDate.getTime() <= today.getTime();
-      const checks = [leadershipTest ?? true, leadershipModule ?? true, chief ?? true, sda ?? true, aeTest ?? true, aeModule ?? true];
-      ready = !isInactive && eligible && checks.every(Boolean);
-    }
+    // CAPWATCH rows can be sparse and achievement-dependent; inferred readiness can produce false positives.
+    // Only treat as ready when an explicit source flag is present.
+    const ready = !isInactive && readyFlag === true;
 
     return {
       capid,
