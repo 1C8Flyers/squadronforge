@@ -101,6 +101,10 @@ const rowStatusTone = (row: CadetPromotion): 'neutral' | 'success' | 'warn' => {
 const readyDisplay = (row: CadetPromotion): string => {
   const raw = row.readyStatus?.trim();
   if (raw && raw.length > 0) {
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toLocaleDateString(undefined, { month: 'short', day: '2-digit' });
+    }
     return raw;
   }
   return row.ready ? 'Yes' : 'No';

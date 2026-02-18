@@ -661,6 +661,7 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
     lastPtDate: indexOfAny('last pt date', 'phyfittest'),
     inactive: indexOfAny('inactive?'),
     ready: indexOfAny('ready?', 'ready'),
+    readyDate: indexOfAny('ready date', 'date ready', 'dateready', 'date when ready', 'projected ready date'),
     leadershipTestCompleted: indexOfAny('leadership test completed', 'leadlabdatep'),
     leadershipModuleCompleted: indexOfAny('leadership module completed', 'leadershipinteractivedate'),
     aeTestCompleted: indexOfAny('ae test completed', 'aedatep'),
@@ -703,7 +704,9 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
     const eligibleDate = idx.promotionEligible >= 0 ? parseDateOrUndefined(cols[idx.promotionEligible]) : undefined;
     const isInactive = idx.inactive >= 0 ? parseBooleanToken(cols[idx.inactive]) === true : false;
     const readyFlag = idx.ready >= 0 ? parseBooleanToken(cols[idx.ready]) : undefined;
-    const readyStatus = idx.ready >= 0 ? normalizeStatusValue(cols[idx.ready]) : undefined;
+    const readyToken = idx.ready >= 0 ? normalizeStatusValue(cols[idx.ready]) : undefined;
+    const readyDateToken = idx.readyDate >= 0 ? normalizeStatusValue(cols[idx.readyDate]) : undefined;
+    const readyStatus = readyDateToken ?? readyToken;
 
     const lastPtDate = idx.lastPtDate >= 0 ? parseDateOrUndefined(cols[idx.lastPtDate]) : undefined;
     const explicitPtStatus = idx.ptStatus >= 0 ? normalizeStatusValue(cols[idx.ptStatus]) : undefined;
