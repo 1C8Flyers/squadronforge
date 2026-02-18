@@ -300,6 +300,23 @@ const rsvp = async (statusValue: 'yes' | 'no' | 'maybe') => {
   }
 };
 
+const rsvpForEvent = async (eventId: string, statusValue: 'yes' | 'no' | 'maybe') => {
+  if (!selectedTenantSlug.value) return;
+  actionMessage.value = '';
+  try {
+    await api.put(`/tenant/${selectedTenantSlug.value}/events/${eventId}/rsvp`, {
+      status: statusValue
+    });
+    actionMessage.value = `RSVP saved: ${statusValue.toUpperCase()}`;
+    await loadEvents();
+    if (selectedEventId.value === eventId) {
+      await loadEventDetail();
+    }
+  } catch (error) {
+    actionMessage.value = errorMessage(error);
+  }
+};
+
 watch([selectedTenantSlug, query, status, memberType, sortBy, sortDir], () => {
   page.value = 1;
   loadEvents();
@@ -442,14 +459,21 @@ const startEditingEvent = (eventId: string) => {
       </UiTable>
 
       <div class="grid gap-3 md:hidden">
-        <button v-for="item in items" :key="`mobile-${item.id}`" class="card text-left" :class="selectedEventId === item.id ? 'ring-2 ring-indigo-400' : ''" @click="selectedEventId = item.id">
-          <p class="font-semibold">{{ item.title }}</p>
-          <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatDateTime(item.startsAt) }}</p>
-          <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ item.location ?? 'No location' }}</p>
-          <div class="mt-2">
-            <UiButton variant="secondary" @click.stop="startEditingEvent(item.id)">Edit</UiButton>
+        <div v-for="item in items" :key="`mobile-${item.id}`" class="card" :class="selectedEventId === item.id ? 'ring-2 ring-indigo-400' : ''">
+          <button class="w-full text-left" @click="selectedEventId = item.id">
+            <p class="font-semibold">{{ item.title }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatDateTime(item.startsAt) }}</p>
+            <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ item.location ?? 'No location' }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Current RSVP: {{ item.myRsvp ?? 'No response' }}</p>
+          </button>
+
+          <div class="mt-3 flex flex-wrap gap-2">
+            <UiButton :disabled="item.isCancelled" @click="rsvpForEvent(item.id, 'yes')">Yes</UiButton>
+            <UiButton variant="secondary" :disabled="item.isCancelled" @click="rsvpForEvent(item.id, 'maybe')">Maybe</UiButton>
+            <UiButton variant="danger" :disabled="item.isCancelled" @click="rsvpForEvent(item.id, 'no')">No</UiButton>
+            <UiButton variant="secondary" @click="startEditingEvent(item.id)">Edit</UiButton>
           </div>
-        </button>
+        </div>
       </div>
 
       <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
@@ -463,7 +487,7 @@ const startEditingEvent = (eventId: string) => {
       </div>
     </div>
 
-    <div class="space-y-4">
+    <div class="hidden space-y-4 lg:block">
       <section v-if="selectedEvent" class="card">
         <h3 class="text-lg font-semibold">{{ selectedEvent.title }}</h3>
         <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ selectedEvent.isCancelled ? 'Cancelled event' : 'Active event' }}</p>

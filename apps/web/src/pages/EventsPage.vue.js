@@ -257,6 +257,24 @@ const rsvp = async (statusValue) => {
         actionMessage.value = errorMessage(error);
     }
 };
+const rsvpForEvent = async (eventId, statusValue) => {
+    if (!selectedTenantSlug.value)
+        return;
+    actionMessage.value = '';
+    try {
+        await api.put(`/tenant/${selectedTenantSlug.value}/events/${eventId}/rsvp`, {
+            status: statusValue
+        });
+        actionMessage.value = `RSVP saved: ${statusValue.toUpperCase()}`;
+        await loadEvents();
+        if (selectedEventId.value === eventId) {
+            await loadEventDetail();
+        }
+    }
+    catch (error) {
+        actionMessage.value = errorMessage(error);
+    }
+};
 watch([selectedTenantSlug, query, status, memberType, sortBy, sortDir], () => {
     page.value = 1;
     loadEvents();
@@ -843,17 +861,21 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 /** @type {__VLS_StyleScopedClasses['gap-3']} */ ;
 /** @type {__VLS_StyleScopedClasses['md:hidden']} */ ;
 for (const [item] of __VLS_vFor((__VLS_ctx.items))) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        key: (`mobile-${item.id}`),
+        ...{ class: "card" },
+        ...{ class: (__VLS_ctx.selectedEventId === item.id ? 'ring-2 ring-indigo-400' : '') },
+    });
+    /** @type {__VLS_StyleScopedClasses['card']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
         ...{ onClick: (...[$event]) => {
                 __VLS_ctx.selectedEventId = item.id;
                 // @ts-ignore
-                [items, selectedEventId,];
+                [items, selectedEventId, selectedEventId,];
             } },
-        key: (`mobile-${item.id}`),
-        ...{ class: "card text-left" },
-        ...{ class: (__VLS_ctx.selectedEventId === item.id ? 'ring-2 ring-indigo-400' : '') },
+        ...{ class: "w-full text-left" },
     });
-    /** @type {__VLS_StyleScopedClasses['card']} */ ;
+    /** @type {__VLS_StyleScopedClasses['w-full']} */ ;
     /** @type {__VLS_StyleScopedClasses['text-left']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
         ...{ class: "font-semibold" },
@@ -875,32 +897,113 @@ for (const [item] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['text-slate-600']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-300']} */ ;
     (item.location ?? 'No location');
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "mt-2" },
+    __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+        ...{ class: "mt-1 text-xs text-slate-500 dark:text-slate-400" },
     });
-    /** @type {__VLS_StyleScopedClasses['mt-2']} */ ;
+    /** @type {__VLS_StyleScopedClasses['mt-1']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+    (item.myRsvp ?? 'No response');
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "mt-3 flex flex-wrap gap-2" },
+    });
+    /** @type {__VLS_StyleScopedClasses['mt-3']} */ ;
+    /** @type {__VLS_StyleScopedClasses['flex']} */ ;
+    /** @type {__VLS_StyleScopedClasses['flex-wrap']} */ ;
+    /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
     const __VLS_129 = UiButton || UiButton;
     // @ts-ignore
     const __VLS_130 = __VLS_asFunctionalComponent1(__VLS_129, new __VLS_129({
         ...{ 'onClick': {} },
-        variant: "secondary",
+        disabled: (item.isCancelled),
     }));
     const __VLS_131 = __VLS_130({
         ...{ 'onClick': {} },
-        variant: "secondary",
+        disabled: (item.isCancelled),
     }, ...__VLS_functionalComponentArgsRest(__VLS_130));
     let __VLS_134;
     const __VLS_135 = ({ click: {} },
         { onClick: (...[$event]) => {
-                __VLS_ctx.startEditingEvent(item.id);
+                __VLS_ctx.rsvpForEvent(item.id, 'yes');
                 // @ts-ignore
-                [selectedEventId, formatDateTime, startEditingEvent,];
+                [formatDateTime, rsvpForEvent,];
             } });
     const { default: __VLS_136 } = __VLS_132.slots;
     // @ts-ignore
     [];
     var __VLS_132;
     var __VLS_133;
+    const __VLS_137 = UiButton || UiButton;
+    // @ts-ignore
+    const __VLS_138 = __VLS_asFunctionalComponent1(__VLS_137, new __VLS_137({
+        ...{ 'onClick': {} },
+        variant: "secondary",
+        disabled: (item.isCancelled),
+    }));
+    const __VLS_139 = __VLS_138({
+        ...{ 'onClick': {} },
+        variant: "secondary",
+        disabled: (item.isCancelled),
+    }, ...__VLS_functionalComponentArgsRest(__VLS_138));
+    let __VLS_142;
+    const __VLS_143 = ({ click: {} },
+        { onClick: (...[$event]) => {
+                __VLS_ctx.rsvpForEvent(item.id, 'maybe');
+                // @ts-ignore
+                [rsvpForEvent,];
+            } });
+    const { default: __VLS_144 } = __VLS_140.slots;
+    // @ts-ignore
+    [];
+    var __VLS_140;
+    var __VLS_141;
+    const __VLS_145 = UiButton || UiButton;
+    // @ts-ignore
+    const __VLS_146 = __VLS_asFunctionalComponent1(__VLS_145, new __VLS_145({
+        ...{ 'onClick': {} },
+        variant: "danger",
+        disabled: (item.isCancelled),
+    }));
+    const __VLS_147 = __VLS_146({
+        ...{ 'onClick': {} },
+        variant: "danger",
+        disabled: (item.isCancelled),
+    }, ...__VLS_functionalComponentArgsRest(__VLS_146));
+    let __VLS_150;
+    const __VLS_151 = ({ click: {} },
+        { onClick: (...[$event]) => {
+                __VLS_ctx.rsvpForEvent(item.id, 'no');
+                // @ts-ignore
+                [rsvpForEvent,];
+            } });
+    const { default: __VLS_152 } = __VLS_148.slots;
+    // @ts-ignore
+    [];
+    var __VLS_148;
+    var __VLS_149;
+    const __VLS_153 = UiButton || UiButton;
+    // @ts-ignore
+    const __VLS_154 = __VLS_asFunctionalComponent1(__VLS_153, new __VLS_153({
+        ...{ 'onClick': {} },
+        variant: "secondary",
+    }));
+    const __VLS_155 = __VLS_154({
+        ...{ 'onClick': {} },
+        variant: "secondary",
+    }, ...__VLS_functionalComponentArgsRest(__VLS_154));
+    let __VLS_158;
+    const __VLS_159 = ({ click: {} },
+        { onClick: (...[$event]) => {
+                __VLS_ctx.startEditingEvent(item.id);
+                // @ts-ignore
+                [startEditingEvent,];
+            } });
+    const { default: __VLS_160 } = __VLS_156.slots;
+    // @ts-ignore
+    [];
+    var __VLS_156;
+    var __VLS_157;
     // @ts-ignore
     [];
 }
@@ -927,70 +1030,72 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 /** @type {__VLS_StyleScopedClasses['flex']} */ ;
 /** @type {__VLS_StyleScopedClasses['items-center']} */ ;
 /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
-const __VLS_137 = UiSelect;
+const __VLS_161 = UiSelect;
 // @ts-ignore
-const __VLS_138 = __VLS_asFunctionalComponent1(__VLS_137, new __VLS_137({
+const __VLS_162 = __VLS_asFunctionalComponent1(__VLS_161, new __VLS_161({
     modelValue: (__VLS_ctx.pageSize),
     options: ([{ label: '25 / page', value: '25' }, { label: '50 / page', value: '50' }, { label: '100 / page', value: '100' }]),
 }));
-const __VLS_139 = __VLS_138({
+const __VLS_163 = __VLS_162({
     modelValue: (__VLS_ctx.pageSize),
     options: ([{ label: '25 / page', value: '25' }, { label: '50 / page', value: '50' }, { label: '100 / page', value: '100' }]),
-}, ...__VLS_functionalComponentArgsRest(__VLS_138));
-const __VLS_142 = UiButton || UiButton;
+}, ...__VLS_functionalComponentArgsRest(__VLS_162));
+const __VLS_166 = UiButton || UiButton;
 // @ts-ignore
-const __VLS_143 = __VLS_asFunctionalComponent1(__VLS_142, new __VLS_142({
+const __VLS_167 = __VLS_asFunctionalComponent1(__VLS_166, new __VLS_166({
     ...{ 'onClick': {} },
     variant: "secondary",
     disabled: (__VLS_ctx.page <= 1),
 }));
-const __VLS_144 = __VLS_143({
+const __VLS_168 = __VLS_167({
     ...{ 'onClick': {} },
     variant: "secondary",
     disabled: (__VLS_ctx.page <= 1),
-}, ...__VLS_functionalComponentArgsRest(__VLS_143));
-let __VLS_147;
-const __VLS_148 = ({ click: {} },
+}, ...__VLS_functionalComponentArgsRest(__VLS_167));
+let __VLS_171;
+const __VLS_172 = ({ click: {} },
     { onClick: (...[$event]) => {
             __VLS_ctx.page = Math.max(1, __VLS_ctx.page - 1);
             // @ts-ignore
             [items, total, pageSize, page, page, page,];
         } });
-const { default: __VLS_149 } = __VLS_145.slots;
+const { default: __VLS_173 } = __VLS_169.slots;
 // @ts-ignore
 [];
-var __VLS_145;
-var __VLS_146;
+var __VLS_169;
+var __VLS_170;
 __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
 (__VLS_ctx.page);
-const __VLS_150 = UiButton || UiButton;
+const __VLS_174 = UiButton || UiButton;
 // @ts-ignore
-const __VLS_151 = __VLS_asFunctionalComponent1(__VLS_150, new __VLS_150({
+const __VLS_175 = __VLS_asFunctionalComponent1(__VLS_174, new __VLS_174({
     ...{ 'onClick': {} },
     variant: "secondary",
     disabled: (__VLS_ctx.page * Number(__VLS_ctx.pageSize) >= __VLS_ctx.total),
 }));
-const __VLS_152 = __VLS_151({
+const __VLS_176 = __VLS_175({
     ...{ 'onClick': {} },
     variant: "secondary",
     disabled: (__VLS_ctx.page * Number(__VLS_ctx.pageSize) >= __VLS_ctx.total),
-}, ...__VLS_functionalComponentArgsRest(__VLS_151));
-let __VLS_155;
-const __VLS_156 = ({ click: {} },
+}, ...__VLS_functionalComponentArgsRest(__VLS_175));
+let __VLS_179;
+const __VLS_180 = ({ click: {} },
     { onClick: (...[$event]) => {
             __VLS_ctx.page = __VLS_ctx.page + 1;
             // @ts-ignore
             [total, pageSize, page, page, page, page,];
         } });
-const { default: __VLS_157 } = __VLS_153.slots;
+const { default: __VLS_181 } = __VLS_177.slots;
 // @ts-ignore
 [];
-var __VLS_153;
-var __VLS_154;
+var __VLS_177;
+var __VLS_178;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "space-y-4" },
+    ...{ class: "hidden space-y-4 lg:block" },
 });
+/** @type {__VLS_StyleScopedClasses['hidden']} */ ;
 /** @type {__VLS_StyleScopedClasses['space-y-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['lg:block']} */ ;
 if (__VLS_ctx.selectedEvent) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
         ...{ class: "card" },
@@ -1074,18 +1179,18 @@ if (__VLS_ctx.selectedEvent) {
     /** @type {__VLS_StyleScopedClasses['flex']} */ ;
     /** @type {__VLS_StyleScopedClasses['flex-wrap']} */ ;
     /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
-    const __VLS_158 = UiButton || UiButton;
+    const __VLS_182 = UiButton || UiButton;
     // @ts-ignore
-    const __VLS_159 = __VLS_asFunctionalComponent1(__VLS_158, new __VLS_158({
+    const __VLS_183 = __VLS_asFunctionalComponent1(__VLS_182, new __VLS_182({
         ...{ 'onClick': {} },
         disabled: (__VLS_ctx.selectedEvent.isCancelled),
     }));
-    const __VLS_160 = __VLS_159({
+    const __VLS_184 = __VLS_183({
         ...{ 'onClick': {} },
         disabled: (__VLS_ctx.selectedEvent.isCancelled),
-    }, ...__VLS_functionalComponentArgsRest(__VLS_159));
-    let __VLS_163;
-    const __VLS_164 = ({ click: {} },
+    }, ...__VLS_functionalComponentArgsRest(__VLS_183));
+    let __VLS_187;
+    const __VLS_188 = ({ click: {} },
         { onClick: (...[$event]) => {
                 if (!(__VLS_ctx.selectedEvent))
                     return;
@@ -1093,25 +1198,25 @@ if (__VLS_ctx.selectedEvent) {
                 // @ts-ignore
                 [formatDateTime, formatDateTime, selectedEvent, selectedEvent, selectedEvent, selectedEvent, selectedEvent, selectedEvent, selectedEvent, selectedEvent, selectedEvent, selectedEvent, formatRecurrence, rsvp,];
             } });
-    const { default: __VLS_165 } = __VLS_161.slots;
+    const { default: __VLS_189 } = __VLS_185.slots;
     // @ts-ignore
     [];
-    var __VLS_161;
-    var __VLS_162;
-    const __VLS_166 = UiButton || UiButton;
+    var __VLS_185;
+    var __VLS_186;
+    const __VLS_190 = UiButton || UiButton;
     // @ts-ignore
-    const __VLS_167 = __VLS_asFunctionalComponent1(__VLS_166, new __VLS_166({
+    const __VLS_191 = __VLS_asFunctionalComponent1(__VLS_190, new __VLS_190({
         ...{ 'onClick': {} },
         variant: "secondary",
         disabled: (__VLS_ctx.selectedEvent.isCancelled),
     }));
-    const __VLS_168 = __VLS_167({
+    const __VLS_192 = __VLS_191({
         ...{ 'onClick': {} },
         variant: "secondary",
         disabled: (__VLS_ctx.selectedEvent.isCancelled),
-    }, ...__VLS_functionalComponentArgsRest(__VLS_167));
-    let __VLS_171;
-    const __VLS_172 = ({ click: {} },
+    }, ...__VLS_functionalComponentArgsRest(__VLS_191));
+    let __VLS_195;
+    const __VLS_196 = ({ click: {} },
         { onClick: (...[$event]) => {
                 if (!(__VLS_ctx.selectedEvent))
                     return;
@@ -1119,25 +1224,25 @@ if (__VLS_ctx.selectedEvent) {
                 // @ts-ignore
                 [selectedEvent, rsvp,];
             } });
-    const { default: __VLS_173 } = __VLS_169.slots;
+    const { default: __VLS_197 } = __VLS_193.slots;
     // @ts-ignore
     [];
-    var __VLS_169;
-    var __VLS_170;
-    const __VLS_174 = UiButton || UiButton;
+    var __VLS_193;
+    var __VLS_194;
+    const __VLS_198 = UiButton || UiButton;
     // @ts-ignore
-    const __VLS_175 = __VLS_asFunctionalComponent1(__VLS_174, new __VLS_174({
+    const __VLS_199 = __VLS_asFunctionalComponent1(__VLS_198, new __VLS_198({
         ...{ 'onClick': {} },
         variant: "danger",
         disabled: (__VLS_ctx.selectedEvent.isCancelled),
     }));
-    const __VLS_176 = __VLS_175({
+    const __VLS_200 = __VLS_199({
         ...{ 'onClick': {} },
         variant: "danger",
         disabled: (__VLS_ctx.selectedEvent.isCancelled),
-    }, ...__VLS_functionalComponentArgsRest(__VLS_175));
-    let __VLS_179;
-    const __VLS_180 = ({ click: {} },
+    }, ...__VLS_functionalComponentArgsRest(__VLS_199));
+    let __VLS_203;
+    const __VLS_204 = ({ click: {} },
         { onClick: (...[$event]) => {
                 if (!(__VLS_ctx.selectedEvent))
                     return;
@@ -1145,11 +1250,11 @@ if (__VLS_ctx.selectedEvent) {
                 // @ts-ignore
                 [selectedEvent, rsvp,];
             } });
-    const { default: __VLS_181 } = __VLS_177.slots;
+    const { default: __VLS_205 } = __VLS_201.slots;
     // @ts-ignore
     [];
-    var __VLS_177;
-    var __VLS_178;
+    var __VLS_201;
+    var __VLS_202;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "mt-3 grid grid-cols-3 gap-2 text-center text-xs" },
     });
@@ -1224,36 +1329,36 @@ if (__VLS_ctx.selectedEvent) {
         /** @type {__VLS_StyleScopedClasses['mt-3']} */ ;
         /** @type {__VLS_StyleScopedClasses['grid']} */ ;
         /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
-        const __VLS_182 = UiInput;
+        const __VLS_206 = UiInput;
         // @ts-ignore
-        const __VLS_183 = __VLS_asFunctionalComponent1(__VLS_182, new __VLS_182({
+        const __VLS_207 = __VLS_asFunctionalComponent1(__VLS_206, new __VLS_206({
             modelValue: (__VLS_ctx.editTitle),
             placeholder: "Event title",
         }));
-        const __VLS_184 = __VLS_183({
+        const __VLS_208 = __VLS_207({
             modelValue: (__VLS_ctx.editTitle),
             placeholder: "Event title",
-        }, ...__VLS_functionalComponentArgsRest(__VLS_183));
-        const __VLS_187 = UiInput;
+        }, ...__VLS_functionalComponentArgsRest(__VLS_207));
+        const __VLS_211 = UiInput;
         // @ts-ignore
-        const __VLS_188 = __VLS_asFunctionalComponent1(__VLS_187, new __VLS_187({
+        const __VLS_212 = __VLS_asFunctionalComponent1(__VLS_211, new __VLS_211({
             modelValue: (__VLS_ctx.editDescription),
             placeholder: "Description",
         }));
-        const __VLS_189 = __VLS_188({
+        const __VLS_213 = __VLS_212({
             modelValue: (__VLS_ctx.editDescription),
             placeholder: "Description",
-        }, ...__VLS_functionalComponentArgsRest(__VLS_188));
-        const __VLS_192 = UiInput;
+        }, ...__VLS_functionalComponentArgsRest(__VLS_212));
+        const __VLS_216 = UiInput;
         // @ts-ignore
-        const __VLS_193 = __VLS_asFunctionalComponent1(__VLS_192, new __VLS_192({
+        const __VLS_217 = __VLS_asFunctionalComponent1(__VLS_216, new __VLS_216({
             modelValue: (__VLS_ctx.editLocation),
             placeholder: "Location",
         }));
-        const __VLS_194 = __VLS_193({
+        const __VLS_218 = __VLS_217({
             modelValue: (__VLS_ctx.editLocation),
             placeholder: "Location",
-        }, ...__VLS_functionalComponentArgsRest(__VLS_193));
+        }, ...__VLS_functionalComponentArgsRest(__VLS_217));
         __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
             ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
         });
@@ -1263,16 +1368,16 @@ if (__VLS_ctx.selectedEvent) {
         /** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
         /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
         /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
-        const __VLS_197 = UiInput;
+        const __VLS_221 = UiInput;
         // @ts-ignore
-        const __VLS_198 = __VLS_asFunctionalComponent1(__VLS_197, new __VLS_197({
+        const __VLS_222 = __VLS_asFunctionalComponent1(__VLS_221, new __VLS_221({
             modelValue: (__VLS_ctx.editStartsAt),
             type: "datetime-local",
         }));
-        const __VLS_199 = __VLS_198({
+        const __VLS_223 = __VLS_222({
             modelValue: (__VLS_ctx.editStartsAt),
             type: "datetime-local",
-        }, ...__VLS_functionalComponentArgsRest(__VLS_198));
+        }, ...__VLS_functionalComponentArgsRest(__VLS_222));
         __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
             ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
         });
@@ -1282,37 +1387,37 @@ if (__VLS_ctx.selectedEvent) {
         /** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
         /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
         /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
-        const __VLS_202 = UiInput;
+        const __VLS_226 = UiInput;
         // @ts-ignore
-        const __VLS_203 = __VLS_asFunctionalComponent1(__VLS_202, new __VLS_202({
+        const __VLS_227 = __VLS_asFunctionalComponent1(__VLS_226, new __VLS_226({
             modelValue: (__VLS_ctx.editEndsAt),
             type: "datetime-local",
         }));
-        const __VLS_204 = __VLS_203({
+        const __VLS_228 = __VLS_227({
             modelValue: (__VLS_ctx.editEndsAt),
             type: "datetime-local",
-        }, ...__VLS_functionalComponentArgsRest(__VLS_203));
-        const __VLS_207 = UiSelect;
+        }, ...__VLS_functionalComponentArgsRest(__VLS_227));
+        const __VLS_231 = UiSelect;
         // @ts-ignore
-        const __VLS_208 = __VLS_asFunctionalComponent1(__VLS_207, new __VLS_207({
+        const __VLS_232 = __VLS_asFunctionalComponent1(__VLS_231, new __VLS_231({
             modelValue: (__VLS_ctx.editVisibility),
             options: ([{ label: 'Tenant-wide', value: 'tenant' }, { label: 'Audience filtered', value: 'audience' }]),
         }));
-        const __VLS_209 = __VLS_208({
+        const __VLS_233 = __VLS_232({
             modelValue: (__VLS_ctx.editVisibility),
             options: ([{ label: 'Tenant-wide', value: 'tenant' }, { label: 'Audience filtered', value: 'audience' }]),
-        }, ...__VLS_functionalComponentArgsRest(__VLS_208));
+        }, ...__VLS_functionalComponentArgsRest(__VLS_232));
         if (__VLS_ctx.editVisibility === 'audience') {
-            const __VLS_212 = UiSelect;
+            const __VLS_236 = UiSelect;
             // @ts-ignore
-            const __VLS_213 = __VLS_asFunctionalComponent1(__VLS_212, new __VLS_212({
+            const __VLS_237 = __VLS_asFunctionalComponent1(__VLS_236, new __VLS_236({
                 modelValue: (__VLS_ctx.editAudienceMemberType),
                 options: ([{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]),
             }));
-            const __VLS_214 = __VLS_213({
+            const __VLS_238 = __VLS_237({
                 modelValue: (__VLS_ctx.editAudienceMemberType),
                 options: ([{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]),
-            }, ...__VLS_functionalComponentArgsRest(__VLS_213));
+            }, ...__VLS_functionalComponentArgsRest(__VLS_237));
         }
         __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
         __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
@@ -1326,16 +1431,16 @@ if (__VLS_ctx.selectedEvent) {
         /** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
         /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
         /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
-        const __VLS_217 = UiSelect;
+        const __VLS_241 = UiSelect;
         // @ts-ignore
-        const __VLS_218 = __VLS_asFunctionalComponent1(__VLS_217, new __VLS_217({
+        const __VLS_242 = __VLS_asFunctionalComponent1(__VLS_241, new __VLS_241({
             modelValue: (__VLS_ctx.editRecurrenceFrequency),
             options: ([{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]),
         }));
-        const __VLS_219 = __VLS_218({
+        const __VLS_243 = __VLS_242({
             modelValue: (__VLS_ctx.editRecurrenceFrequency),
             options: ([{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]),
-        }, ...__VLS_functionalComponentArgsRest(__VLS_218));
+        }, ...__VLS_functionalComponentArgsRest(__VLS_242));
         __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
         __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
             ...{ class: "mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
@@ -1348,18 +1453,18 @@ if (__VLS_ctx.selectedEvent) {
         /** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
         /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
         /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
-        const __VLS_222 = UiInput;
+        const __VLS_246 = UiInput;
         // @ts-ignore
-        const __VLS_223 = __VLS_asFunctionalComponent1(__VLS_222, new __VLS_222({
+        const __VLS_247 = __VLS_asFunctionalComponent1(__VLS_246, new __VLS_246({
             modelValue: (__VLS_ctx.editRecurrenceInterval),
             type: "number",
             placeholder: "1 = every week/day/month",
         }));
-        const __VLS_224 = __VLS_223({
+        const __VLS_248 = __VLS_247({
             modelValue: (__VLS_ctx.editRecurrenceInterval),
             type: "number",
             placeholder: "1 = every week/day/month",
-        }, ...__VLS_functionalComponentArgsRest(__VLS_223));
+        }, ...__VLS_functionalComponentArgsRest(__VLS_247));
         if (__VLS_ctx.editRecurrenceFrequency !== 'none') {
             __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
             __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
@@ -1373,18 +1478,18 @@ if (__VLS_ctx.selectedEvent) {
             /** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
             /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
             /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
-            const __VLS_227 = UiInput;
+            const __VLS_251 = UiInput;
             // @ts-ignore
-            const __VLS_228 = __VLS_asFunctionalComponent1(__VLS_227, new __VLS_227({
+            const __VLS_252 = __VLS_asFunctionalComponent1(__VLS_251, new __VLS_251({
                 modelValue: (__VLS_ctx.editRecurrenceUntil),
                 type: "datetime-local",
                 placeholder: "Stop date for recurrence",
             }));
-            const __VLS_229 = __VLS_228({
+            const __VLS_253 = __VLS_252({
                 modelValue: (__VLS_ctx.editRecurrenceUntil),
                 type: "datetime-local",
                 placeholder: "Stop date for recurrence",
-            }, ...__VLS_functionalComponentArgsRest(__VLS_228));
+            }, ...__VLS_functionalComponentArgsRest(__VLS_252));
         }
         __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
             ...{ class: "mt-2 flex flex-wrap gap-2" },
@@ -1393,37 +1498,37 @@ if (__VLS_ctx.selectedEvent) {
         /** @type {__VLS_StyleScopedClasses['flex']} */ ;
         /** @type {__VLS_StyleScopedClasses['flex-wrap']} */ ;
         /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
-        const __VLS_232 = UiButton || UiButton;
+        const __VLS_256 = UiButton || UiButton;
         // @ts-ignore
-        const __VLS_233 = __VLS_asFunctionalComponent1(__VLS_232, new __VLS_232({
+        const __VLS_257 = __VLS_asFunctionalComponent1(__VLS_256, new __VLS_256({
             type: "submit",
             disabled: (__VLS_ctx.saving),
         }));
-        const __VLS_234 = __VLS_233({
+        const __VLS_258 = __VLS_257({
             type: "submit",
             disabled: (__VLS_ctx.saving),
-        }, ...__VLS_functionalComponentArgsRest(__VLS_233));
-        const { default: __VLS_237 } = __VLS_235.slots;
+        }, ...__VLS_functionalComponentArgsRest(__VLS_257));
+        const { default: __VLS_261 } = __VLS_259.slots;
         (__VLS_ctx.saving ? 'Saving...' : 'Update selected');
         // @ts-ignore
         [saving, saving, selectedEvent, selectedEvent, selectedEvent, selectedTotal, showEditForm, saveSelectedEvent, editTitle, editDescription, editLocation, editStartsAt, editEndsAt, editVisibility, editVisibility, editAudienceMemberType, editRecurrenceFrequency, editRecurrenceFrequency, editRecurrenceInterval, editRecurrenceUntil,];
-        var __VLS_235;
-        const __VLS_238 = UiButton || UiButton;
+        var __VLS_259;
+        const __VLS_262 = UiButton || UiButton;
         // @ts-ignore
-        const __VLS_239 = __VLS_asFunctionalComponent1(__VLS_238, new __VLS_238({
+        const __VLS_263 = __VLS_asFunctionalComponent1(__VLS_262, new __VLS_262({
             ...{ 'onClick': {} },
             variant: "secondary",
             type: "button",
             disabled: (__VLS_ctx.saving),
         }));
-        const __VLS_240 = __VLS_239({
+        const __VLS_264 = __VLS_263({
             ...{ 'onClick': {} },
             variant: "secondary",
             type: "button",
             disabled: (__VLS_ctx.saving),
-        }, ...__VLS_functionalComponentArgsRest(__VLS_239));
-        let __VLS_243;
-        const __VLS_244 = ({ click: {} },
+        }, ...__VLS_functionalComponentArgsRest(__VLS_263));
+        let __VLS_267;
+        const __VLS_268 = ({ click: {} },
             { onClick: (...[$event]) => {
                     if (!(__VLS_ctx.selectedEvent))
                         return;
@@ -1433,33 +1538,33 @@ if (__VLS_ctx.selectedEvent) {
                     // @ts-ignore
                     [saving, showEditForm,];
                 } });
-        const { default: __VLS_245 } = __VLS_241.slots;
+        const { default: __VLS_269 } = __VLS_265.slots;
         // @ts-ignore
         [];
-        var __VLS_241;
-        var __VLS_242;
-        const __VLS_246 = UiButton || UiButton;
+        var __VLS_265;
+        var __VLS_266;
+        const __VLS_270 = UiButton || UiButton;
         // @ts-ignore
-        const __VLS_247 = __VLS_asFunctionalComponent1(__VLS_246, new __VLS_246({
+        const __VLS_271 = __VLS_asFunctionalComponent1(__VLS_270, new __VLS_270({
             ...{ 'onClick': {} },
             variant: "danger",
             type: "button",
             disabled: (__VLS_ctx.saving || __VLS_ctx.selectedEvent.isCancelled),
         }));
-        const __VLS_248 = __VLS_247({
+        const __VLS_272 = __VLS_271({
             ...{ 'onClick': {} },
             variant: "danger",
             type: "button",
             disabled: (__VLS_ctx.saving || __VLS_ctx.selectedEvent.isCancelled),
-        }, ...__VLS_functionalComponentArgsRest(__VLS_247));
-        let __VLS_251;
-        const __VLS_252 = ({ click: {} },
+        }, ...__VLS_functionalComponentArgsRest(__VLS_271));
+        let __VLS_275;
+        const __VLS_276 = ({ click: {} },
             { onClick: (__VLS_ctx.cancelSelectedEvent) });
-        const { default: __VLS_253 } = __VLS_249.slots;
+        const { default: __VLS_277 } = __VLS_273.slots;
         // @ts-ignore
         [saving, selectedEvent, cancelSelectedEvent,];
-        var __VLS_249;
-        var __VLS_250;
+        var __VLS_273;
+        var __VLS_274;
     }
 }
 else {
