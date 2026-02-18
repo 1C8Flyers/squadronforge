@@ -1,0 +1,74 @@
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import PageHeader from '@/components/layout/PageHeader.vue';
+import UiCard from '@/components/ui/UiCard.vue';
+import UiButton from '@/components/ui/UiButton.vue';
+import { api } from '@/lib';
+import { useSession } from '@/state/session';
+
+const router = useRouter();
+const { activeTenant, selectedTenantSlug } = useSession();
+const dashboard = ref<{ lastRun: { startedAt: string } | null; memberCount: number; activeCount: number; nextRunAt?: string } | null>(null);
+
+const loadDashboard = async () => {
+  if (!selectedTenantSlug.value) return;
+  const { data } = await api.get(`/tenant/${selectedTenantSlug.value}/dashboard`);
+  dashboard.value = data;
+};
+
+const runSyncNow = async () => {
+  if (!selectedTenantSlug.value) return;
+  await api.post(`/tenant/${selectedTenantSlug.value}/sync-now`);
+};
+
+const lastSyncLabel = computed(() => {
+  const date = dashboard.value?.lastRun?.startedAt;
+  if (!date) return 'Never';
+  return new Date(date).toLocaleString();
+});
+
+const nextRunLabel = computed(() => {
+  const date = dashboard.value?.nextRunAt;
+  if (!date) return 'n/a';
+  return new Date(date).toLocaleString();
+});
+
+watch(selectedTenantSlug, () => {
+  loadDashboard();
+});
+
+onMounted(loadDashboard);
+</script>
+
+<template>
+  <PageHeader title="Tenant Dashboard" :subtitle="activeTenant?.name ?? 'No tenant selected'" />
+
+  <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <UiCard>
+      <p class="text-sm text-slate-500">Last sync</p>
+      <p class="mt-2 text-xl font-semibold">{{ lastSyncLabel }}</p>
+    </UiCard>
+    <UiCard>
+      <p class="text-sm text-slate-500">Next run</p>
+      <p class="mt-2 text-xl font-semibold">{{ nextRunLabel }}</p>
+    </UiCard>
+    <UiCard>
+      <p class="text-sm text-slate-500">Members</p>
+      <p class="mt-2 text-xl font-semibold">{{ dashboard?.memberCount ?? 0 }}</p>
+    </UiCard>
+    <UiCard>
+      <p class="text-sm text-slate-500">Active</p>
+      <p class="mt-2 text-xl font-semibold">{{ dashboard?.activeCount ?? 0 }}</p>
+    </UiCard>
+  </section>
+
+  <section class="mt-6 card">
+    <h3 class="text-lg font-semibold">Quick actions</h3>
+    <div class="mt-4 flex flex-wrap gap-3">
+      <UiButton @click="runSyncNow">Sync now</UiButton>
+      <UiButton variant="secondary" @click="router.push('/members')">Open Members</UiButton>
+      <UiButton variant="ghost" @click="router.push('/sync-runs')">View Sync Runs</UiButton>
+    </div>
+  </section>
+</template>

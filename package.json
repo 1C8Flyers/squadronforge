@@ -1,0 +1,18 @@
+{
+  "name": "squadronforge",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --workspace @squadronforge/web run dev",
+    "dev:api": "npm --workspace @squadronforge/api run dev",
+    "dev:worker": "npm --workspace @squadronforge/worker run dev",
+    "build": "npm run -ws build",
+    "test": "npm run -ws test",
+    "lint": "npm run -ws lint",
+    "smoke:docker": "powershell -ExecutionPolicy Bypass -File ./scripts/docker-smoke.ps1"
+  }
+}

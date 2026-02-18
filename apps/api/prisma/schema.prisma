@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SystemRole {
+  systemAdmin
+  user
+}
+
+enum TenantRole {
+  tenantAdmin
+  tenantViewer
+}
+
+enum SyncRunStatus {
+  success
+  failed
+  running
+}
+
+enum MemberType {
+  CADET
+  SENIOR
+  UNKNOWN
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  UNKNOWN
+}
+
+model Tenant {
+  id               String     @id @default(cuid())
+  name             String
+  slug             String     @unique
+  orgid            Int
+  unitOnly         Boolean    @default(true)
+  timezone         String
+  syncScheduleCron String
+  credentialsRef   String
+  fileMappingJson  Json?
+  isEnabled        Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  users            TenantUser[]
+  members          Member[]
+  dutyPositions    DutyPosition[]
+  syncRuns         SyncRun[]
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  systemRole   SystemRole  @default(user)
+  createdAt    DateTime    @default(now())
+  tenants      TenantUser[]
+  refreshTokens RefreshToken[]
+}
+
+model TenantUser {
+  tenantId String
+  userId   String
+  role     TenantRole
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([tenantId, userId])
+}
+
+model SyncRun {
+  id              String       @id @default(cuid())
+  tenantId        String
+  tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  startedAt       DateTime
+  finishedAt      DateTime?
+  status          SyncRunStatus
+  membersUpserted Int          @default(0)
+  membersActive   Int          @default(0)
+  errorMessage    String?
+  fileListJson    Json?
+  checksum        String?
+  createdAt       DateTime     @default(now())
+}
+
+model Member {
+  id             String       @id @default(cuid())
+  tenantId       String
+  tenant         Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  capid          String
+  firstName      String
+  lastName       String
+  memberType     MemberType   @default(UNKNOWN)
+  email          String?
+  status         MemberStatus @default(UNKNOWN)
+  unitCharter    String?
+  orgid          Int?
+  expirationDate DateTime?
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([tenantId, capid])
+  @@index([tenantId, lastName])
+}
+
+model DutyPosition {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  capid     String
+  dutyName  String
+  dutyCode  String?
+  startDate DateTime?
+  endDate   DateTime?
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, capid])
+  @@index([tenantId, dutyCode])
+}
+
+model RefreshToken {
+  id                String       @id @default(cuid())
+  userId            String
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash         String       @unique
+  expiresAt         DateTime
+  revokedAt         DateTime?
+  replacedByTokenId String?
+  replacedBy        RefreshToken? @relation("RefreshTokenReplacement", fields: [replacedByTokenId], references: [id])
+  replaces          RefreshToken[] @relation("RefreshTokenReplacement")
+  createdAt         DateTime     @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}

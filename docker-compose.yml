@@ -1,0 +1,81 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: squadronforge
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d squadronforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: on-failure
+    env_file:
+      - .env
+    environment:
+      CAPWATCH_ROCKFORD_CAPID_FILE: /run/secrets/capwatch_rockford_capid
+      CAPWATCH_ROCKFORD_PASSWORD_FILE: /run/secrets/capwatch_rockford_password
+    secrets:
+      - capwatch_rockford_capid
+      - capwatch_rockford_password
+    ports:
+      - "4000:4000"
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    depends_on:
+      api:
+        condition: service_started
+      redis:
+        condition: service_started
+      db:
+        condition: service_healthy
+    restart: on-failure
+    env_file:
+      - .env
+    environment:
+      CAPWATCH_ROCKFORD_CAPID_FILE: /run/secrets/capwatch_rockford_capid
+      CAPWATCH_ROCKFORD_PASSWORD_FILE: /run/secrets/capwatch_rockford_password
+    secrets:
+      - capwatch_rockford_capid
+      - capwatch_rockford_password
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "5173:80"
+
+volumes:
+  pg_data:
+
+secrets:
+  capwatch_rockford_capid:
+    file: ./docker/secrets/rockford_capid.txt
+  capwatch_rockford_password:
+    file: ./docker/secrets/rockford_password.txt
