@@ -1,4 +1,4 @@
-import { Home, Users, BriefcaseBusiness, Award, RefreshCcw, Settings, Shield, X } from 'lucide-vue-next';
+import { Home, Users, BriefcaseBusiness, Award, ChartColumnIncreasing, RefreshCcw, Settings, Shield, X } from 'lucide-vue-next';
 const __VLS_props = defineProps();
 const __VLS_emit = defineEmits();
 const navItems = [
@@ -6,6 +6,7 @@ const navItems = [
     { label: 'Members', to: '/members', icon: Users },
     { label: 'Duty Positions', to: '/duty-positions', icon: BriefcaseBusiness },
     { label: 'Cadet Promotions', to: '/cadet-promotions', icon: Award },
+    { label: 'Reports', to: '/reports', icon: ChartColumnIncreasing },
     { label: 'Sync Runs', to: '/sync-runs', icon: RefreshCcw },
     { label: 'Settings', to: '/settings', icon: Settings },
     { label: 'Admin', to: '/admin', icon: Shield }

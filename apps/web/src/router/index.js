@@ -4,6 +4,7 @@ import LoginPage from '@/pages/LoginPage.vue';
 import MembersPage from '@/pages/MembersPage.vue';
 import DutyPositionsPage from '@/pages/DutyPositionsPage.vue';
 import CadetPromotionsPage from '@/pages/CadetPromotionsPage.vue';
+import ReportsPage from '@/pages/ReportsPage.vue';
 import SyncRunsPage from '@/pages/SyncRunsPage.vue';
 import SettingsPage from '@/pages/SettingsPage.vue';
 import AdminPage from '@/pages/AdminPage.vue';
@@ -15,6 +16,7 @@ const router = createRouter({
         { path: '/members', name: 'members', component: MembersPage },
         { path: '/duty-positions', name: 'duty-positions', component: DutyPositionsPage },
         { path: '/cadet-promotions', name: 'cadet-promotions', component: CadetPromotionsPage },
+        { path: '/reports', name: 'reports', component: ReportsPage },
         { path: '/sync-runs', name: 'sync-runs', component: SyncRunsPage },
         { path: '/settings', name: 'settings', component: SettingsPage },
         { path: '/admin', name: 'admin', component: AdminPage }
