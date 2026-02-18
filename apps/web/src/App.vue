@@ -13,7 +13,7 @@ const isAuthPage = computed(() => route.path === '/login');
   <div v-if="isAuthPage" class="min-h-full">
     <RouterView />
   </div>
-  <div v-else class="flex min-h-full bg-slate-100 dark:bg-slate-950">
+  <div v-else class="flex min-h-full bg-[#06265b]">
     <SidebarNav :open="sidebarOpen" @close="sidebarOpen = false" />
     <div class="min-w-0 flex-1">
       <TopBar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
