@@ -1,8 +1,23 @@
 # Event Calendar / RSVP / Notifications Build Plan
 
-Status: Draft implementation plan (no code changes yet)
+Status: In progress (Phase A delivered, recurrence delivered, notifications/sync pending)
 Date: 2026-02-18
 Owner: SquadronForge
+
+## Progress Update (Current)
+
+Completed:
+- ✅ Tenant-aware event CRUD APIs
+- ✅ RSVP (`yes` / `no` / `maybe`) with upsert behavior
+- ✅ Events page in web app with filters, list/detail workflow, and attendance counters
+- ✅ Event-centric UX: RSVP actions and edit controls live within selected event detail
+- ✅ Separate “New event” form
+- ✅ Recurrence support (daily/weekly/monthly) with interval/until/occurrence-based generation
+
+Not yet completed:
+- ⏳ Notification scheduling and delivery (email/push)
+- ⏳ Signed RSVP links from notifications
+- ⏳ Google Calendar sync (Phase C)
 
 ## Goals
 
@@ -31,10 +46,12 @@ Deliverables:
 - Event list/calendar view with filters.
 - Basic attendance counters (yes/no/maybe/unknown).
 
-Out of scope:
+Status:
+- ✅ Delivered
+
+Out of scope (still deferred):
 - Google Calendar sync
-- Push notifications
-- Recurrence engine
+- Push/email notifications
 
 ### Phase B — Notifications
 
@@ -44,6 +61,9 @@ Deliverables:
 - Web push notifications for event publish/update/reminder.
 - RSVP action links from notifications.
 
+Status:
+- ⏳ Not started
+
 ### Phase C — Google Calendar One-Way Sync
 
 Deliverables:
@@ -51,13 +71,19 @@ Deliverables:
 - Push SquadronForge event creates/updates/deletes to Google Calendar.
 - Store per-event Google IDs and sync status.
 
+Status:
+- ⏳ Not started
+
 ### Phase D — Hardening + Enhancements
 
 Deliverables:
 - Conflict/retry handling and observability.
-- Optional recurrence support.
+- Recurrence support.
 - ICS export and attendance export.
 - Optional two-way sync (only after policy and conflict rules are approved).
+
+Status:
+- 🔄 Partially delivered (recurrence support complete)
 
 ## Data Model (Prisma Additions)
 
@@ -65,6 +91,7 @@ Deliverables:
 
 - `EventVisibility`: `tenant`, `audience`
 - `RsvpStatus`: `yes`, `no`, `maybe`
+- `RecurrenceFrequency`: `none`, `daily`, `weekly`, `monthly`
 - `NotificationChannel`: `email`, `push`
 - `NotificationType`: `publish`, `update`, `reminder`, `cancel`
 - `NotificationStatus`: `queued`, `sent`, `failed`, `skipped`
@@ -86,11 +113,16 @@ Deliverables:
 - `updatedByUserId` (FK User, nullable)
 - `isCancelled` (boolean)
 - `cancelReason` (nullable)
+- `recurrenceSeriesId` (nullable)
+- `recurrenceFrequency` (`RecurrenceFrequency`)
+- `recurrenceInterval` (int)
+- `recurrenceUntil` (nullable)
 - `createdAt`, `updatedAt`
 
 Indexes:
 - `(tenantId, startsAt)`
 - `(tenantId, isCancelled, startsAt)`
+- `(tenantId, recurrenceSeriesId)`
 
 2. `EventAudienceRule`
 - `id`
@@ -181,10 +213,11 @@ Base prefix: `/tenant/:slug`
   - Returns paged list + counts
 
 - `POST /events` (tenantAdmin)
-  - Body: `{ title, description?, location?, startsAt, endsAt, allDay, visibility, audienceRules? }`
+  - Body: `{ title, description?, location?, startsAt, endsAt, allDay, visibility, audienceRules?, recurrence? }`
 
 - `GET /events/:eventId`
 - `PATCH /events/:eventId` (tenantAdmin)
+  - Supports recurrence field updates
 - `DELETE /events/:eventId` (tenantAdmin, soft cancel preferred)
 
 ### RSVP
@@ -307,13 +340,13 @@ Add metrics/logs:
 
 ## Suggested Build Order (Tasks)
 
-1. Prisma schema + migration for Event/RSVP/Notification core
-2. API routes for event CRUD + RSVP
-3. Web pages/components for event list/detail/create/edit + RSVP
-4. Worker notification scheduling/dispatch
-5. Push subscription API + web client hookup
-6. Signed RSVP action links + endpoint
-7. Google Calendar one-way sync (Phase C)
+1. ✅ Prisma schema + migration for Event/RSVP/Notification core (+ recurrence additions)
+2. ✅ API routes for event CRUD + RSVP (+ recurrence create/update support)
+3. ✅ Web pages/components for event list/detail/create/edit + RSVP
+4. ⏳ Worker notification scheduling/dispatch
+5. ⏳ Push subscription API + web client hookup
+6. ⏳ Signed RSVP action links + endpoint
+7. ⏳ Google Calendar one-way sync (Phase C)
 
 ## Risks / Notes
 

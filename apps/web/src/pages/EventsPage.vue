@@ -55,6 +55,8 @@ const items = ref<EventListItem[]>([]);
 const total = ref(0);
 const selectedEventId = ref('');
 const selectedEvent = ref<EventDetail | null>(null);
+const showNewEventForm = ref(false);
+const showEditForm = ref(false);
 
 const newTitle = ref('');
 const newDescription = ref('');
@@ -226,6 +228,7 @@ const createEvent = async () => {
       await loadEventDetail();
     }
     resetNewForm();
+    showNewEventForm.value = false;
   } catch (error) {
     actionMessage.value = errorMessage(error);
   } finally {
@@ -257,6 +260,7 @@ const saveSelectedEvent = async () => {
     actionMessage.value = 'Selected event updated.';
     await loadEvents();
     await loadEventDetail();
+    showEditForm.value = false;
   } catch (error) {
     actionMessage.value = errorMessage(error);
   } finally {
@@ -273,6 +277,7 @@ const cancelSelectedEvent = async () => {
     actionMessage.value = 'Selected event cancelled.';
     await loadEvents();
     await loadEventDetail();
+    showEditForm.value = false;
   } catch (error) {
     actionMessage.value = errorMessage(error);
   } finally {
@@ -304,6 +309,7 @@ watch([page, pageSize], loadEvents);
 
 watch(selectedEventId, async () => {
   await loadEventDetail();
+  showEditForm.value = false;
   if (selectedEvent.value) {
     populateEditFormFromEvent(selectedEvent.value);
   }
@@ -317,14 +323,36 @@ onMounted(async () => {
     populateEditFormFromEvent(selectedEvent.value);
   }
 });
+
+const startNewEvent = () => {
+  resetNewForm();
+  showNewEventForm.value = true;
+};
+
+const startEditingEvent = (eventId: string) => {
+  selectedEventId.value = eventId;
+  showEditForm.value = true;
+};
 </script>
 
 <template>
   <PageHeader title="Events" subtitle="Event-centric details, RSVPs, and recurring event creation" />
 
-  <section class="card mb-4">
-    <h3 class="text-lg font-semibold">New event form</h3>
-    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Create one-time or recurring events. RSVP actions live inside each selected event.</p>
+  <div class="mb-4 grid gap-3 md:grid-cols-7">
+    <UiInput v-model="query" placeholder="Search title, location, description" />
+    <UiSelect v-model="status" :options="[{ label: 'Active', value: 'active' }, { label: 'Cancelled', value: 'cancelled' }, { label: 'All', value: 'all' }]" />
+    <UiSelect v-model="memberType" :options="[{ label: 'All audiences', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]" />
+    <UiSelect v-model="sortBy" :options="[{ label: 'Start time', value: 'startsAt' }, { label: 'Title', value: 'title' }, { label: 'Updated', value: 'updatedAt' }, { label: 'Created', value: 'createdAt' }]" />
+    <UiSelect v-model="sortDir" :options="[{ label: 'Ascending', value: 'asc' }, { label: 'Descending', value: 'desc' }]" />
+    <UiButton :disabled="loading" @click="loadEvents">{{ loading ? 'Loading...' : 'Refresh' }}</UiButton>
+    <UiButton @click="startNewEvent">New event</UiButton>
+  </div>
+
+  <section v-if="showNewEventForm" class="card mb-4">
+    <div class="mb-2 flex items-center justify-between gap-2">
+      <h3 class="text-lg font-semibold">New event</h3>
+      <UiButton variant="secondary" @click="showNewEventForm = false">Close</UiButton>
+    </div>
     <form class="mt-3 grid gap-2 md:grid-cols-2" @submit.prevent="createEvent">
       <UiInput v-model="newTitle" placeholder="Event title" />
       <UiInput v-model="newLocation" placeholder="Location (manual entry supported)" />
@@ -358,15 +386,6 @@ onMounted(async () => {
     </form>
   </section>
 
-  <div class="mb-4 grid gap-3 md:grid-cols-6">
-    <UiInput v-model="query" placeholder="Search title, location, description" />
-    <UiSelect v-model="status" :options="[{ label: 'Active', value: 'active' }, { label: 'Cancelled', value: 'cancelled' }, { label: 'All', value: 'all' }]" />
-    <UiSelect v-model="memberType" :options="[{ label: 'All audiences', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]" />
-    <UiSelect v-model="sortBy" :options="[{ label: 'Start time', value: 'startsAt' }, { label: 'Title', value: 'title' }, { label: 'Updated', value: 'updatedAt' }, { label: 'Created', value: 'createdAt' }]" />
-    <UiSelect v-model="sortDir" :options="[{ label: 'Ascending', value: 'asc' }, { label: 'Descending', value: 'desc' }]" />
-    <UiButton :disabled="loading" @click="loadEvents">{{ loading ? 'Loading...' : 'Refresh' }}</UiButton>
-  </div>
-
   <div class="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
     <div>
       <UiTable class="hidden md:block">
@@ -376,6 +395,7 @@ onMounted(async () => {
             <th class="px-4 py-3">Starts</th>
             <th class="px-4 py-3">Recurrence</th>
             <th class="px-4 py-3">RSVP</th>
+            <th class="px-4 py-3">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -395,9 +415,12 @@ onMounted(async () => {
               {{ item.recurrenceFrequency && item.recurrenceFrequency !== 'none' ? `${item.recurrenceFrequency} x${item.recurrenceInterval ?? 1}` : 'None' }}
             </td>
             <td class="px-4 py-3">Y {{ item.counts.yes }} / M {{ item.counts.maybe }} / N {{ item.counts.no }}</td>
+            <td class="px-4 py-3">
+              <UiButton variant="secondary" @click.stop="startEditingEvent(item.id)">Edit</UiButton>
+            </td>
           </tr>
           <tr v-if="items.length === 0" class="border-t border-slate-200 dark:border-slate-800">
-            <td colspan="4" class="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">No events found.</td>
+            <td colspan="5" class="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">No events found.</td>
           </tr>
         </tbody>
       </UiTable>
@@ -407,6 +430,9 @@ onMounted(async () => {
           <p class="font-semibold">{{ item.title }}</p>
           <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatDateTime(item.startsAt) }}</p>
           <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ item.location ?? 'No location' }}</p>
+          <div class="mt-2">
+            <UiButton variant="secondary" @click.stop="startEditingEvent(item.id)">Edit</UiButton>
+          </div>
         </button>
       </div>
 
@@ -449,7 +475,7 @@ onMounted(async () => {
           <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Total responses: {{ selectedTotal }}</p>
         </div>
 
-        <div class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
+        <div v-if="showEditForm" class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
           <h4 class="text-base font-semibold">Edit selected event</h4>
           <form class="mt-3 grid gap-2" @submit.prevent="saveSelectedEvent">
             <UiInput v-model="editTitle" placeholder="Event title" />
@@ -471,6 +497,7 @@ onMounted(async () => {
 
             <div class="mt-2 flex flex-wrap gap-2">
               <UiButton type="submit" :disabled="saving">{{ saving ? 'Saving...' : 'Update selected' }}</UiButton>
+              <UiButton variant="secondary" type="button" :disabled="saving" @click="showEditForm = false">Close</UiButton>
               <UiButton variant="danger" type="button" :disabled="saving || selectedEvent.isCancelled" @click="cancelSelectedEvent">Cancel selected</UiButton>
             </div>
           </form>
