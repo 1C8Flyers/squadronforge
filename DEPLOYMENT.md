@@ -37,6 +37,7 @@ Set strong values in `.env`:
 - `SEED_ADMIN_PASSWORD`
 - `API_HOST_PORT` (optional override if `4000` is in use)
 - `WEB_HOST_PORT` (optional override if `5173` is in use)
+- `VITE_API_URL` (URL browsers should use for API, e.g. `http://<DEPLOY_HOST>:<API_HOST_PORT>`)
 - `DATABASE_URL` (if not using default compose network config)
 - `REDIS_URL` (if not using default compose network config)
 
