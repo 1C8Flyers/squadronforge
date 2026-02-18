@@ -5,7 +5,9 @@ const prismaMock = vi.hoisted(() => ({
   tenant: { findUnique: vi.fn() },
   user: { findUnique: vi.fn() },
   tenantUser: { findUnique: vi.fn() },
-  member: { findMany: vi.fn(), count: vi.fn() },
+  member: { findMany: vi.fn(), findFirst: vi.fn(), count: vi.fn() },
+  memberContact: { findMany: vi.fn() },
+  memberAddress: { findMany: vi.fn() },
   dutyPosition: { findMany: vi.fn(), count: vi.fn() }
 }));
 
@@ -114,5 +116,33 @@ describe('tenant data integration', () => {
 
     const memberFindManyArgs = prismaMock.member.findMany.mock.calls[0]?.[0];
     expect(memberFindManyArgs.where.capid.in).toEqual(['123456']);
+  });
+
+  it('returns member details including contact and address records', async () => {
+    const token = signAccessToken({ userId: 'sa-1', systemRole: 'systemAdmin' });
+
+    prismaMock.member.findFirst.mockResolvedValue({
+      capid: '123456',
+      firstName: 'Jane',
+      lastName: 'Doe',
+      memberType: 'CADET',
+      status: 'ACTIVE'
+    });
+    prismaMock.memberContact.findMany.mockResolvedValue([
+      { capid: '123456', type: 'CADET PARENT EMAIL', contact: 'parent@example.com' }
+    ]);
+    prismaMock.memberAddress.findMany.mockResolvedValue([
+      { capid: '123456', type: 'MAIL', addr1: '123 Main St', city: 'Rockford', state: 'IL', zip: '61111' }
+    ]);
+    prismaMock.dutyPosition.findMany.mockResolvedValue([{ capid: '123456', dutyName: 'Cadet First Sergeant' }]);
+
+    const app = createApp();
+    const res = await request(app).get('/tenant/rockford/members/123456').set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.member.capid).toBe('123456');
+    expect(res.body.contacts[0].type).toBe('CADET PARENT EMAIL');
+    expect(res.body.addresses[0].type).toBe('MAIL');
+    expect(res.body.duties[0].dutyName).toBe('Cadet First Sergeant');
   });
 });

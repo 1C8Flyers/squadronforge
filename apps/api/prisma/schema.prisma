@@ -50,6 +50,8 @@ model Tenant {
   updatedAt        DateTime   @updatedAt
   users            TenantUser[]
   members          Member[]
+  memberContacts   MemberContact[]
+  memberAddresses  MemberAddress[]
   dutyPositions    DutyPosition[]
   syncRuns         SyncRun[]
 }
@@ -106,6 +108,42 @@ model Member {
 
   @@unique([tenantId, capid])
   @@index([tenantId, lastName])
+}
+
+model MemberContact {
+  id           String   @id @default(cuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  capid        String
+  type         String
+  priority     String?
+  contact      String
+  doNotContact Boolean  @default(false)
+  contactName  String?
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId, capid])
+  @@index([tenantId, type])
+}
+
+model MemberAddress {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  capid     String
+  type      String
+  priority  String?
+  addr1     String?
+  addr2     String?
+  city      String?
+  state     String?
+  zip       String?
+  latitude  String?
+  longitude String?
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, capid])
+  @@index([tenantId, type])
 }
 
 model DutyPosition {

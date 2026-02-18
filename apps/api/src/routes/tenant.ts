@@ -126,6 +126,39 @@ tenantRouter.get('/:slug/members/export.csv', async (req, res) => {
   res.send(csv);
 });
 
+tenantRouter.get('/:slug/members/:capid', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+  const capid = z.string().min(1).parse(req.params.capid);
+
+  const member = await prisma.member.findFirst({
+    where: {
+      tenantId,
+      capid
+    }
+  });
+
+  if (!member) {
+    return res.status(404).json({ error: 'Member not found' });
+  }
+
+  const [contacts, addresses, duties] = await Promise.all([
+    prisma.memberContact.findMany({
+      where: { tenantId, capid },
+      orderBy: [{ type: 'asc' }, { priority: 'asc' }]
+    }),
+    prisma.memberAddress.findMany({
+      where: { tenantId, capid },
+      orderBy: [{ type: 'asc' }, { priority: 'asc' }]
+    }),
+    prisma.dutyPosition.findMany({
+      where: { tenantId, capid },
+      orderBy: [{ dutyName: 'asc' }]
+    })
+  ]);
+
+  res.json({ member, contacts, addresses, duties });
+});
+
 tenantRouter.get('/:slug/sync-runs', async (req, res) => {
   const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
   const scoped = tenantScopedDb(tenantId);
