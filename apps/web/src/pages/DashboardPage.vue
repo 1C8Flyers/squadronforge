@@ -9,7 +9,22 @@ import { useSession } from '@/state/session';
 
 const router = useRouter();
 const { activeTenant, selectedTenantSlug } = useSession();
-const dashboard = ref<{ lastRun: { startedAt: string } | null; memberCount: number; activeCount: number; nextRunAt?: string } | null>(null);
+type DashboardPayload = {
+  lastRun: { startedAt: string } | null;
+  memberCount: number;
+  activeCount: number;
+  nextRunAt?: string;
+  nextEvent?: {
+    id: string;
+    title: string;
+    startsAt: string;
+    endsAt: string;
+    location: string | null;
+    uniformOfDay: 'PT' | 'ABU_OCP' | 'BLUES' | null;
+  } | null;
+};
+
+const dashboard = ref<DashboardPayload | null>(null);
 
 const loadDashboard = async () => {
   if (!selectedTenantSlug.value) return;
@@ -34,6 +49,19 @@ const nextRunLabel = computed(() => {
   return new Date(date).toLocaleString();
 });
 
+const nextEventStartLabel = computed(() => {
+  const date = dashboard.value?.nextEvent?.startsAt;
+  if (!date) return 'No upcoming events';
+  return new Date(date).toLocaleString();
+});
+
+const nextEventUniformLabel = computed(() => {
+  const value = dashboard.value?.nextEvent?.uniformOfDay;
+  if (!value) return 'UOD: Not set';
+  if (value === 'ABU_OCP') return 'UOD: ABU/OCP';
+  return `UOD: ${value}`;
+});
+
 watch(selectedTenantSlug, () => {
   loadDashboard();
 });
@@ -42,9 +70,9 @@ onMounted(loadDashboard);
 </script>
 
 <template>
-  <PageHeader title="Tenant Dashboard" :subtitle="activeTenant?.name ?? 'No tenant selected'" />
+  <PageHeader title="Dashboard" :subtitle="activeTenant?.name ?? 'No tenant selected'" />
 
-  <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+  <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
     <UiCard>
       <p class="text-sm text-slate-500">Last sync</p>
       <p class="mt-2 text-xl font-semibold">{{ lastSyncLabel }}</p>
@@ -60,6 +88,12 @@ onMounted(loadDashboard);
     <UiCard>
       <p class="text-sm text-slate-500">Active</p>
       <p class="mt-2 text-xl font-semibold">{{ dashboard?.activeCount ?? 0 }}</p>
+    </UiCard>
+    <UiCard>
+      <p class="text-sm text-slate-500">Next event</p>
+      <p class="mt-2 text-base font-semibold">{{ dashboard?.nextEvent?.title ?? 'No upcoming events' }}</p>
+      <p class="mt-1 text-sm text-slate-500">{{ nextEventStartLabel }}</p>
+      <p class="mt-1 text-xs text-slate-500">{{ nextEventUniformLabel }}</p>
     </UiCard>
   </section>
 

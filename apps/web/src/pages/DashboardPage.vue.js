@@ -31,6 +31,20 @@ const nextRunLabel = computed(() => {
         return 'n/a';
     return new Date(date).toLocaleString();
 });
+const nextEventStartLabel = computed(() => {
+    const date = dashboard.value?.nextEvent?.startsAt;
+    if (!date)
+        return 'No upcoming events';
+    return new Date(date).toLocaleString();
+});
+const nextEventUniformLabel = computed(() => {
+    const value = dashboard.value?.nextEvent?.uniformOfDay;
+    if (!value)
+        return 'UOD: Not set';
+    if (value === 'ABU_OCP')
+        return 'UOD: ABU/OCP';
+    return `UOD: ${value}`;
+});
 watch(selectedTenantSlug, () => {
     loadDashboard();
 });
@@ -45,20 +59,20 @@ let __VLS_directives;
 const __VLS_0 = PageHeader;
 // @ts-ignore
 const __VLS_1 = __VLS_asFunctionalComponent1(__VLS_0, new __VLS_0({
-    title: "Tenant Dashboard",
+    title: "Dashboard",
     subtitle: (__VLS_ctx.activeTenant?.name ?? 'No tenant selected'),
 }));
 const __VLS_2 = __VLS_1({
-    title: "Tenant Dashboard",
+    title: "Dashboard",
     subtitle: (__VLS_ctx.activeTenant?.name ?? 'No tenant selected'),
 }, ...__VLS_functionalComponentArgsRest(__VLS_1));
 __VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
-    ...{ class: "grid gap-4 md:grid-cols-2 xl:grid-cols-4" },
+    ...{ class: "grid gap-4 md:grid-cols-2 xl:grid-cols-5" },
 });
 /** @type {__VLS_StyleScopedClasses['grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['gap-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['md:grid-cols-2']} */ ;
-/** @type {__VLS_StyleScopedClasses['xl:grid-cols-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['xl:grid-cols-5']} */ ;
 const __VLS_5 = UiCard || UiCard;
 // @ts-ignore
 const __VLS_6 = __VLS_asFunctionalComponent1(__VLS_5, new __VLS_5({}));
@@ -139,6 +153,40 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
 // @ts-ignore
 [dashboard,];
 var __VLS_26;
+const __VLS_29 = UiCard || UiCard;
+// @ts-ignore
+const __VLS_30 = __VLS_asFunctionalComponent1(__VLS_29, new __VLS_29({}));
+const __VLS_31 = __VLS_30({}, ...__VLS_functionalComponentArgsRest(__VLS_30));
+const { default: __VLS_34 } = __VLS_32.slots;
+__VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+    ...{ class: "text-sm text-slate-500" },
+});
+/** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+    ...{ class: "mt-2 text-base font-semibold" },
+});
+/** @type {__VLS_StyleScopedClasses['mt-2']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-base']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+(__VLS_ctx.dashboard?.nextEvent?.title ?? 'No upcoming events');
+__VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+    ...{ class: "mt-1 text-sm text-slate-500" },
+});
+/** @type {__VLS_StyleScopedClasses['mt-1']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+(__VLS_ctx.nextEventStartLabel);
+__VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+    ...{ class: "mt-1 text-xs text-slate-500" },
+});
+/** @type {__VLS_StyleScopedClasses['mt-1']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+(__VLS_ctx.nextEventUniformLabel);
+// @ts-ignore
+[dashboard, nextEventStartLabel, nextEventUniformLabel,];
+var __VLS_32;
 __VLS_asFunctionalElement1(__VLS_intrinsics.section, __VLS_intrinsics.section)({
     ...{ class: "mt-6 card" },
 });
@@ -156,66 +204,66 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 /** @type {__VLS_StyleScopedClasses['flex']} */ ;
 /** @type {__VLS_StyleScopedClasses['flex-wrap']} */ ;
 /** @type {__VLS_StyleScopedClasses['gap-3']} */ ;
-const __VLS_29 = UiButton || UiButton;
+const __VLS_35 = UiButton || UiButton;
 // @ts-ignore
-const __VLS_30 = __VLS_asFunctionalComponent1(__VLS_29, new __VLS_29({
+const __VLS_36 = __VLS_asFunctionalComponent1(__VLS_35, new __VLS_35({
     ...{ 'onClick': {} },
 }));
-const __VLS_31 = __VLS_30({
+const __VLS_37 = __VLS_36({
     ...{ 'onClick': {} },
-}, ...__VLS_functionalComponentArgsRest(__VLS_30));
-let __VLS_34;
-const __VLS_35 = ({ click: {} },
+}, ...__VLS_functionalComponentArgsRest(__VLS_36));
+let __VLS_40;
+const __VLS_41 = ({ click: {} },
     { onClick: (__VLS_ctx.runSyncNow) });
-const { default: __VLS_36 } = __VLS_32.slots;
+const { default: __VLS_42 } = __VLS_38.slots;
 // @ts-ignore
 [runSyncNow,];
-var __VLS_32;
-var __VLS_33;
-const __VLS_37 = UiButton || UiButton;
+var __VLS_38;
+var __VLS_39;
+const __VLS_43 = UiButton || UiButton;
 // @ts-ignore
-const __VLS_38 = __VLS_asFunctionalComponent1(__VLS_37, new __VLS_37({
+const __VLS_44 = __VLS_asFunctionalComponent1(__VLS_43, new __VLS_43({
     ...{ 'onClick': {} },
     variant: "secondary",
 }));
-const __VLS_39 = __VLS_38({
+const __VLS_45 = __VLS_44({
     ...{ 'onClick': {} },
     variant: "secondary",
-}, ...__VLS_functionalComponentArgsRest(__VLS_38));
-let __VLS_42;
-const __VLS_43 = ({ click: {} },
+}, ...__VLS_functionalComponentArgsRest(__VLS_44));
+let __VLS_48;
+const __VLS_49 = ({ click: {} },
     { onClick: (...[$event]) => {
             __VLS_ctx.router.push('/members');
             // @ts-ignore
             [router,];
         } });
-const { default: __VLS_44 } = __VLS_40.slots;
+const { default: __VLS_50 } = __VLS_46.slots;
 // @ts-ignore
 [];
-var __VLS_40;
-var __VLS_41;
-const __VLS_45 = UiButton || UiButton;
+var __VLS_46;
+var __VLS_47;
+const __VLS_51 = UiButton || UiButton;
 // @ts-ignore
-const __VLS_46 = __VLS_asFunctionalComponent1(__VLS_45, new __VLS_45({
+const __VLS_52 = __VLS_asFunctionalComponent1(__VLS_51, new __VLS_51({
     ...{ 'onClick': {} },
     variant: "ghost",
 }));
-const __VLS_47 = __VLS_46({
+const __VLS_53 = __VLS_52({
     ...{ 'onClick': {} },
     variant: "ghost",
-}, ...__VLS_functionalComponentArgsRest(__VLS_46));
-let __VLS_50;
-const __VLS_51 = ({ click: {} },
+}, ...__VLS_functionalComponentArgsRest(__VLS_52));
+let __VLS_56;
+const __VLS_57 = ({ click: {} },
     { onClick: (...[$event]) => {
             __VLS_ctx.router.push('/settings?tab=sync-log');
             // @ts-ignore
             [router,];
         } });
-const { default: __VLS_52 } = __VLS_48.slots;
+const { default: __VLS_58 } = __VLS_54.slots;
 // @ts-ignore
 [];
-var __VLS_48;
-var __VLS_49;
+var __VLS_54;
+var __VLS_55;
 // @ts-ignore
 [];
 const __VLS_export = (await import('vue')).defineComponent({});

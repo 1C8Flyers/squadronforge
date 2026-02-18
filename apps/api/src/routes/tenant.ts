@@ -146,10 +146,26 @@ tenantRouter.get('/:slug/dashboard', async (req, res) => {
     throw new Error('Tenant not found');
   }
 
-  const [lastRun, memberCount, activeCount] = await Promise.all([
+  const [lastRun, memberCount, activeCount, nextEvent] = await Promise.all([
     scoped.syncRun.findFirst({ orderBy: { startedAt: 'desc' } }),
     scoped.member.count(),
-    scoped.member.count({ where: { status: 'ACTIVE' } })
+    scoped.member.count({ where: { status: 'ACTIVE' } }),
+    prisma.event.findFirst({
+      where: {
+        tenantId,
+        isCancelled: false,
+        endsAt: { gte: new Date() }
+      },
+      orderBy: [{ startsAt: 'asc' }, { createdAt: 'asc' }],
+      select: {
+        id: true,
+        title: true,
+        startsAt: true,
+        endsAt: true,
+        location: true,
+        uniformOfDay: true
+      }
+    })
   ]);
 
   const nextRunAt = CronExpressionParser.parse(tenant.syncScheduleCron, {
@@ -159,7 +175,7 @@ tenantRouter.get('/:slug/dashboard', async (req, res) => {
     .next()
     .toDate();
 
-  res.json({ lastRun, memberCount, activeCount, nextRunAt });
+  res.json({ lastRun, memberCount, activeCount, nextRunAt, nextEvent });
 });
 
 tenantRouter.get('/:slug/members', async (req, res) => {
