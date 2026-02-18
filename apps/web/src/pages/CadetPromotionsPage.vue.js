@@ -19,6 +19,7 @@ const readyCount = ref(0);
 const inactiveCount = ref(0);
 const sortBy = ref('memberName');
 const sortDir = ref('asc');
+const expandedNeedId = ref(null);
 const loadCadetPromotions = async () => {
     if (!selectedTenantSlug.value)
         return;
@@ -74,6 +75,10 @@ const rowStatusTone = (row) => {
 const readyDisplay = (row) => {
     const raw = row.readyStatus?.trim();
     if (raw && raw.length > 0) {
+        const parsed = new Date(raw);
+        if (!Number.isNaN(parsed.getTime())) {
+            return parsed.toLocaleDateString(undefined, { month: 'short', day: '2-digit' });
+        }
         return raw;
     }
     return row.ready ? 'Yes' : 'No';
@@ -85,6 +90,63 @@ const readyTone = (row) => {
     if (value === 'no')
         return 'neutral';
     return 'success';
+};
+const normalizeStatus = (value) => (value ?? '').trim();
+const statusDone = (value) => {
+    const v = normalizeStatus(value).toUpperCase();
+    return v.length > 0 && v !== 'WC';
+};
+const isSdaRequired = (row) => normalizeStatus(row.sdaStatus).toUpperCase() !== 'N/A';
+const checkProgress = (row) => {
+    const required = [row.ptStatus, row.leadStatus, row.aeStatus, row.drillStatus, row.cdStatus];
+    if (isSdaRequired(row)) {
+        required.push(row.sdaStatus);
+    }
+    const done = required.filter((status) => statusDone(status)).length;
+    return { done, total: required.length };
+};
+const needsList = (row) => {
+    const needs = [];
+    if (!normalizeStatus(row.ptStatus)) {
+        needs.push('CPFT within last 182 days');
+    }
+    const lead = normalizeStatus(row.leadStatus).toUpperCase();
+    if (!lead) {
+        needs.push('Leadership: test and interactive module');
+    }
+    else if (lead === 'X') {
+        if (!row.leadershipTestCompleted)
+            needs.push('Leadership: complete leadership test');
+        if (!row.leadershipModuleCompleted)
+            needs.push('Leadership: complete interactive module');
+    }
+    const ae = normalizeStatus(row.aeStatus).toUpperCase();
+    if (!ae) {
+        needs.push('Aerospace: test and interactive module');
+    }
+    else if (ae === 'X') {
+        if (row.aeTestCompleted !== true)
+            needs.push('Aerospace: complete AE test');
+        if (row.aeModuleCompleted !== true)
+            needs.push('Aerospace: complete interactive module');
+    }
+    if (!normalizeStatus(row.drillStatus)) {
+        needs.push('Drill test');
+    }
+    const cd = normalizeStatus(row.cdStatus).toUpperCase();
+    if (cd === 'WC') {
+        needs.push('Welcome Course');
+    }
+    else if (!cd) {
+        needs.push('Character Development forum');
+    }
+    if (isSdaRequired(row) && !normalizeStatus(row.sdaStatus)) {
+        needs.push('Staff Duty Analysis (SDA)');
+    }
+    return needs;
+};
+const toggleNeeds = (id) => {
+    expandedNeedId.value = expandedNeedId.value === id ? null : id;
 };
 const pendingCount = computed(() => Math.max(0, total.value - readyCount.value - inactiveCount.value));
 watch([selectedTenantSlug, query, ready, inactive], () => {
@@ -340,8 +402,36 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({});
     (row.comments ?? '—');
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "col-span-2" },
+    });
+    /** @type {__VLS_StyleScopedClasses['col-span-2']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+        ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
+    });
+    /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.ul, __VLS_intrinsics.ul)({
+        ...{ class: "mt-1 list-disc pl-5 text-xs" },
+    });
+    /** @type {__VLS_StyleScopedClasses['mt-1']} */ ;
+    /** @type {__VLS_StyleScopedClasses['list-disc']} */ ;
+    /** @type {__VLS_StyleScopedClasses['pl-5']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+    if (__VLS_ctx.needsList(row).length === 0) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({});
+    }
+    for (const [need] of __VLS_vFor((__VLS_ctx.needsList(row)))) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({
+            key: (`${row.id}-${need}`),
+        });
+        (need);
+        // @ts-ignore
+        [formatDate, formatDate, needsList, needsList,];
+    }
     // @ts-ignore
-    [formatDate, formatDate,];
+    [];
 }
 const __VLS_34 = UiTable || UiTable;
 // @ts-ignore
@@ -490,10 +580,15 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
 });
 /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
+    ...{ class: "px-4 py-3" },
+});
+/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-3']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.tbody, __VLS_intrinsics.tbody)({});
 for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
+    (row.id);
     __VLS_asFunctionalElement1(__VLS_intrinsics.tr, __VLS_intrinsics.tr)({
-        key: (row.id),
         ...{ class: "border-t border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40" },
     });
     /** @type {__VLS_StyleScopedClasses['border-t']} */ ;
@@ -582,12 +677,90 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
     /** @type {__VLS_StyleScopedClasses['text-slate-600']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-300']} */ ;
-    (row.ptStatus ?? (row.lastPtDate ? '✓' : '—'));
-    (row.leadStatus ?? (row.leadershipTestCompleted && row.leadershipModuleCompleted ? '✓' : '—'));
-    (row.aeStatus ?? ((row.aeTestCompleted ?? true) && (row.aeModuleCompleted ?? true) ? '✓' : '—'));
-    (row.drillStatus ?? '—');
-    (row.cdStatus ?? (row.chiefSpeechEssayCompleted ? '✓' : '—'));
-    (row.sdaStatus ?? (row.sdaCompleted ? '✓' : '—'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+        ...{ class: "font-semibold" },
+    });
+    /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+    (__VLS_ctx.checkProgress(row).done);
+    (__VLS_ctx.checkProgress(row).total);
+    __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+        ...{ class: "px-4 py-3" },
+    });
+    /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+    const __VLS_52 = UiButton || UiButton;
+    // @ts-ignore
+    const __VLS_53 = __VLS_asFunctionalComponent1(__VLS_52, new __VLS_52({
+        ...{ 'onClick': {} },
+        variant: "secondary",
+        ...{ class: "px-3 py-1 text-xs" },
+    }));
+    const __VLS_54 = __VLS_53({
+        ...{ 'onClick': {} },
+        variant: "secondary",
+        ...{ class: "px-3 py-1 text-xs" },
+    }, ...__VLS_functionalComponentArgsRest(__VLS_53));
+    let __VLS_57;
+    const __VLS_58 = ({ click: {} },
+        { onClick: (...[$event]) => {
+                __VLS_ctx.toggleNeeds(row.id);
+                // @ts-ignore
+                [checkProgress, checkProgress, toggleNeeds,];
+            } });
+    /** @type {__VLS_StyleScopedClasses['px-3']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-1']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+    const { default: __VLS_59 } = __VLS_55.slots;
+    (__VLS_ctx.expandedNeedId === row.id ? 'Hide' : 'What I need');
+    // @ts-ignore
+    [expandedNeedId,];
+    var __VLS_55;
+    var __VLS_56;
+    if (__VLS_ctx.expandedNeedId === row.id) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.tr, __VLS_intrinsics.tr)({
+            ...{ class: "bg-slate-50/70 dark:bg-slate-900/60" },
+        });
+        /** @type {__VLS_StyleScopedClasses['bg-slate-50/70']} */ ;
+        /** @type {__VLS_StyleScopedClasses['dark:bg-slate-900/60']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+            colspan: "10",
+            ...{ class: "px-4 py-3" },
+        });
+        /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+        /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+            ...{ class: "card p-3" },
+        });
+        /** @type {__VLS_StyleScopedClasses['card']} */ ;
+        /** @type {__VLS_StyleScopedClasses['p-3']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+            ...{ class: "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" },
+        });
+        /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+        /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+        /** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+        /** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+        /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.ul, __VLS_intrinsics.ul)({
+            ...{ class: "mt-2 list-disc pl-5 text-sm" },
+        });
+        /** @type {__VLS_StyleScopedClasses['mt-2']} */ ;
+        /** @type {__VLS_StyleScopedClasses['list-disc']} */ ;
+        /** @type {__VLS_StyleScopedClasses['pl-5']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+        if (__VLS_ctx.needsList(row).length === 0) {
+            __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({});
+        }
+        for (const [need] of __VLS_vFor((__VLS_ctx.needsList(row)))) {
+            __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({
+                key: (`${row.id}-${need}`),
+            });
+            (need);
+            // @ts-ignore
+            [needsList, needsList, expandedNeedId,];
+        }
+    }
     // @ts-ignore
     [];
 }
@@ -617,69 +790,69 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 /** @type {__VLS_StyleScopedClasses['flex']} */ ;
 /** @type {__VLS_StyleScopedClasses['items-center']} */ ;
 /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
-const __VLS_52 = UiSelect;
+const __VLS_60 = UiSelect;
 // @ts-ignore
-const __VLS_53 = __VLS_asFunctionalComponent1(__VLS_52, new __VLS_52({
+const __VLS_61 = __VLS_asFunctionalComponent1(__VLS_60, new __VLS_60({
     modelValue: (__VLS_ctx.pageSize),
     options: ([{ label: '50 / page', value: '50' }, { label: '100 / page', value: '100' }, { label: '200 / page', value: '200' }]),
 }));
-const __VLS_54 = __VLS_53({
+const __VLS_62 = __VLS_61({
     modelValue: (__VLS_ctx.pageSize),
     options: ([{ label: '50 / page', value: '50' }, { label: '100 / page', value: '100' }, { label: '200 / page', value: '200' }]),
-}, ...__VLS_functionalComponentArgsRest(__VLS_53));
-const __VLS_57 = UiButton || UiButton;
-// @ts-ignore
-const __VLS_58 = __VLS_asFunctionalComponent1(__VLS_57, new __VLS_57({
-    ...{ 'onClick': {} },
-    variant: "secondary",
-    disabled: (__VLS_ctx.page <= 1),
-}));
-const __VLS_59 = __VLS_58({
-    ...{ 'onClick': {} },
-    variant: "secondary",
-    disabled: (__VLS_ctx.page <= 1),
-}, ...__VLS_functionalComponentArgsRest(__VLS_58));
-let __VLS_62;
-const __VLS_63 = ({ click: {} },
-    { onClick: (...[$event]) => {
-            __VLS_ctx.page = Math.max(1, __VLS_ctx.page - 1);
-            // @ts-ignore
-            [items, total, pageSize, page, page, page,];
-        } });
-const { default: __VLS_64 } = __VLS_60.slots;
-// @ts-ignore
-[];
-var __VLS_60;
-var __VLS_61;
-__VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
-    ...{ class: "px-2" },
-});
-/** @type {__VLS_StyleScopedClasses['px-2']} */ ;
-(__VLS_ctx.page);
+}, ...__VLS_functionalComponentArgsRest(__VLS_61));
 const __VLS_65 = UiButton || UiButton;
 // @ts-ignore
 const __VLS_66 = __VLS_asFunctionalComponent1(__VLS_65, new __VLS_65({
     ...{ 'onClick': {} },
     variant: "secondary",
-    disabled: (__VLS_ctx.page * Number(__VLS_ctx.pageSize) >= __VLS_ctx.total),
+    disabled: (__VLS_ctx.page <= 1),
 }));
 const __VLS_67 = __VLS_66({
     ...{ 'onClick': {} },
     variant: "secondary",
-    disabled: (__VLS_ctx.page * Number(__VLS_ctx.pageSize) >= __VLS_ctx.total),
+    disabled: (__VLS_ctx.page <= 1),
 }, ...__VLS_functionalComponentArgsRest(__VLS_66));
 let __VLS_70;
 const __VLS_71 = ({ click: {} },
     { onClick: (...[$event]) => {
-            __VLS_ctx.page = __VLS_ctx.page + 1;
+            __VLS_ctx.page = Math.max(1, __VLS_ctx.page - 1);
             // @ts-ignore
-            [total, pageSize, page, page, page, page,];
+            [items, total, pageSize, page, page, page,];
         } });
 const { default: __VLS_72 } = __VLS_68.slots;
 // @ts-ignore
 [];
 var __VLS_68;
 var __VLS_69;
+__VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+    ...{ class: "px-2" },
+});
+/** @type {__VLS_StyleScopedClasses['px-2']} */ ;
+(__VLS_ctx.page);
+const __VLS_73 = UiButton || UiButton;
+// @ts-ignore
+const __VLS_74 = __VLS_asFunctionalComponent1(__VLS_73, new __VLS_73({
+    ...{ 'onClick': {} },
+    variant: "secondary",
+    disabled: (__VLS_ctx.page * Number(__VLS_ctx.pageSize) >= __VLS_ctx.total),
+}));
+const __VLS_75 = __VLS_74({
+    ...{ 'onClick': {} },
+    variant: "secondary",
+    disabled: (__VLS_ctx.page * Number(__VLS_ctx.pageSize) >= __VLS_ctx.total),
+}, ...__VLS_functionalComponentArgsRest(__VLS_74));
+let __VLS_78;
+const __VLS_79 = ({ click: {} },
+    { onClick: (...[$event]) => {
+            __VLS_ctx.page = __VLS_ctx.page + 1;
+            // @ts-ignore
+            [total, pageSize, page, page, page, page,];
+        } });
+const { default: __VLS_80 } = __VLS_76.slots;
+// @ts-ignore
+[];
+var __VLS_76;
+var __VLS_77;
 // @ts-ignore
 [];
 const __VLS_export = (await import('vue')).defineComponent({});

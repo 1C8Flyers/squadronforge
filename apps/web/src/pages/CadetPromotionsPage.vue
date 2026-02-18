@@ -47,6 +47,7 @@ const readyCount = ref(0);
 const inactiveCount = ref(0);
 const sortBy = ref<'memberName' | 'rank' | 'capid' | 'achievementName' | 'datePromotionEligible' | 'lastPtDate' | 'ready' | 'inactive'>('memberName');
 const sortDir = ref<'asc' | 'desc'>('asc');
+const expandedNeedId = ref<string | null>(null);
 
 const loadCadetPromotions = async () => {
   if (!selectedTenantSlug.value) return;
@@ -115,6 +116,70 @@ const readyTone = (row: CadetPromotion): 'neutral' | 'success' => {
   if (value === 'yes') return 'success';
   if (value === 'no') return 'neutral';
   return 'success';
+};
+
+const normalizeStatus = (value: string | null | undefined): string => (value ?? '').trim();
+
+const statusDone = (value: string | null | undefined): boolean => {
+  const v = normalizeStatus(value).toUpperCase();
+  return v.length > 0 && v !== 'WC';
+};
+
+const isSdaRequired = (row: CadetPromotion): boolean => normalizeStatus(row.sdaStatus).toUpperCase() !== 'N/A';
+
+const checkProgress = (row: CadetPromotion): { done: number; total: number } => {
+  const required = [row.ptStatus, row.leadStatus, row.aeStatus, row.drillStatus, row.cdStatus];
+  if (isSdaRequired(row)) {
+    required.push(row.sdaStatus);
+  }
+
+  const done = required.filter((status) => statusDone(status)).length;
+  return { done, total: required.length };
+};
+
+const needsList = (row: CadetPromotion): string[] => {
+  const needs: string[] = [];
+
+  if (!normalizeStatus(row.ptStatus)) {
+    needs.push('CPFT within last 182 days');
+  }
+
+  const lead = normalizeStatus(row.leadStatus).toUpperCase();
+  if (!lead) {
+    needs.push('Leadership: test and interactive module');
+  } else if (lead === 'X') {
+    if (!row.leadershipTestCompleted) needs.push('Leadership: complete leadership test');
+    if (!row.leadershipModuleCompleted) needs.push('Leadership: complete interactive module');
+  }
+
+  const ae = normalizeStatus(row.aeStatus).toUpperCase();
+  if (!ae) {
+    needs.push('Aerospace: test and interactive module');
+  } else if (ae === 'X') {
+    if (row.aeTestCompleted !== true) needs.push('Aerospace: complete AE test');
+    if (row.aeModuleCompleted !== true) needs.push('Aerospace: complete interactive module');
+  }
+
+  if (!normalizeStatus(row.drillStatus)) {
+    needs.push('Drill test');
+  }
+
+  const cd = normalizeStatus(row.cdStatus).toUpperCase();
+  if (cd === 'WC') {
+    needs.push('Welcome Course');
+  } else if (!cd) {
+    needs.push('Character Development forum');
+  }
+
+  if (isSdaRequired(row) && !normalizeStatus(row.sdaStatus)) {
+    needs.push('Staff Duty Analysis (SDA)');
+  }
+
+  return needs;
+};
+
+const toggleNeeds = (id: string) => {
+  expandedNeedId.value = expandedNeedId.value === id ? null : id;
 };
 
 const pendingCount = computed(() => Math.max(0, total.value - readyCount.value - inactiveCount.value));
@@ -192,6 +257,13 @@ onMounted(loadCadetPromotions);
           <p class="text-xs text-slate-500 dark:text-slate-400">Comments</p>
           <p>{{ row.comments ?? '—' }}</p>
         </div>
+        <div class="col-span-2">
+          <p class="text-xs text-slate-500 dark:text-slate-400">What I need</p>
+          <ul class="mt-1 list-disc pl-5 text-xs">
+            <li v-if="needsList(row).length === 0">No blockers found</li>
+            <li v-for="need in needsList(row)" :key="`${row.id}-${need}`">{{ need }}</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -208,10 +280,12 @@ onMounted(loadCadetPromotions);
         <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('ready')">Ready{{ sortLabel('ready') }}</button></th>
         <th class="px-4 py-3"><button class="hover:underline" @click="toggleSort('inactive')">Inactive{{ sortLabel('inactive') }}</button></th>
         <th class="px-4 py-3">Checks</th>
+        <th class="px-4 py-3">What I Need</th>
       </tr>
     </thead>
     <tbody>
-      <tr v-for="row in items" :key="row.id" class="border-t border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40">
+      <template v-for="row in items" :key="row.id">
+        <tr class="border-t border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40">
         <td class="px-4 py-3">{{ row.memberName ?? 'Unknown cadet' }}</td>
         <td class="px-4 py-3">{{ row.rank ?? '—' }}</td>
         <td class="px-4 py-3 font-medium">{{ row.capid }}</td>
@@ -221,14 +295,27 @@ onMounted(loadCadetPromotions);
         <td class="px-4 py-3"><UiBadge :tone="readyTone(row)">{{ readyDisplay(row) }}</UiBadge></td>
         <td class="px-4 py-3"><UiBadge :tone="row.inactive ? 'warn' : 'neutral'">{{ row.inactive ? 'Yes' : 'No' }}</UiBadge></td>
         <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
-          PT {{ row.ptStatus ?? (row.lastPtDate ? '✓' : '—') }} ·
-          Lead {{ row.leadStatus ?? (row.leadershipTestCompleted && row.leadershipModuleCompleted ? '✓' : '—') }} ·
-          AE {{ row.aeStatus ?? ((row.aeTestCompleted ?? true) && (row.aeModuleCompleted ?? true) ? '✓' : '—') }} ·
-          Drill {{ row.drillStatus ?? '—' }} ·
-          CD {{ row.cdStatus ?? (row.chiefSpeechEssayCompleted ? '✓' : '—') }} ·
-          SDA {{ row.sdaStatus ?? (row.sdaCompleted ? '✓' : '—') }}
+          <span class="font-semibold">{{ checkProgress(row).done }}/{{ checkProgress(row).total }}</span>
+          complete
         </td>
-      </tr>
+        <td class="px-4 py-3">
+          <UiButton variant="secondary" class="px-3 py-1 text-xs" @click="toggleNeeds(row.id)">
+            {{ expandedNeedId === row.id ? 'Hide' : 'What I need' }}
+          </UiButton>
+        </td>
+        </tr>
+        <tr v-if="expandedNeedId === row.id" class="bg-slate-50/70 dark:bg-slate-900/60">
+          <td colspan="10" class="px-4 py-3">
+            <div class="card p-3">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">What I need</p>
+              <ul class="mt-2 list-disc pl-5 text-sm">
+                <li v-if="needsList(row).length === 0">No blockers found</li>
+                <li v-for="need in needsList(row)" :key="`${row.id}-${need}`">{{ need }}</li>
+              </ul>
+            </div>
+          </td>
+        </tr>
+      </template>
     </tbody>
   </UiTable>
 
