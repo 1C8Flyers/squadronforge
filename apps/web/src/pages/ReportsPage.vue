@@ -95,11 +95,7 @@ const exportPdf = () => {
     })
     .join('');
 
-  const popup = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=850');
-  if (!popup) return;
-
-  popup.document.open();
-  popup.document.write(`
+  const html = `
     <!doctype html>
     <html>
       <head>
@@ -136,12 +132,28 @@ const exportPdf = () => {
         </table>
       </body>
     </html>
-  `);
-  popup.document.close();
-  popup.focus();
-  window.setTimeout(() => {
-    popup.print();
-  }, 250);
+  `;
+
+  const popup = window.open('', '_blank', 'width=1100,height=850');
+  if (!popup) return;
+
+  try {
+    popup.document.open();
+    popup.document.write(html);
+    popup.document.close();
+    popup.focus();
+    popup.onload = () => popup.print();
+    window.setTimeout(() => {
+      if (!popup.closed) {
+        popup.print();
+      }
+    }, 400);
+  } catch {
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  }
 };
 
 const readyCount = computed(() => items.value.filter((row) => row.ready).length);
