@@ -91,7 +91,7 @@ onMounted(loadDutyPositions);
         </div>
         <span class="rounded-full bg-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200">{{ row.dutyCode ?? '—' }}</span>
       </div>
-      <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+      <div class="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
         <div>
           <p class="text-xs text-slate-500 dark:text-slate-400">Start</p>
           <p>{{ row.startDate ? new Date(row.startDate).toLocaleDateString() : '—' }}</p>

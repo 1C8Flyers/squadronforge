@@ -246,7 +246,7 @@ onMounted(loadCadetPromotions);
         </div>
         <UiBadge :tone="rowStatusTone(row)">{{ rowStatusText(row) }}</UiBadge>
       </div>
-      <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+      <div class="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
         <div>
           <p class="text-xs text-slate-500 dark:text-slate-400">Achievement</p>
           <p>{{ row.achievementName ?? '—' }}</p>

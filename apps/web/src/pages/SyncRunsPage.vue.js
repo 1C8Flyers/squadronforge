@@ -267,8 +267,9 @@ if (__VLS_ctx.selectedRun) {
     /** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
     /** @type {__VLS_StyleScopedClasses['font-medium']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.pre, __VLS_intrinsics.pre)({
-        ...{ class: "overflow-auto rounded-lg bg-slate-100 p-2 text-xs dark:bg-slate-800" },
+        ...{ class: "max-h-64 overflow-auto rounded-lg bg-slate-100 p-2 text-xs dark:bg-slate-800" },
     });
+    /** @type {__VLS_StyleScopedClasses['max-h-64']} */ ;
     /** @type {__VLS_StyleScopedClasses['overflow-auto']} */ ;
     /** @type {__VLS_StyleScopedClasses['rounded-lg']} */ ;
     /** @type {__VLS_StyleScopedClasses['bg-slate-100']} */ ;

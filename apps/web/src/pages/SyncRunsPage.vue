@@ -97,7 +97,7 @@ onMounted(loadRuns);
         </div>
         <div>
           <p class="mb-1 font-medium">Files</p>
-          <pre class="overflow-auto rounded-lg bg-slate-100 p-2 text-xs dark:bg-slate-800">{{ JSON.stringify(selectedRun.fileListJson, null, 2) }}</pre>
+          <pre class="max-h-64 overflow-auto rounded-lg bg-slate-100 p-2 text-xs dark:bg-slate-800">{{ JSON.stringify(selectedRun.fileListJson, null, 2) }}</pre>
         </div>
       </div>
       <p v-else class="mt-3 text-sm text-slate-500 dark:text-slate-400">Select a run to inspect files, timings, and errors.</p>

@@ -6,6 +6,7 @@ import UiSelect from '@/components/ui/UiSelect.vue';
 import UiTable from '@/components/ui/UiTable.vue';
 import { api } from '@/lib';
 import { useSession } from '@/state/session';
+import { formatRankDisplay } from '@/utils/rank-display';
 const { selectedTenantSlug } = useSession();
 const capid = ref('');
 const dutyCode = ref('');
@@ -152,7 +153,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
     /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
-    (row.memberGrade ?? '—');
+    (__VLS_ctx.formatRankDisplay(row.memberGrade));
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
         ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
     });
@@ -174,13 +175,14 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-200']} */ ;
     (row.dutyCode ?? '—');
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "mt-3 grid grid-cols-2 gap-2 text-sm" },
+        ...{ class: "mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2" },
     });
     /** @type {__VLS_StyleScopedClasses['mt-3']} */ ;
     /** @type {__VLS_StyleScopedClasses['grid']} */ ;
-    /** @type {__VLS_StyleScopedClasses['grid-cols-2']} */ ;
+    /** @type {__VLS_StyleScopedClasses['grid-cols-1']} */ ;
     /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
     /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+    /** @type {__VLS_StyleScopedClasses['sm:grid-cols-2']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
         ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
@@ -200,7 +202,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({});
     (row.endDate ? new Date(row.endDate).toLocaleDateString() : '—');
     // @ts-ignore
-    [items,];
+    [items, formatRankDisplay,];
 }
 const __VLS_23 = UiTable || UiTable;
 // @ts-ignore
@@ -351,7 +353,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     });
     /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
     /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
-    (row.memberGrade ?? '—');
+    (__VLS_ctx.formatRankDisplay(row.memberGrade));
     __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
         ...{ class: "px-4 py-3 font-medium" },
     });
@@ -384,7 +386,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
     (row.endDate ? new Date(row.endDate).toLocaleDateString() : '—');
     // @ts-ignore
-    [items, sortLabel,];
+    [items, formatRankDisplay, sortLabel,];
 }
 // @ts-ignore
 [];

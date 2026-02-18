@@ -8,6 +8,7 @@ import UiBadge from '@/components/ui/UiBadge.vue';
 import UiModal from '@/components/ui/UiModal.vue';
 import { api } from '@/lib';
 import { useSession } from '@/state/session';
+import { formatRankDisplay } from '@/utils/rank-display';
 const query = ref('');
 const status = ref('all');
 const type = ref('all');
@@ -239,13 +240,14 @@ for (const [row] of __VLS_vFor((__VLS_ctx.members))) {
     [];
     var __VLS_32;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "mt-3 grid grid-cols-2 gap-2 text-sm" },
+        ...{ class: "mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2" },
     });
     /** @type {__VLS_StyleScopedClasses['mt-3']} */ ;
     /** @type {__VLS_StyleScopedClasses['grid']} */ ;
-    /** @type {__VLS_StyleScopedClasses['grid-cols-2']} */ ;
+    /** @type {__VLS_StyleScopedClasses['grid-cols-1']} */ ;
     /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
     /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+    /** @type {__VLS_StyleScopedClasses['sm:grid-cols-2']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
         ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
@@ -254,7 +256,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.members))) {
     /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({});
-    (row.grade ?? '—');
+    (__VLS_ctx.formatRankDisplay(row.grade));
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
         ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
@@ -292,7 +294,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.members))) {
         { onClick: (...[$event]) => {
                 __VLS_ctx.loadMemberDetail(row.capid);
                 // @ts-ignore
-                [loadMemberDetail,];
+                [loadMemberDetail, formatRankDisplay,];
             } });
     const { default: __VLS_42 } = __VLS_38.slots;
     // @ts-ignore
@@ -437,7 +439,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.members))) {
     });
     /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
     /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
-    (row.grade ?? '—');
+    (__VLS_ctx.formatRankDisplay(row.grade));
     __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
         ...{ class: "px-4 py-3" },
     });
@@ -447,7 +449,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.members))) {
         ...{ onClick: (...[$event]) => {
                 __VLS_ctx.loadMemberDetail(row.capid);
                 // @ts-ignore
-                [members, loadMemberDetail, sortLabel,];
+                [members, loadMemberDetail, formatRankDisplay, sortLabel,];
             } },
         ...{ class: "text-left hover:underline" },
     });
@@ -652,7 +654,7 @@ else if (__VLS_ctx.memberDetail) {
     });
     /** @type {__VLS_StyleScopedClasses['text-lg']} */ ;
     /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
-    (__VLS_ctx.memberDetail.member.grade ? `${__VLS_ctx.memberDetail.member.grade} ` : '');
+    (__VLS_ctx.memberDetail.member.grade ? `${__VLS_ctx.formatRankDisplay(__VLS_ctx.memberDetail.member.grade)} ` : '');
     (__VLS_ctx.memberDetail.member.lastName);
     (__VLS_ctx.memberDetail.member.firstName);
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
@@ -678,7 +680,7 @@ else if (__VLS_ctx.memberDetail) {
     const { default: __VLS_89 } = __VLS_87.slots;
     (__VLS_ctx.memberDetail.member.status);
     // @ts-ignore
-    [detailsLoading, detailsError, detailsError, memberDetail, memberDetail, memberDetail, memberDetail, memberDetail, memberDetail, memberDetail, memberDetail,];
+    [formatRankDisplay, detailsLoading, detailsError, detailsError, memberDetail, memberDetail, memberDetail, memberDetail, memberDetail, memberDetail, memberDetail, memberDetail,];
     var __VLS_87;
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
         ...{ class: "rounded-full bg-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100" },

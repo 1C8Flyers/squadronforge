@@ -292,6 +292,15 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     // @ts-ignore
     [];
 }
+if (__VLS_ctx.items.length === 0) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "card text-sm text-slate-500 dark:text-slate-400" },
+    });
+    /** @type {__VLS_StyleScopedClasses['card']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+}
 const __VLS_28 = UiTable || UiTable;
 // @ts-ignore
 const __VLS_29 = __VLS_asFunctionalComponent1(__VLS_28, new __VLS_28({
@@ -323,7 +332,7 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
     ...{ onClick: (...[$event]) => {
             __VLS_ctx.toggleSort('memberName');
             // @ts-ignore
-            [toggleSort,];
+            [items, toggleSort,];
         } },
     ...{ class: "hover:underline" },
 });
@@ -440,8 +449,26 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     // @ts-ignore
     [];
 }
+if (__VLS_ctx.items.length === 0) {
+    __VLS_asFunctionalElement1(__VLS_intrinsics.tr, __VLS_intrinsics.tr)({
+        ...{ class: "border-t border-slate-200 dark:border-slate-800" },
+    });
+    /** @type {__VLS_StyleScopedClasses['border-t']} */ ;
+    /** @type {__VLS_StyleScopedClasses['border-slate-200']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:border-slate-800']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+        colspan: "5",
+        ...{ class: "px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400" },
+    });
+    /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-6']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-center']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+}
 // @ts-ignore
-[];
+[items,];
 var __VLS_31;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "mt-4 flex flex-wrap items-center justify-between gap-3 text-sm" },

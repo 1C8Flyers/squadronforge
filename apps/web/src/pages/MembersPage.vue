@@ -175,7 +175,7 @@ onMounted(loadMembers);
         </div>
         <UiBadge :tone="row.status === 'ACTIVE' ? 'success' : 'warn'">{{ row.status }}</UiBadge>
       </div>
-      <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+      <div class="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
         <div>
           <p class="text-xs text-slate-500 dark:text-slate-400">Rank</p>
           <p>{{ formatRankDisplay(row.grade) }}</p>

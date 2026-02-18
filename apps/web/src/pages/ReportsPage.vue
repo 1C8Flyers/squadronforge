@@ -127,6 +127,10 @@ onMounted(loadReport);
         </ul>
       </div>
     </div>
+
+    <div v-if="items.length === 0" class="card text-sm text-slate-500 dark:text-slate-400">
+      No cadets matched your report filters.
+    </div>
   </div>
 
   <UiTable class="hidden md:block">
@@ -151,6 +155,9 @@ onMounted(loadReport);
             <li v-for="need in needsFor(row)" :key="`${row.id}-${need}`">{{ need }}</li>
           </ul>
         </td>
+      </tr>
+      <tr v-if="items.length === 0" class="border-t border-slate-200 dark:border-slate-800">
+        <td colspan="5" class="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">No cadets matched your report filters.</td>
       </tr>
     </tbody>
   </UiTable>

@@ -14,9 +14,10 @@ let __VLS_intrinsics;
 let __VLS_directives;
 if (__VLS_ctx.isAuthPage) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "min-h-dvh" },
+        ...{ class: "min-h-dvh overflow-x-hidden" },
     });
     /** @type {__VLS_StyleScopedClasses['min-h-dvh']} */ ;
+    /** @type {__VLS_StyleScopedClasses['overflow-x-hidden']} */ ;
     let __VLS_0;
     /** @ts-ignore @type {typeof __VLS_components.RouterView} */
     RouterView;
@@ -26,10 +27,11 @@ if (__VLS_ctx.isAuthPage) {
 }
 else {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "flex min-h-dvh bg-slate-100 dark:bg-slate-950" },
+        ...{ class: "flex min-h-dvh overflow-x-hidden bg-slate-100 dark:bg-slate-950" },
     });
     /** @type {__VLS_StyleScopedClasses['flex']} */ ;
     /** @type {__VLS_StyleScopedClasses['min-h-dvh']} */ ;
+    /** @type {__VLS_StyleScopedClasses['overflow-x-hidden']} */ ;
     /** @type {__VLS_StyleScopedClasses['bg-slate-100']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:bg-slate-950']} */ ;
     const __VLS_5 = SidebarNav;
