@@ -113,4 +113,4 @@ docker compose up -d --build
 
 - Do not commit `.env` or credential files.
 - For internet exposure, front `web`/`api` with HTTPS reverse proxy.
-- Consider removing direct host exposure for Postgres/Redis in production.
+- `db` and `redis` are internal-only by default (not published to host ports).
