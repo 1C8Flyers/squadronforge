@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
-import { randomUUID } from 'crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import { Queue } from 'bullmq';
 import { CronExpressionParser } from 'cron-parser';
 import { requireAuth } from '../middleware/require-auth.js';
@@ -10,8 +10,155 @@ import { prisma } from '../lib/prisma.js';
 import { computeCadetPromotion } from '../lib/promotion/computeCadetPromotion.js';
 
 const queue = new Queue('capwatch-sync', { connection: { url: process.env.REDIS_URL ?? 'redis://localhost:6379' } });
+const notificationQueue = new Queue('event-notifications', { connection: { url: process.env.REDIS_URL ?? 'redis://localhost:6379' } });
+const RSVP_LINK_SECRET = process.env.RSVP_LINK_SECRET ?? process.env.JWT_SECRET ?? 'change-me-rsvp-link-secret';
 
 export const tenantRouter = Router();
+
+type SignedRsvpPayload = {
+  tenantId: string;
+  eventId: string;
+  status: 'yes' | 'no' | 'maybe';
+  source: 'email-link' | 'push-link';
+  exp: number;
+  userId?: string;
+  capid?: string;
+};
+
+const fromBase64Url = (value: string): string => Buffer.from(value, 'base64url').toString('utf8');
+
+const verifySignedRsvpToken = (token: string): SignedRsvpPayload | null => {
+  const [encodedPayload, encodedSignature] = token.split('.');
+  if (!encodedPayload || !encodedSignature) {
+    return null;
+  }
+
+  const expectedSignature = createHmac('sha256', RSVP_LINK_SECRET).update(encodedPayload).digest('base64url');
+  const provided = Buffer.from(encodedSignature);
+  const expected = Buffer.from(expectedSignature);
+  if (provided.length !== expected.length || !timingSafeEqual(provided, expected)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(fromBase64Url(encodedPayload));
+    return z
+      .object({
+        tenantId: z.string().min(1),
+        eventId: z.string().min(1),
+        status: z.enum(['yes', 'no', 'maybe']),
+        source: z.enum(['email-link', 'push-link']),
+        exp: z.coerce.number().int().positive(),
+        userId: z.string().min(1).optional(),
+        capid: z.string().min(1).optional()
+      })
+      .parse(parsed);
+  } catch {
+    return null;
+  }
+};
+
+const rsvpActionHtml = (title: string, message: string): string => `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>${title}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 0; padding: 24px; background: #f8fafc; color: #0f172a; }
+      .card { max-width: 560px; margin: 24px auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; }
+      h1 { margin: 0 0 8px 0; font-size: 20px; }
+      p { margin: 0; line-height: 1.5; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>${title}</h1>
+      <p>${message}</p>
+    </div>
+  </body>
+</html>`;
+
+tenantRouter.get('/rsvp/:token', async (req, res) => {
+  const payload = verifySignedRsvpToken(req.params.token);
+  if (!payload) {
+    return res.status(400).send(rsvpActionHtml('Invalid RSVP link', 'This RSVP link is invalid. Please request a new notification link.'));
+  }
+
+  if (Date.now() > payload.exp * 1000) {
+    return res.status(410).send(rsvpActionHtml('RSVP link expired', 'This RSVP link has expired. Please use the app to update your RSVP.'));
+  }
+
+  const event = await prisma.event.findFirst({
+    where: { tenantId: payload.tenantId, id: payload.eventId },
+    select: { id: true, title: true, isCancelled: true }
+  });
+
+  if (!event) {
+    return res.status(404).send(rsvpActionHtml('Event not found', 'This event could not be found.'));
+  }
+
+  if (event.isCancelled) {
+    return res.status(409).send(rsvpActionHtml('Event cancelled', 'This event was cancelled, so RSVP updates are disabled.'));
+  }
+
+  if (payload.userId) {
+    await prisma.eventRsvp.upsert({
+      where: {
+        tenantId_eventId_userId: {
+          tenantId: payload.tenantId,
+          eventId: payload.eventId,
+          userId: payload.userId
+        }
+      },
+      create: {
+        tenantId: payload.tenantId,
+        eventId: payload.eventId,
+        userId: payload.userId,
+        status: payload.status,
+        source: payload.source,
+        respondedAt: new Date()
+      },
+      update: {
+        status: payload.status,
+        source: payload.source,
+        respondedAt: new Date()
+      }
+    });
+  } else if (payload.capid) {
+    const existing = await prisma.eventRsvp.findFirst({
+      where: { tenantId: payload.tenantId, eventId: payload.eventId, capid: payload.capid },
+      select: { id: true }
+    });
+
+    if (existing) {
+      await prisma.eventRsvp.update({
+        where: { id: existing.id },
+        data: {
+          status: payload.status,
+          source: payload.source,
+          respondedAt: new Date()
+        }
+      });
+    } else {
+      await prisma.eventRsvp.create({
+        data: {
+          tenantId: payload.tenantId,
+          eventId: payload.eventId,
+          capid: payload.capid,
+          status: payload.status,
+          source: payload.source,
+          respondedAt: new Date()
+        }
+      });
+    }
+  } else {
+    return res.status(400).send(rsvpActionHtml('Invalid RSVP link', 'This RSVP link is missing a recipient identity.'));
+  }
+
+  return res.status(200).send(rsvpActionHtml('RSVP recorded', `Your RSVP (${payload.status.toUpperCase()}) for "${event.title}" has been saved.`));
+});
+
 tenantRouter.use(requireAuth);
 
 const queryBoolean = z.preprocess((value) => {
@@ -950,6 +1097,127 @@ tenantRouter.put('/:slug/events/:eventId/rsvp', async (req, res) => {
   });
 
   res.json(rsvp);
+});
+
+tenantRouter.post('/:slug/events/:eventId/notify', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+  await ensureTenantAdminAccess(tenantId, req.auth!);
+  const eventId = z.string().min(1).parse(req.params.eventId);
+
+  const body = z
+    .object({
+      type: z.enum(['publish', 'update', 'reminder']).default('reminder'),
+      channels: z.array(z.enum(['email', 'push'])).min(1),
+      scheduledAt: z.coerce.date().optional()
+    })
+    .parse(req.body);
+
+  const event = await prisma.event.findFirst({ where: { tenantId, id: eventId }, select: { id: true } });
+  if (!event) {
+    return res.status(404).json({ error: 'Event not found' });
+  }
+
+  const channels = [...new Set(body.channels)];
+  const scheduledAt = body.scheduledAt ?? new Date();
+
+  const created = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const rows = [] as Array<{ id: string; channel: 'email' | 'push'; status: 'queued'; scheduledAt: Date }>;
+    for (const channel of channels) {
+      const row = await tx.eventNotification.create({
+        data: {
+          tenantId,
+          eventId,
+          channel,
+          type: body.type,
+          scheduledAt,
+          status: 'queued',
+          payloadJson: {
+            requestedByUserId: req.auth!.userId,
+            requestedAt: new Date().toISOString()
+          }
+        },
+        select: {
+          id: true,
+          channel: true,
+          status: true,
+          scheduledAt: true
+        }
+      });
+      rows.push(row as { id: string; channel: 'email' | 'push'; status: 'queued'; scheduledAt: Date });
+    }
+    return rows;
+  });
+
+  if (scheduledAt.getTime() <= Date.now()) {
+    await Promise.all(
+      created.map((row) =>
+        notificationQueue.add('dispatch-notification', { notificationId: row.id }, { jobId: `event-notification-${row.id}`, removeOnComplete: 50, removeOnFail: 200 })
+      )
+    );
+  }
+
+  res.status(201).json({ items: created });
+});
+
+tenantRouter.post('/:slug/notifications/push-subscriptions', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+
+  const body = z
+    .object({
+      endpoint: z.string().url(),
+      keys: z.object({
+        p256dh: z.string().min(1),
+        auth: z.string().min(1)
+      }),
+      expiresAt: z.coerce.date().nullable().optional()
+    })
+    .parse(req.body);
+
+  const subscription = await prisma.pushSubscription.upsert({
+    where: {
+      tenantId_userId_endpoint: {
+        tenantId,
+        userId: req.auth!.userId,
+        endpoint: body.endpoint
+      }
+    },
+    create: {
+      tenantId,
+      userId: req.auth!.userId,
+      endpoint: body.endpoint,
+      p256dh: body.keys.p256dh,
+      auth: body.keys.auth,
+      expiresAt: body.expiresAt ?? null,
+      lastSeenAt: new Date()
+    },
+    update: {
+      p256dh: body.keys.p256dh,
+      auth: body.keys.auth,
+      expiresAt: body.expiresAt ?? null,
+      lastSeenAt: new Date()
+    }
+  });
+
+  res.status(201).json({ id: subscription.id, endpoint: subscription.endpoint });
+});
+
+tenantRouter.delete('/:slug/notifications/push-subscriptions', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+  const body = z
+    .object({
+      endpoint: z.string().url()
+    })
+    .parse(req.body);
+
+  await prisma.pushSubscription.deleteMany({
+    where: {
+      tenantId,
+      userId: req.auth!.userId,
+      endpoint: body.endpoint
+    }
+  });
+
+  res.status(204).send();
 });
 
 tenantRouter.get('/:slug/settings', async (req, res) => {

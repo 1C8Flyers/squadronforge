@@ -52,6 +52,7 @@ const sortBy = ref<'startsAt' | 'title' | 'updatedAt' | 'createdAt'>('startsAt')
 const sortDir = ref<'asc' | 'desc'>('asc');
 const loading = ref(false);
 const saving = ref(false);
+const notifying = ref(false);
 const actionMessage = ref('');
 const items = ref<EventListItem[]>([]);
 const total = ref(0);
@@ -59,6 +60,10 @@ const selectedEventId = ref('');
 const selectedEvent = ref<EventDetail | null>(null);
 const showNewEventForm = ref(false);
 const showEditForm = ref(false);
+const notifyType = ref<'publish' | 'update' | 'reminder'>('reminder');
+const notifyScheduledAt = ref('');
+const notifyEmail = ref(true);
+const notifyPush = ref(true);
 
 const newTitle = ref('');
 const newDescription = ref('');
@@ -331,6 +336,31 @@ const rsvpForEvent = async (eventId: string, statusValue: 'yes' | 'no' | 'maybe'
   }
 };
 
+const sendNotificationForSelectedEvent = async () => {
+  if (!selectedTenantSlug.value || !selectedEvent.value) return;
+  const channels = [notifyEmail.value ? 'email' : null, notifyPush.value ? 'push' : null].filter((value): value is 'email' | 'push' => Boolean(value));
+  if (channels.length === 0) {
+    actionMessage.value = 'Select at least one channel (email or push).';
+    return;
+  }
+
+  notifying.value = true;
+  actionMessage.value = '';
+  try {
+    await api.post(`/tenant/${selectedTenantSlug.value}/events/${selectedEvent.value.id}/notify`, {
+      type: notifyType.value,
+      channels,
+      scheduledAt: notifyScheduledAt.value ? fromDatetimeLocal(notifyScheduledAt.value) : undefined
+    });
+    actionMessage.value = notifyScheduledAt.value ? 'Notification scheduled.' : 'Notification queued for immediate delivery.';
+    notifyScheduledAt.value = '';
+  } catch (error) {
+    actionMessage.value = errorMessage(error);
+  } finally {
+    notifying.value = false;
+  }
+};
+
 watch([selectedTenantSlug, query, status, memberType, sortBy, sortDir], () => {
   page.value = 1;
   loadEvents();
@@ -540,6 +570,38 @@ const startEditingEvent = (eventId: string) => {
             <div class="rounded-lg bg-rose-100 px-2 py-1 font-semibold text-rose-800 dark:bg-rose-900/30 dark:text-rose-300">No {{ selectedEvent.counts.no }}</div>
           </div>
           <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Total responses: {{ selectedTotal }}</p>
+        </div>
+
+        <div class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
+          <h4 class="text-base font-semibold">Notifications</h4>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Schedule email/push notifications with signed RSVP links.</p>
+          <div class="mt-3 grid gap-2">
+            <UiSelect
+              v-model="notifyType"
+              :options="[
+                { label: 'Publish', value: 'publish' },
+                { label: 'Update', value: 'update' },
+                { label: 'Reminder', value: 'reminder' }
+              ]"
+            />
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Schedule at (optional)</label>
+              <UiInput v-model="notifyScheduledAt" type="datetime-local" />
+            </div>
+            <div class="flex flex-wrap gap-4 text-sm">
+              <label class="inline-flex items-center gap-2">
+                <input v-model="notifyEmail" type="checkbox" />
+                <span>Email</span>
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input v-model="notifyPush" type="checkbox" />
+                <span>Push</span>
+              </label>
+            </div>
+            <div>
+              <UiButton :disabled="notifying" @click="sendNotificationForSelectedEvent">{{ notifying ? 'Sending…' : 'Send/Schedule notification' }}</UiButton>
+            </div>
+          </div>
         </div>
 
         <div v-if="showEditForm" class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">

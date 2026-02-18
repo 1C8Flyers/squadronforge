@@ -10,10 +10,35 @@ import { Queue, Worker } from 'bullmq';
 import { CronExpressionParser } from 'cron-parser';
 import { Prisma, PrismaClient } from '@prisma/client';
 import unzipper from 'unzipper';
+import nodemailer from 'nodemailer';
+import webpush from 'web-push';
 
 const prisma = new PrismaClient();
 const connection = { url: process.env.REDIS_URL ?? 'redis://localhost:6379' };
 const queue = new Queue('capwatch-sync', { connection });
+const notificationQueue = new Queue('event-notifications', { connection });
+
+const RSVP_LINK_SECRET = process.env.RSVP_LINK_SECRET ?? process.env.JWT_SECRET ?? 'change-me-rsvp-link-secret';
+const RSVP_LINK_BASE_URL =
+  process.env.RSVP_LINK_BASE_URL ??
+  process.env.VITE_API_URL ??
+  process.env.PUBLIC_API_URL ??
+  'http://localhost:4000';
+
+const SMTP_HOST = process.env.SMTP_HOST;
+const SMTP_PORT = Number(process.env.SMTP_PORT ?? '587');
+const SMTP_SECURE = (process.env.SMTP_SECURE ?? 'false').toLowerCase() === 'true';
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const EMAIL_FROM = process.env.EMAIL_FROM ?? 'SquadronForge <no-reply@squadronforge.local>';
+
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT ?? 'mailto:admin@example.com';
+
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+}
 
 type ParsedMember = {
   capid: string;
@@ -973,6 +998,269 @@ const setRunStage = async (runId: string, stage: string) => {
   });
 };
 
+let emailTransporter: nodemailer.Transporter | null | undefined;
+
+const getEmailTransporter = (): nodemailer.Transporter | null => {
+  if (emailTransporter !== undefined) {
+    return emailTransporter;
+  }
+
+  if (!SMTP_HOST) {
+    emailTransporter = null;
+    return emailTransporter;
+  }
+
+  emailTransporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_SECURE,
+    ...(SMTP_USER ? { auth: { user: SMTP_USER, pass: SMTP_PASS } } : {})
+  });
+
+  return emailTransporter;
+};
+
+type SignedRsvpPayload = {
+  tenantId: string;
+  eventId: string;
+  status: 'yes' | 'no' | 'maybe';
+  source: 'email-link' | 'push-link';
+  exp: number;
+  userId?: string;
+  capid?: string;
+};
+
+const signRsvpToken = (payload: SignedRsvpPayload): string => {
+  const encodedPayload = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+  const signature = crypto.createHmac('sha256', RSVP_LINK_SECRET).update(encodedPayload).digest('base64url');
+  return `${encodedPayload}.${signature}`;
+};
+
+const buildRsvpLink = (payload: SignedRsvpPayload): string => {
+  const token = signRsvpToken(payload);
+  return `${RSVP_LINK_BASE_URL.replace(/\/$/, '')}/tenant/rsvp/${token}`;
+};
+
+const buildAudienceMemberWhere = (event: {
+  tenantId: string;
+  visibility: 'tenant' | 'audience';
+  audienceRules: Array<{ memberType: 'CADET' | 'SENIOR' | 'UNKNOWN' | null; unitCharter: string | null }>;
+}) => {
+  const base = {
+    tenantId: event.tenantId,
+    status: 'ACTIVE' as const,
+    email: { not: null as any }
+  };
+
+  if (event.visibility !== 'audience' || event.audienceRules.length === 0) {
+    return base;
+  }
+
+  const orRules = event.audienceRules.map((rule) => ({
+    ...(rule.memberType ? { memberType: rule.memberType } : {}),
+    ...(rule.unitCharter ? { unitCharter: rule.unitCharter } : {})
+  }));
+
+  const filtered = orRules.filter((rule) => Object.keys(rule).length > 0);
+  if (filtered.length === 0) {
+    return base;
+  }
+
+  return {
+    ...base,
+    OR: filtered
+  };
+};
+
+const scheduleEventNotificationsLoop = async () => {
+  const due = await prisma.eventNotification.findMany({
+    where: {
+      status: 'queued',
+      scheduledAt: { lte: new Date() }
+    },
+    orderBy: { scheduledAt: 'asc' },
+    take: 200,
+    select: { id: true }
+  });
+
+  await Promise.all(
+    due.map((row) =>
+      notificationQueue.add('dispatch-notification', { notificationId: row.id }, { jobId: `event-notification-${row.id}`, removeOnComplete: 200, removeOnFail: 500 })
+    )
+  );
+};
+
+const dispatchEmailNotification = async (notificationId: string): Promise<{ status: 'sent' | 'failed' | 'skipped'; message: string }> => {
+  const transporter = getEmailTransporter();
+  if (!transporter) {
+    return { status: 'skipped', message: 'SMTP not configured' };
+  }
+
+  const notification = await prisma.eventNotification.findUnique({
+    where: { id: notificationId },
+    include: {
+      event: {
+        include: { audienceRules: true }
+      }
+    }
+  });
+
+  if (!notification?.event) {
+    return { status: 'failed', message: 'Event notification record not found' };
+  }
+
+  const members = await prisma.member.findMany({
+    where: buildAudienceMemberWhere({
+      tenantId: notification.tenantId,
+      visibility: notification.event.visibility,
+      audienceRules: notification.event.audienceRules.map((rule) => ({
+        memberType: rule.memberType,
+        unitCharter: rule.unitCharter
+      }))
+    }),
+    select: {
+      email: true,
+      capid: true,
+      firstName: true,
+      lastName: true
+    }
+  });
+
+  const uniqueByEmail = new Map<string, (typeof members)[number]>();
+  for (const member of members) {
+    const email = (member.email ?? '').trim().toLowerCase();
+    if (email) {
+      uniqueByEmail.set(email, member);
+    }
+  }
+
+  if (uniqueByEmail.size === 0) {
+    return { status: 'skipped', message: 'No active members with email recipients' };
+  }
+
+  const eventStarts = notification.event.startsAt.toLocaleString();
+  const eventEnds = notification.event.endsAt.toLocaleString();
+  const expiresAt = Math.floor(Date.now() / 1000) + 72 * 60 * 60;
+
+  let sentCount = 0;
+  for (const recipient of uniqueByEmail.values()) {
+    const yesLink = buildRsvpLink({
+      tenantId: notification.tenantId,
+      eventId: notification.eventId,
+      capid: recipient.capid,
+      status: 'yes',
+      source: 'email-link',
+      exp: expiresAt
+    });
+    const maybeLink = buildRsvpLink({
+      tenantId: notification.tenantId,
+      eventId: notification.eventId,
+      capid: recipient.capid,
+      status: 'maybe',
+      source: 'email-link',
+      exp: expiresAt
+    });
+    const noLink = buildRsvpLink({
+      tenantId: notification.tenantId,
+      eventId: notification.eventId,
+      capid: recipient.capid,
+      status: 'no',
+      source: 'email-link',
+      exp: expiresAt
+    });
+
+    const name = `${recipient.firstName} ${recipient.lastName}`.trim();
+
+    await transporter.sendMail({
+      from: EMAIL_FROM,
+      to: recipient.email!,
+      subject: `[SquadronForge] ${notification.type.toUpperCase()}: ${notification.event.title}`,
+      html: `
+        <p>Hello ${name || 'member'},</p>
+        <p><strong>${notification.event.title}</strong></p>
+        <p>Starts: ${eventStarts}<br/>Ends: ${eventEnds}<br/>Location: ${notification.event.location ?? 'TBD'}</p>
+        <p>Quick RSVP:</p>
+        <p>
+          <a href="${yesLink}">Yes</a> |
+          <a href="${maybeLink}">Maybe</a> |
+          <a href="${noLink}">No</a>
+        </p>
+      `
+    });
+    sentCount += 1;
+  }
+
+  return { status: 'sent', message: `Email sent to ${sentCount} recipients` };
+};
+
+const dispatchPushNotification = async (notificationId: string): Promise<{ status: 'sent' | 'failed' | 'skipped'; message: string }> => {
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+    return { status: 'skipped', message: 'VAPID keys not configured' };
+  }
+
+  const notification = await prisma.eventNotification.findUnique({
+    where: { id: notificationId },
+    include: {
+      event: true,
+      tenant: {
+        select: { slug: true }
+      }
+    }
+  });
+
+  if (!notification?.event) {
+    return { status: 'failed', message: 'Event notification record not found' };
+  }
+
+  const subscriptions = await prisma.pushSubscription.findMany({
+    where: { tenantId: notification.tenantId },
+    select: { id: true, endpoint: true, p256dh: true, auth: true }
+  });
+
+  if (subscriptions.length === 0) {
+    return { status: 'skipped', message: 'No push subscriptions registered' };
+  }
+
+  const payload = JSON.stringify({
+    title: `Event ${notification.type}: ${notification.event.title}`,
+    body: `${notification.event.startsAt.toLocaleString()} • ${notification.event.location ?? 'Location TBD'}`,
+    url: `/${notification.tenant.slug}/events`
+  });
+
+  let successCount = 0;
+  let failureCount = 0;
+
+  for (const subscription of subscriptions) {
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: subscription.p256dh,
+            auth: subscription.auth
+          }
+        },
+        payload
+      );
+      successCount += 1;
+    } catch (error: any) {
+      failureCount += 1;
+      const statusCode = Number(error?.statusCode ?? 0);
+      if (statusCode === 404 || statusCode === 410) {
+        await prisma.pushSubscription.delete({ where: { id: subscription.id } });
+      }
+    }
+  }
+
+  if (successCount > 0) {
+    return { status: 'sent', message: `Push sent to ${successCount} subscriptions${failureCount > 0 ? `, ${failureCount} failed` : ''}` };
+  }
+  if (failureCount > 0) {
+    return { status: 'failed', message: `Push delivery failed for ${failureCount} subscriptions` };
+  }
+  return { status: 'skipped', message: 'No push notifications delivered' };
+};
+
 const scheduleLoop = async () => {
   const tenants = await prisma.tenant.findMany({ where: { isEnabled: true } });
   const now = new Date();
@@ -995,11 +1283,59 @@ scheduleLoop().catch((error) => {
   console.error(JSON.stringify({ level: 'error', msg: 'initial_schedule_failed', error: String(error) }));
 });
 
+scheduleEventNotificationsLoop().catch((error) => {
+  console.error(JSON.stringify({ level: 'error', msg: 'initial_event_notification_schedule_failed', error: String(error) }));
+});
+
 setInterval(() => {
   scheduleLoop().catch((error) => {
     console.error(JSON.stringify({ level: 'error', msg: 'schedule_loop_failed', error: String(error) }));
   });
 }, 60_000);
+
+setInterval(() => {
+  scheduleEventNotificationsLoop().catch((error) => {
+    console.error(JSON.stringify({ level: 'error', msg: 'event_notification_schedule_loop_failed', error: String(error) }));
+  });
+}, 60_000);
+
+new Worker(
+  'event-notifications',
+  async (job) => {
+    const notificationId = String(job.data.notificationId ?? '');
+    if (!notificationId) {
+      throw new Error('notificationId is required');
+    }
+
+    const notification = await prisma.eventNotification.findUnique({
+      where: { id: notificationId },
+      select: { id: true, status: true, channel: true }
+    });
+
+    if (!notification) {
+      throw new Error('Notification not found');
+    }
+
+    if (notification.status !== 'queued') {
+      return;
+    }
+
+    const result =
+      notification.channel === 'email'
+        ? await dispatchEmailNotification(notificationId)
+        : await dispatchPushNotification(notificationId);
+
+    await prisma.eventNotification.update({
+      where: { id: notificationId },
+      data: {
+        status: result.status,
+        sentAt: result.status === 'sent' ? new Date() : null,
+        errorMessage: result.status === 'failed' ? result.message : null
+      }
+    });
+  },
+  { connection }
+);
 
 new Worker(
   'capwatch-sync',

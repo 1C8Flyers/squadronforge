@@ -1,6 +1,6 @@
 # Event Calendar / RSVP / Notifications Build Plan
 
-Status: In progress (Phase A delivered, recurrence delivered, mobile RSVP UX delivered, notifications/sync pending)
+Status: In progress (Phase A delivered, recurrence delivered, notification dispatch + signed RSVP links delivered, Google sync pending)
 Date: 2026-02-18
 Owner: SquadronForge
 
@@ -16,10 +16,12 @@ Completed:
 - ✅ Recurrence support (daily/weekly/monthly) with interval/until/occurrence-based generation
 - ✅ Recurrence helper labels/instructions in create/edit flows
 - ✅ Mobile inline RSVP actions on event cards (detail panel hidden on small screens)
+- ✅ Notification scheduling + queue dispatch (email/push channels)
+- ✅ Signed RSVP links from notifications with expiry and scope validation
+- ✅ Event detail notification controls in web app
 
 Not yet completed:
-- ⏳ Notification scheduling and delivery (email/push)
-- ⏳ Signed RSVP links from notifications
+- ⏳ End-to-end production channel hardening (SMTP/VAPID config, delivery observability tuning)
 - ⏳ Google Calendar sync (Phase C)
 
 ## Goals
@@ -71,7 +73,7 @@ Deliverables:
 - RSVP action links from notifications.
 
 Status:
-- ⏳ Not started
+- 🔄 In progress (core queue dispatch + signed RSVP actions delivered)
 
 ### Phase C — Google Calendar One-Way Sync
 
