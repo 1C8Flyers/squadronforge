@@ -32,12 +32,8 @@ services:
     restart: on-failure
     env_file:
       - .env
-    environment:
-      CAPWATCH_ROCKFORD_CAPID_FILE: /run/secrets/capwatch_rockford_capid
-      CAPWATCH_ROCKFORD_PASSWORD_FILE: /run/secrets/capwatch_rockford_password
-    secrets:
-      - capwatch_rockford_capid
-      - capwatch_rockford_password
+    volumes:
+      - ./docker/secrets:/run/secrets:ro
     ports:
       - "4000:4000"
 
@@ -55,12 +51,8 @@ services:
     restart: on-failure
     env_file:
       - .env
-    environment:
-      CAPWATCH_ROCKFORD_CAPID_FILE: /run/secrets/capwatch_rockford_capid
-      CAPWATCH_ROCKFORD_PASSWORD_FILE: /run/secrets/capwatch_rockford_password
-    secrets:
-      - capwatch_rockford_capid
-      - capwatch_rockford_password
+    volumes:
+      - ./docker/secrets:/run/secrets:ro
 
   web:
     build:
@@ -73,9 +65,3 @@ services:
 
 volumes:
   pg_data:
-
-secrets:
-  capwatch_rockford_capid:
-    file: ./docker/secrets/rockford_capid.txt
-  capwatch_rockford_password:
-    file: ./docker/secrets/rockford_password.txt

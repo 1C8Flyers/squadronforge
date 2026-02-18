@@ -70,17 +70,27 @@ Or Docker secret file environment keys:
 - `CAPWATCH_<TENANT_SLUG>_CAPID_FILE`
 - `CAPWATCH_<TENANT_SLUG>_PASSWORD_FILE`
 
-Example for `rockford`:
+Credential lookup uses `tenant.credentialsRef` from the database.
 
-- `CAPWATCH_ROCKFORD_CAPID=123456`
-- `CAPWATCH_ROCKFORD_PASSWORD=super-secret`
+Example:
 
-Tenant row should set `credentialsRef=rockford`.
+- Tenant `credentialsRef`: `acme`
+- CAPWATCH env keys to provide:
+   - `CAPWATCH_ACME_CAPID`
+   - `CAPWATCH_ACME_PASSWORD`
+   - or `CAPWATCH_ACME_CAPID_FILE` + `CAPWATCH_ACME_PASSWORD_FILE`
 
-For local Docker Compose, example secret files are mounted from:
+Tenant row should set `credentialsRef` to the tenant key you provisioned (for example, `acme`).
 
-- [docker/secrets/rockford_capid.txt](docker/secrets/rockford_capid.txt)
-- [docker/secrets/rockford_password.txt](docker/secrets/rockford_password.txt)
+For local Docker Compose, set the `*_FILE` paths to files under:
+
+- [docker/secrets](docker/secrets)
+
+To add another tenant, add a new `credentialsRef` value in tenant settings and add matching env/file keys.
+
+Deployment instructions:
+
+- [DEPLOYMENT.md](DEPLOYMENT.md)
 
 Auth secrets:
 
