@@ -252,7 +252,16 @@ const detectCadetPromotionFileByHeader = async (files: string[]): Promise<string
 const discoverCapwatchFiles = async (
   extractedDir: string,
   mapping: Record<string, string> | undefined
-): Promise<{ organization?: string; membership?: string; dutyPosition?: string; memberContact?: string; memberAddress?: string; cadetPromotion?: string; files: string[] }> => {
+): Promise<{
+  organization?: string;
+  membership?: string;
+  dutyPosition?: string;
+  dutyPositionFiles: string[];
+  memberContact?: string;
+  memberAddress?: string;
+  cadetPromotion?: string;
+  files: string[];
+}> => {
   const files = await listFilesRecursive(extractedDir);
   const relativeFiles = files.map((f) => path.relative(extractedDir, f));
   const lowerMap = new Map(relativeFiles.map((rf, idx) => [rf.toLowerCase(), files[idx]]));
@@ -266,6 +275,7 @@ const discoverCapwatchFiles = async (
 
   const preferredMembership = lowerMap.get('member.txt') ?? lowerMap.get('membership.txt');
   const preferredDuty = lowerMap.get('dutyposition.txt') ?? lowerMap.get('cadetdutypositions.txt');
+  const preferredCadetDuty = lowerMap.get('cadetdutypositions.txt');
   const preferredMemberContact = lowerMap.get('mbrcontact.txt');
   const preferredMemberAddress = lowerMap.get('mbraddresses.txt');
   const preferredCadetPromotion = lowerMap.get('cadetachvfullreport.txt');
@@ -297,11 +307,12 @@ const discoverCapwatchFiles = async (
 
   const membership = mappedMembership ?? preferredMembership ?? membershipByHeuristic ?? (await detectMembershipFileByHeader(files));
   const dutyPosition = mappedDuty ?? preferredDuty ?? dutyByHeuristic ?? (await detectDutyFileByHeader(files));
+  const dutyPositionFiles = [...new Set([dutyPosition, preferredCadetDuty].filter((value): value is string => Boolean(value)))];
   const memberContact = mappedMemberContact ?? preferredMemberContact ?? memberContactByHeuristic;
   const memberAddress = mappedMemberAddress ?? preferredMemberAddress ?? memberAddressByHeuristic;
   const cadetPromotion = mappedCadetPromotion ?? preferredCadetPromotion ?? cadetPromotionByHeuristic ?? (await detectCadetPromotionFileByHeader(files));
 
-  return { organization, membership, dutyPosition, memberContact, memberAddress, cadetPromotion, files: relativeFiles };
+  return { organization, membership, dutyPosition, dutyPositionFiles, memberContact, memberAddress, cadetPromotion, files: relativeFiles };
 };
 
 const normalizeMemberType = (value: string): ParsedMember['memberType'] => {
@@ -1042,7 +1053,11 @@ new Worker(
           grade: member.grade
         });
       }
-      const dutyPositions = discovery.dutyPosition ? await parseDutyPositionFile(discovery.dutyPosition) : [];
+      const dutyPositionRows = await Promise.all(discovery.dutyPositionFiles.map((filePath) => parseDutyPositionFile(filePath)));
+      const dutyPositionMerged = dutyPositionRows.flat();
+      const dutyPositionKey = (duty: ParsedDutyPosition): string =>
+        `${duty.capid}|${(duty.dutyName ?? '').toLowerCase()}|${(duty.dutyCode ?? '').toLowerCase()}|${duty.startDate?.toISOString() ?? ''}|${duty.endDate?.toISOString() ?? ''}`;
+      const dutyPositions = [...new Map(dutyPositionMerged.map((row) => [dutyPositionKey(row), row])).values()];
       const memberContacts = discovery.memberContact ? await parseMemberContactFile(discovery.memberContact) : [];
       const memberAddresses = discovery.memberAddress ? await parseMemberAddressFile(discovery.memberAddress) : [];
       const cadetPromotionsRaw = discovery.cadetPromotion ? await parseCadetPromotionFile(discovery.cadetPromotion) : [];
@@ -1208,6 +1223,7 @@ new Worker(
             organizationFile: discovery.organization ? path.relative(extracted, discovery.organization) : null,
             membershipFile: path.relative(extracted, discovery.membership),
             dutyPositionFile: discovery.dutyPosition ? path.relative(extracted, discovery.dutyPosition) : null,
+            dutyPositionFiles: discovery.dutyPositionFiles.map((filePath) => path.relative(extracted, filePath)),
             memberContactFile: discovery.memberContact ? path.relative(extracted, discovery.memberContact) : null,
             memberAddressFile: discovery.memberAddress ? path.relative(extracted, discovery.memberAddress) : null,
             cadetPromotionFile: discovery.cadetPromotion ? path.relative(extracted, discovery.cadetPromotion) : null,
