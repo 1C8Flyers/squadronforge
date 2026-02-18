@@ -568,7 +568,7 @@ const parseCadetPromotionFile = async (cadetPromotionFile: string): Promise<Pars
     promotionEligible: indexOfAny('date promotion eligable', 'date promotion eligible', 'nextapprovaldate'),
     lastPtDate: indexOfAny('last pt date', 'phyfittest'),
     inactive: indexOfAny('inactive?'),
-    ready: indexOfAny('ready?'),
+    ready: indexOfAny('ready?', 'ready'),
     leadershipTestCompleted: indexOfAny('leadership test completed', 'leadlabdatep'),
     leadershipModuleCompleted: indexOfAny('leadership module completed', 'leadershipinteractivedate'),
     aeTestCompleted: indexOfAny('ae test completed', 'aedatep'),
