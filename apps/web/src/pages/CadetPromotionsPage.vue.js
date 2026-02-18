@@ -7,6 +7,7 @@ import UiTable from '@/components/ui/UiTable.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
 import { api } from '@/lib';
 import { useSession } from '@/state/session';
+import { computePromotion } from '@/lib/promotionLogic';
 const { selectedTenantSlug } = useSession();
 const query = ref('');
 const ready = ref('all');
@@ -15,8 +16,6 @@ const items = ref([]);
 const total = ref(0);
 const page = ref(1);
 const pageSize = ref('50');
-const readyCount = ref(0);
-const inactiveCount = ref(0);
 const sortBy = ref('memberName');
 const sortDir = ref('asc');
 const loadCadetPromotions = async () => {
@@ -30,15 +29,11 @@ const loadCadetPromotions = async () => {
     };
     if (query.value.trim())
         params.search = query.value.trim();
-    if (ready.value !== 'all')
-        params.ready = ready.value;
     if (inactive.value !== 'all')
         params.inactive = inactive.value;
     const { data } = await api.get(`/tenant/${selectedTenantSlug.value}/cadet-promotions`, { params });
     items.value = data.items;
     total.value = data.total;
-    readyCount.value = data.summary?.readyCount ?? 0;
-    inactiveCount.value = data.summary?.inactiveCount ?? 0;
 };
 const toggleSort = (column) => {
     if (sortBy.value === column) {
@@ -57,37 +52,56 @@ const sortLabel = (column) => {
     return sortDir.value === 'asc' ? ' ▲' : ' ▼';
 };
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString() : '—');
+const normalizeStatus = (value) => {
+    const normalized = (value ?? '').trim();
+    return normalized.length > 0 ? normalized : '—';
+};
+const computedRows = computed(() => items.value.map((row) => {
+    const computed = computePromotion(row);
+    return {
+        row,
+        computed
+    };
+}));
+const visibleRows = computed(() => {
+    const search = query.value.trim().toLowerCase();
+    return computedRows.value.filter(({ row, computed }) => {
+        const matchesSearch = !search ||
+            (row.memberName ?? '').toLowerCase().includes(search) ||
+            row.capid.toLowerCase().includes(search) ||
+            (row.rank ?? '').toLowerCase().includes(search) ||
+            (row.achievementName ?? '').toLowerCase().includes(search);
+        const matchesReady = ready.value === 'all' || String(computed.readyComputed) === ready.value;
+        const matchesInactive = inactive.value === 'all' || String(row.inactive) === inactive.value;
+        return matchesSearch && matchesReady && matchesInactive;
+    });
+});
+const readyCount = computed(() => visibleRows.value.filter(({ computed }) => computed.readyComputed).length);
+const inactiveCount = computed(() => visibleRows.value.filter(({ row }) => row.inactive).length);
+const pendingCount = computed(() => Math.max(0, visibleRows.value.length - readyCount.value - inactiveCount.value));
 const rowStatusText = (row) => {
     if (row.inactive)
         return 'Inactive';
-    if (row.ready)
+    if (computePromotion(row).readyComputed)
         return 'Ready';
     return 'Pending';
 };
 const rowStatusTone = (row) => {
     if (row.inactive)
         return 'warn';
-    if (row.ready)
+    if (computePromotion(row).readyComputed)
         return 'success';
     return 'neutral';
 };
 const readyDisplay = (row) => {
-    const raw = row.readyStatus?.trim();
-    if (raw && raw.length > 0) {
-        return raw;
-    }
-    return row.ready ? 'Yes' : 'No';
+    return computePromotion(row).readyComputed ? 'Yes' : 'No';
 };
 const readyTone = (row) => {
-    const value = readyDisplay(row).toLowerCase();
-    if (value === 'yes')
-        return 'success';
-    if (value === 'no')
+    if (row.inactive)
         return 'neutral';
-    return 'success';
+    return computePromotion(row).readyComputed ? 'success' : 'warn';
 };
-const pendingCount = computed(() => Math.max(0, total.value - readyCount.value - inactiveCount.value));
-watch([selectedTenantSlug, query, ready, inactive], () => {
+watch([selectedTenantSlug], () => {
     page.value = 1;
     loadCadetPromotions();
 });
@@ -255,9 +269,9 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 /** @type {__VLS_StyleScopedClasses['grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['gap-3']} */ ;
 /** @type {__VLS_StyleScopedClasses['md:hidden']} */ ;
-for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
+for (const [entry] of __VLS_vFor((__VLS_ctx.visibleRows))) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        key: (row.id),
+        key: (entry.row.id),
         ...{ class: "card" },
     });
     /** @type {__VLS_StyleScopedClasses['card']} */ ;
@@ -274,27 +288,27 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     });
     /** @type {__VLS_StyleScopedClasses['text-base']} */ ;
     /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
-    (row.memberName ?? 'Unknown cadet');
+    (entry.row.memberName ?? 'Unknown cadet');
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
         ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
     });
     /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
     /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
-    (row.rank ?? '—');
-    (row.capid);
+    (entry.row.rank ?? '—');
+    (entry.row.capid);
     const __VLS_28 = UiBadge || UiBadge;
     // @ts-ignore
     const __VLS_29 = __VLS_asFunctionalComponent1(__VLS_28, new __VLS_28({
-        tone: (__VLS_ctx.rowStatusTone(row)),
+        tone: (__VLS_ctx.rowStatusTone(entry.row)),
     }));
     const __VLS_30 = __VLS_29({
-        tone: (__VLS_ctx.rowStatusTone(row)),
+        tone: (__VLS_ctx.rowStatusTone(entry.row)),
     }, ...__VLS_functionalComponentArgsRest(__VLS_29));
     const { default: __VLS_33 } = __VLS_31.slots;
-    (__VLS_ctx.rowStatusText(row));
+    (__VLS_ctx.rowStatusText(entry.row));
     // @ts-ignore
-    [readyCount, pendingCount, inactiveCount, items, rowStatusTone, rowStatusText,];
+    [readyCount, pendingCount, inactiveCount, visibleRows, rowStatusTone, rowStatusText,];
     var __VLS_31;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "mt-3 grid grid-cols-2 gap-2 text-sm" },
@@ -312,7 +326,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({});
-    (row.achievementName ?? '—');
+    (entry.row.achievementName ?? '—');
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
         ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
@@ -321,7 +335,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({});
-    (__VLS_ctx.formatDate(row.datePromotionEligible));
+    (__VLS_ctx.formatDate(entry.row.datePromotionEligible));
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
         ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
@@ -330,7 +344,7 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({});
-    (__VLS_ctx.formatDate(row.lastPtDate));
+    (__VLS_ctx.formatDate(entry.row.lastPtDate));
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
         ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
@@ -338,19 +352,35 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
     /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
-    __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({});
-    (row.comments ?? '—');
+    __VLS_asFunctionalElement1(__VLS_intrinsics.ul, __VLS_intrinsics.ul)({
+        ...{ class: "list-disc pl-4 text-xs" },
+    });
+    /** @type {__VLS_StyleScopedClasses['list-disc']} */ ;
+    /** @type {__VLS_StyleScopedClasses['pl-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+    if (entry.computed.missingDetails.length === 0) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({});
+    }
+    for (const [need] of __VLS_vFor((entry.computed.missingDetails))) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({
+            key: (need),
+        });
+        (need);
+        // @ts-ignore
+        [formatDate, formatDate,];
+    }
     // @ts-ignore
-    [formatDate, formatDate,];
+    [];
 }
 const __VLS_34 = UiTable || UiTable;
 // @ts-ignore
 const __VLS_35 = __VLS_asFunctionalComponent1(__VLS_34, new __VLS_34({
-    ...{ class: "hidden md:block" },
+    ...{ class: "table-shell hidden md:block" },
 }));
 const __VLS_36 = __VLS_35({
-    ...{ class: "hidden md:block" },
+    ...{ class: "table-shell hidden md:block" },
 }, ...__VLS_functionalComponentArgsRest(__VLS_35));
+/** @type {__VLS_StyleScopedClasses['table-shell']} */ ;
 /** @type {__VLS_StyleScopedClasses['hidden']} */ ;
 /** @type {__VLS_StyleScopedClasses['md:block']} */ ;
 const { default: __VLS_39 } = __VLS_37.slots;
@@ -387,21 +417,6 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
 /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
     ...{ onClick: (...[$event]) => {
-            __VLS_ctx.toggleSort('rank');
-            // @ts-ignore
-            [toggleSort, sortLabel,];
-        } },
-    ...{ class: "hover:underline" },
-});
-/** @type {__VLS_StyleScopedClasses['hover:underline']} */ ;
-(__VLS_ctx.sortLabel('rank'));
-__VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
-    ...{ class: "px-4 py-3" },
-});
-/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
-/** @type {__VLS_StyleScopedClasses['py-3']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
-    ...{ onClick: (...[$event]) => {
             __VLS_ctx.toggleSort('capid');
             // @ts-ignore
             [toggleSort, sortLabel,];
@@ -410,6 +425,21 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
 });
 /** @type {__VLS_StyleScopedClasses['hover:underline']} */ ;
 (__VLS_ctx.sortLabel('capid'));
+__VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
+    ...{ class: "px-4 py-3" },
+});
+/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+    ...{ onClick: (...[$event]) => {
+            __VLS_ctx.toggleSort('rank');
+            // @ts-ignore
+            [toggleSort, sortLabel,];
+        } },
+    ...{ class: "hover:underline" },
+});
+/** @type {__VLS_StyleScopedClasses['hover:underline']} */ ;
+(__VLS_ctx.sortLabel('rank'));
 __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
     ...{ class: "px-4 py-3" },
 });
@@ -475,6 +505,41 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
 });
 /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
+    ...{ class: "px-4 py-3" },
+});
+/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
+    ...{ class: "px-4 py-3" },
+});
+/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
+    ...{ class: "px-4 py-3" },
+});
+/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
+    ...{ class: "px-4 py-3" },
+});
+/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
+    ...{ class: "px-4 py-3" },
+});
+/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
+    ...{ class: "px-4 py-3" },
+});
+/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
+    ...{ class: "px-4 py-3" },
+});
+/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-3']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
     ...{ onClick: (...[$event]) => {
             __VLS_ctx.toggleSort('inactive');
@@ -485,15 +550,10 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
 });
 /** @type {__VLS_StyleScopedClasses['hover:underline']} */ ;
 (__VLS_ctx.sortLabel('inactive'));
-__VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
-    ...{ class: "px-4 py-3" },
-});
-/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
-/** @type {__VLS_StyleScopedClasses['py-3']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.tbody, __VLS_intrinsics.tbody)({});
-for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
+for (const [entry] of __VLS_vFor((__VLS_ctx.visibleRows))) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.tr, __VLS_intrinsics.tr)({
-        key: (row.id),
+        key: (entry.row.id),
         ...{ class: "border-t border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40" },
     });
     /** @type {__VLS_StyleScopedClasses['border-t']} */ ;
@@ -506,38 +566,38 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     });
     /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
     /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
-    (row.memberName ?? 'Unknown cadet');
-    __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
-        ...{ class: "px-4 py-3" },
-    });
-    /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
-    /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
-    (row.rank ?? '—');
+    (entry.row.memberName ?? 'Unknown cadet');
     __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
         ...{ class: "px-4 py-3 font-medium" },
     });
     /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
     /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
     /** @type {__VLS_StyleScopedClasses['font-medium']} */ ;
-    (row.capid);
+    (entry.row.capid);
     __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
         ...{ class: "px-4 py-3" },
     });
     /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
     /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
-    (row.achievementName ?? '—');
+    (entry.row.rank ?? '—');
     __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
         ...{ class: "px-4 py-3" },
     });
     /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
     /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
-    (__VLS_ctx.formatDate(row.datePromotionEligible));
+    (entry.row.achievementName ?? '—');
     __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
         ...{ class: "px-4 py-3" },
     });
     /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
     /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
-    (__VLS_ctx.formatDate(row.lastPtDate));
+    (__VLS_ctx.formatDate(entry.row.datePromotionEligible));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+        ...{ class: "px-4 py-3" },
+    });
+    /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+    (__VLS_ctx.formatDate(entry.row.lastPtDate));
     __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
         ...{ class: "px-4 py-3" },
     });
@@ -546,34 +606,16 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     const __VLS_40 = UiBadge || UiBadge;
     // @ts-ignore
     const __VLS_41 = __VLS_asFunctionalComponent1(__VLS_40, new __VLS_40({
-        tone: (__VLS_ctx.readyTone(row)),
+        tone: (__VLS_ctx.readyTone(entry.row)),
     }));
     const __VLS_42 = __VLS_41({
-        tone: (__VLS_ctx.readyTone(row)),
+        tone: (__VLS_ctx.readyTone(entry.row)),
     }, ...__VLS_functionalComponentArgsRest(__VLS_41));
     const { default: __VLS_45 } = __VLS_43.slots;
-    (__VLS_ctx.readyDisplay(row));
+    (__VLS_ctx.readyDisplay(entry.row));
     // @ts-ignore
-    [items, formatDate, formatDate, sortLabel, readyTone, readyDisplay,];
+    [visibleRows, formatDate, formatDate, sortLabel, readyTone, readyDisplay,];
     var __VLS_43;
-    __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
-        ...{ class: "px-4 py-3" },
-    });
-    /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
-    /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
-    const __VLS_46 = UiBadge || UiBadge;
-    // @ts-ignore
-    const __VLS_47 = __VLS_asFunctionalComponent1(__VLS_46, new __VLS_46({
-        tone: (row.inactive ? 'warn' : 'neutral'),
-    }));
-    const __VLS_48 = __VLS_47({
-        tone: (row.inactive ? 'warn' : 'neutral'),
-    }, ...__VLS_functionalComponentArgsRest(__VLS_47));
-    const { default: __VLS_51 } = __VLS_49.slots;
-    (row.inactive ? 'Yes' : 'No');
-    // @ts-ignore
-    [];
-    var __VLS_49;
     __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
         ...{ class: "px-4 py-3 text-xs text-slate-600 dark:text-slate-300" },
     });
@@ -582,12 +624,148 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
     /** @type {__VLS_StyleScopedClasses['text-slate-600']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:text-slate-300']} */ ;
-    (row.ptStatus ?? (row.lastPtDate ? '✓' : '—'));
-    (row.leadStatus ?? (row.leadershipTestCompleted && row.leadershipModuleCompleted ? '✓' : '—'));
-    (row.aeStatus ?? ((row.aeTestCompleted ?? true) && (row.aeModuleCompleted ?? true) ? '✓' : '—'));
-    (row.drillStatus ?? '—');
-    (row.cdStatus ?? (row.chiefSpeechEssayCompleted ? '✓' : '—'));
-    (row.sdaStatus ?? (row.sdaCompleted ? '✓' : '—'));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.ul, __VLS_intrinsics.ul)({
+        ...{ class: "list-disc pl-4" },
+    });
+    /** @type {__VLS_StyleScopedClasses['list-disc']} */ ;
+    /** @type {__VLS_StyleScopedClasses['pl-4']} */ ;
+    if (entry.computed.missingDetails.length === 0) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({});
+    }
+    for (const [need] of __VLS_vFor((entry.computed.missingDetails))) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({
+            key: (`${entry.row.id}-${need}`),
+        });
+        (need);
+        // @ts-ignore
+        [];
+    }
+    __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+        ...{ class: "px-4 py-3" },
+    });
+    /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+    const __VLS_46 = UiBadge || UiBadge;
+    // @ts-ignore
+    const __VLS_47 = __VLS_asFunctionalComponent1(__VLS_46, new __VLS_46({
+        tone: (__VLS_ctx.normalizeStatus(entry.row.ptStatus) === '—' ? 'warn' : 'neutral'),
+    }));
+    const __VLS_48 = __VLS_47({
+        tone: (__VLS_ctx.normalizeStatus(entry.row.ptStatus) === '—' ? 'warn' : 'neutral'),
+    }, ...__VLS_functionalComponentArgsRest(__VLS_47));
+    const { default: __VLS_51 } = __VLS_49.slots;
+    (__VLS_ctx.normalizeStatus(entry.row.ptStatus));
+    // @ts-ignore
+    [normalizeStatus, normalizeStatus,];
+    var __VLS_49;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+        ...{ class: "px-4 py-3" },
+    });
+    /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+    const __VLS_52 = UiBadge || UiBadge;
+    // @ts-ignore
+    const __VLS_53 = __VLS_asFunctionalComponent1(__VLS_52, new __VLS_52({
+        tone: (__VLS_ctx.normalizeStatus(entry.row.leadStatus) === '—' ? 'warn' : 'neutral'),
+    }));
+    const __VLS_54 = __VLS_53({
+        tone: (__VLS_ctx.normalizeStatus(entry.row.leadStatus) === '—' ? 'warn' : 'neutral'),
+    }, ...__VLS_functionalComponentArgsRest(__VLS_53));
+    const { default: __VLS_57 } = __VLS_55.slots;
+    (__VLS_ctx.normalizeStatus(entry.row.leadStatus));
+    // @ts-ignore
+    [normalizeStatus, normalizeStatus,];
+    var __VLS_55;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+        ...{ class: "px-4 py-3" },
+    });
+    /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+    const __VLS_58 = UiBadge || UiBadge;
+    // @ts-ignore
+    const __VLS_59 = __VLS_asFunctionalComponent1(__VLS_58, new __VLS_58({
+        tone: (__VLS_ctx.normalizeStatus(entry.row.aeStatus) === '—' ? 'warn' : 'neutral'),
+    }));
+    const __VLS_60 = __VLS_59({
+        tone: (__VLS_ctx.normalizeStatus(entry.row.aeStatus) === '—' ? 'warn' : 'neutral'),
+    }, ...__VLS_functionalComponentArgsRest(__VLS_59));
+    const { default: __VLS_63 } = __VLS_61.slots;
+    (__VLS_ctx.normalizeStatus(entry.row.aeStatus));
+    // @ts-ignore
+    [normalizeStatus, normalizeStatus,];
+    var __VLS_61;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+        ...{ class: "px-4 py-3" },
+    });
+    /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+    const __VLS_64 = UiBadge || UiBadge;
+    // @ts-ignore
+    const __VLS_65 = __VLS_asFunctionalComponent1(__VLS_64, new __VLS_64({
+        tone: (__VLS_ctx.normalizeStatus(entry.row.drillStatus) === '—' ? 'warn' : 'neutral'),
+    }));
+    const __VLS_66 = __VLS_65({
+        tone: (__VLS_ctx.normalizeStatus(entry.row.drillStatus) === '—' ? 'warn' : 'neutral'),
+    }, ...__VLS_functionalComponentArgsRest(__VLS_65));
+    const { default: __VLS_69 } = __VLS_67.slots;
+    (__VLS_ctx.normalizeStatus(entry.row.drillStatus));
+    // @ts-ignore
+    [normalizeStatus, normalizeStatus,];
+    var __VLS_67;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+        ...{ class: "px-4 py-3" },
+    });
+    /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+    const __VLS_70 = UiBadge || UiBadge;
+    // @ts-ignore
+    const __VLS_71 = __VLS_asFunctionalComponent1(__VLS_70, new __VLS_70({
+        tone: (__VLS_ctx.normalizeStatus(entry.row.cdStatus) === 'WC' ? 'warn' : __VLS_ctx.normalizeStatus(entry.row.cdStatus) === '—' ? 'warn' : 'neutral'),
+    }));
+    const __VLS_72 = __VLS_71({
+        tone: (__VLS_ctx.normalizeStatus(entry.row.cdStatus) === 'WC' ? 'warn' : __VLS_ctx.normalizeStatus(entry.row.cdStatus) === '—' ? 'warn' : 'neutral'),
+    }, ...__VLS_functionalComponentArgsRest(__VLS_71));
+    const { default: __VLS_75 } = __VLS_73.slots;
+    (__VLS_ctx.normalizeStatus(entry.row.cdStatus));
+    // @ts-ignore
+    [normalizeStatus, normalizeStatus, normalizeStatus,];
+    var __VLS_73;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+        ...{ class: "px-4 py-3" },
+    });
+    /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+    const __VLS_76 = UiBadge || UiBadge;
+    // @ts-ignore
+    const __VLS_77 = __VLS_asFunctionalComponent1(__VLS_76, new __VLS_76({
+        tone: (__VLS_ctx.normalizeStatus(entry.row.sdaStatus) === '—' ? 'warn' : 'neutral'),
+    }));
+    const __VLS_78 = __VLS_77({
+        tone: (__VLS_ctx.normalizeStatus(entry.row.sdaStatus) === '—' ? 'warn' : 'neutral'),
+    }, ...__VLS_functionalComponentArgsRest(__VLS_77));
+    const { default: __VLS_81 } = __VLS_79.slots;
+    (__VLS_ctx.normalizeStatus(entry.row.sdaStatus));
+    // @ts-ignore
+    [normalizeStatus, normalizeStatus,];
+    var __VLS_79;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+        ...{ class: "px-4 py-3" },
+    });
+    /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+    const __VLS_82 = UiBadge || UiBadge;
+    // @ts-ignore
+    const __VLS_83 = __VLS_asFunctionalComponent1(__VLS_82, new __VLS_82({
+        tone: (entry.row.inactive ? 'warn' : 'neutral'),
+    }));
+    const __VLS_84 = __VLS_83({
+        tone: (entry.row.inactive ? 'warn' : 'neutral'),
+    }, ...__VLS_functionalComponentArgsRest(__VLS_83));
+    const { default: __VLS_87 } = __VLS_85.slots;
+    (entry.row.inactive ? 'Yes' : 'No');
+    // @ts-ignore
+    [];
+    var __VLS_85;
     // @ts-ignore
     [];
 }
@@ -609,6 +787,7 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
 });
 /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
 /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+(__VLS_ctx.visibleRows.length);
 (__VLS_ctx.items.length);
 (__VLS_ctx.total);
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
@@ -617,69 +796,69 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 /** @type {__VLS_StyleScopedClasses['flex']} */ ;
 /** @type {__VLS_StyleScopedClasses['items-center']} */ ;
 /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
-const __VLS_52 = UiSelect;
+const __VLS_88 = UiSelect;
 // @ts-ignore
-const __VLS_53 = __VLS_asFunctionalComponent1(__VLS_52, new __VLS_52({
+const __VLS_89 = __VLS_asFunctionalComponent1(__VLS_88, new __VLS_88({
     modelValue: (__VLS_ctx.pageSize),
     options: ([{ label: '50 / page', value: '50' }, { label: '100 / page', value: '100' }, { label: '200 / page', value: '200' }]),
 }));
-const __VLS_54 = __VLS_53({
+const __VLS_90 = __VLS_89({
     modelValue: (__VLS_ctx.pageSize),
     options: ([{ label: '50 / page', value: '50' }, { label: '100 / page', value: '100' }, { label: '200 / page', value: '200' }]),
-}, ...__VLS_functionalComponentArgsRest(__VLS_53));
-const __VLS_57 = UiButton || UiButton;
+}, ...__VLS_functionalComponentArgsRest(__VLS_89));
+const __VLS_93 = UiButton || UiButton;
 // @ts-ignore
-const __VLS_58 = __VLS_asFunctionalComponent1(__VLS_57, new __VLS_57({
+const __VLS_94 = __VLS_asFunctionalComponent1(__VLS_93, new __VLS_93({
     ...{ 'onClick': {} },
     variant: "secondary",
     disabled: (__VLS_ctx.page <= 1),
 }));
-const __VLS_59 = __VLS_58({
+const __VLS_95 = __VLS_94({
     ...{ 'onClick': {} },
     variant: "secondary",
     disabled: (__VLS_ctx.page <= 1),
-}, ...__VLS_functionalComponentArgsRest(__VLS_58));
-let __VLS_62;
-const __VLS_63 = ({ click: {} },
+}, ...__VLS_functionalComponentArgsRest(__VLS_94));
+let __VLS_98;
+const __VLS_99 = ({ click: {} },
     { onClick: (...[$event]) => {
             __VLS_ctx.page = Math.max(1, __VLS_ctx.page - 1);
             // @ts-ignore
-            [items, total, pageSize, page, page, page,];
+            [visibleRows, items, total, pageSize, page, page, page,];
         } });
-const { default: __VLS_64 } = __VLS_60.slots;
+const { default: __VLS_100 } = __VLS_96.slots;
 // @ts-ignore
 [];
-var __VLS_60;
-var __VLS_61;
+var __VLS_96;
+var __VLS_97;
 __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
     ...{ class: "px-2" },
 });
 /** @type {__VLS_StyleScopedClasses['px-2']} */ ;
 (__VLS_ctx.page);
-const __VLS_65 = UiButton || UiButton;
+const __VLS_101 = UiButton || UiButton;
 // @ts-ignore
-const __VLS_66 = __VLS_asFunctionalComponent1(__VLS_65, new __VLS_65({
+const __VLS_102 = __VLS_asFunctionalComponent1(__VLS_101, new __VLS_101({
     ...{ 'onClick': {} },
     variant: "secondary",
     disabled: (__VLS_ctx.page * Number(__VLS_ctx.pageSize) >= __VLS_ctx.total),
 }));
-const __VLS_67 = __VLS_66({
+const __VLS_103 = __VLS_102({
     ...{ 'onClick': {} },
     variant: "secondary",
     disabled: (__VLS_ctx.page * Number(__VLS_ctx.pageSize) >= __VLS_ctx.total),
-}, ...__VLS_functionalComponentArgsRest(__VLS_66));
-let __VLS_70;
-const __VLS_71 = ({ click: {} },
+}, ...__VLS_functionalComponentArgsRest(__VLS_102));
+let __VLS_106;
+const __VLS_107 = ({ click: {} },
     { onClick: (...[$event]) => {
             __VLS_ctx.page = __VLS_ctx.page + 1;
             // @ts-ignore
             [total, pageSize, page, page, page, page,];
         } });
-const { default: __VLS_72 } = __VLS_68.slots;
+const { default: __VLS_108 } = __VLS_104.slots;
 // @ts-ignore
 [];
-var __VLS_68;
-var __VLS_69;
+var __VLS_104;
+var __VLS_105;
 // @ts-ignore
 [];
 const __VLS_export = (await import('vue')).defineComponent({});
