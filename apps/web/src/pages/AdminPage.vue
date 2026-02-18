@@ -114,7 +114,7 @@ onMounted(async () => {
       <form class="mb-4 grid gap-2" @submit.prevent="createTenant">
         <UiInput v-model="newTenant.name" placeholder="Tenant name" />
         <UiInput v-model="newTenant.slug" placeholder="tenant-slug" />
-        <div class="grid grid-cols-2 gap-2">
+        <div class="grid gap-2 sm:grid-cols-2">
           <UiInput v-model="newTenant.orgid" placeholder="ORGID" />
           <UiSelect v-model="newTenant.unitOnly" :options="[{ label: 'Unit only', value: '1' }, { label: 'Wing level', value: '0' }]" />
         </div>
@@ -125,8 +125,8 @@ onMounted(async () => {
       </form>
       <ul class="space-y-2 text-sm">
         <li v-for="tenant in tenants" :key="tenant.id" class="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800">
-          <div class="flex items-center justify-between gap-2">
-            <div>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="min-w-0 break-words">
               {{ tenant.name }} <span class="text-slate-500">({{ tenant.slug }})</span>
             </div>
             <UiButton variant="danger" @click="removeTenant(tenant.id)">Delete</UiButton>
@@ -145,8 +145,8 @@ onMounted(async () => {
       </form>
       <ul class="space-y-2 text-sm">
         <li v-for="user in users" :key="user.id" class="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800">
-          <div class="flex items-center justify-between gap-2">
-            <div>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="min-w-0 break-words">
               {{ user.email }} <span class="text-slate-500">({{ user.systemRole }})</span>
             </div>
             <UiButton variant="danger" @click="removeUser(user.id)">Delete</UiButton>
@@ -168,8 +168,8 @@ onMounted(async () => {
         <div v-for="user in users" :key="user.id" class="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
           <p class="mb-2 font-medium">{{ user.email }}</p>
           <ul class="space-y-1">
-            <li v-for="link in user.tenants" :key="`${link.tenant.id}-${link.role}`" class="flex items-center justify-between gap-2 text-slate-600 dark:text-slate-300">
-              <span>{{ link.tenant.name }} - {{ link.role }}</span>
+            <li v-for="link in user.tenants" :key="`${link.tenant.id}-${link.role}`" class="flex flex-wrap items-center justify-between gap-2 text-slate-600 dark:text-slate-300">
+              <span class="min-w-0 break-words">{{ link.tenant.name }} - {{ link.role }}</span>
               <UiButton variant="ghost" @click="removeAssignment(link.tenant.id, user.id)">Remove</UiButton>
             </li>
           </ul>

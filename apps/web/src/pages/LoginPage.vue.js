@@ -31,10 +31,10 @@ let __VLS_components;
 let __VLS_intrinsics;
 let __VLS_directives;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "grid min-h-screen place-items-center bg-slate-100 p-4 dark:bg-slate-950" },
+    ...{ class: "grid min-h-dvh place-items-center bg-slate-100 p-4 dark:bg-slate-950" },
 });
 /** @type {__VLS_StyleScopedClasses['grid']} */ ;
-/** @type {__VLS_StyleScopedClasses['min-h-screen']} */ ;
+/** @type {__VLS_StyleScopedClasses['min-h-dvh']} */ ;
 /** @type {__VLS_StyleScopedClasses['place-items-center']} */ ;
 /** @type {__VLS_StyleScopedClasses['bg-slate-100']} */ ;
 /** @type {__VLS_StyleScopedClasses['p-4']} */ ;

@@ -164,11 +164,11 @@ const __VLS_21 = __VLS_20({
     placeholder: "tenant-slug",
 }, ...__VLS_functionalComponentArgsRest(__VLS_20));
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "grid grid-cols-2 gap-2" },
+    ...{ class: "grid gap-2 sm:grid-cols-2" },
 });
 /** @type {__VLS_StyleScopedClasses['grid']} */ ;
-/** @type {__VLS_StyleScopedClasses['grid-cols-2']} */ ;
 /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
+/** @type {__VLS_StyleScopedClasses['sm:grid-cols-2']} */ ;
 const __VLS_24 = UiInput;
 // @ts-ignore
 const __VLS_25 = __VLS_asFunctionalComponent1(__VLS_24, new __VLS_24({
@@ -248,13 +248,18 @@ for (const [tenant] of __VLS_vFor((__VLS_ctx.tenants))) {
     /** @type {__VLS_StyleScopedClasses['py-2']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:border-slate-800']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "flex items-center justify-between gap-2" },
+        ...{ class: "flex flex-wrap items-center justify-between gap-2" },
     });
     /** @type {__VLS_StyleScopedClasses['flex']} */ ;
+    /** @type {__VLS_StyleScopedClasses['flex-wrap']} */ ;
     /** @type {__VLS_StyleScopedClasses['items-center']} */ ;
     /** @type {__VLS_StyleScopedClasses['justify-between']} */ ;
     /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "min-w-0 break-words" },
+    });
+    /** @type {__VLS_StyleScopedClasses['min-w-0']} */ ;
+    /** @type {__VLS_StyleScopedClasses['break-words']} */ ;
     (tenant.name);
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
         ...{ class: "text-slate-500" },
@@ -364,13 +369,18 @@ for (const [user] of __VLS_vFor((__VLS_ctx.users))) {
     /** @type {__VLS_StyleScopedClasses['py-2']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:border-slate-800']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "flex items-center justify-between gap-2" },
+        ...{ class: "flex flex-wrap items-center justify-between gap-2" },
     });
     /** @type {__VLS_StyleScopedClasses['flex']} */ ;
+    /** @type {__VLS_StyleScopedClasses['flex-wrap']} */ ;
     /** @type {__VLS_StyleScopedClasses['items-center']} */ ;
     /** @type {__VLS_StyleScopedClasses['justify-between']} */ ;
     /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
-    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "min-w-0 break-words" },
+    });
+    /** @type {__VLS_StyleScopedClasses['min-w-0']} */ ;
+    /** @type {__VLS_StyleScopedClasses['break-words']} */ ;
     (user.email);
     __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
         ...{ class: "text-slate-500" },
@@ -489,15 +499,20 @@ for (const [user] of __VLS_vFor((__VLS_ctx.users))) {
     for (const [link] of __VLS_vFor((user.tenants))) {
         __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({
             key: (`${link.tenant.id}-${link.role}`),
-            ...{ class: "flex items-center justify-between gap-2 text-slate-600 dark:text-slate-300" },
+            ...{ class: "flex flex-wrap items-center justify-between gap-2 text-slate-600 dark:text-slate-300" },
         });
         /** @type {__VLS_StyleScopedClasses['flex']} */ ;
+        /** @type {__VLS_StyleScopedClasses['flex-wrap']} */ ;
         /** @type {__VLS_StyleScopedClasses['items-center']} */ ;
         /** @type {__VLS_StyleScopedClasses['justify-between']} */ ;
         /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
         /** @type {__VLS_StyleScopedClasses['text-slate-600']} */ ;
         /** @type {__VLS_StyleScopedClasses['dark:text-slate-300']} */ ;
-        __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({});
+        __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+            ...{ class: "min-w-0 break-words" },
+        });
+        /** @type {__VLS_StyleScopedClasses['min-w-0']} */ ;
+        /** @type {__VLS_StyleScopedClasses['break-words']} */ ;
         (link.tenant.name);
         (link.role);
         const __VLS_113 = UiButton || UiButton;

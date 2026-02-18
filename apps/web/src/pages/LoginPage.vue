@@ -28,7 +28,7 @@ const login = async () => {
 </script>
 
 <template>
-  <div class="grid min-h-screen place-items-center bg-slate-100 p-4 dark:bg-slate-950">
+  <div class="grid min-h-dvh place-items-center bg-slate-100 p-4 dark:bg-slate-950">
     <form class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900" @submit.prevent="login">
       <div class="mb-5 text-center">
         <p class="text-xs font-semibold uppercase tracking-wide text-indigo-500">SquadronForge</p>
