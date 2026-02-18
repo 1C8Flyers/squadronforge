@@ -161,7 +161,31 @@ tenantRouter.get('/:slug/duty-positions', async (req, res) => {
     scoped.dutyPosition.count({ where })
   ]);
 
-  res.json({ items, total, page: q.page, pageSize: q.pageSize });
+  const capids = [...new Set(items.map((item) => item.capid).filter(Boolean))];
+  const membersByCapid = new Map<string, { firstName: string; lastName: string }>();
+
+  if (capids.length > 0) {
+    const members = await scoped.member.findMany({
+      where: { capid: { in: capids } },
+      select: { capid: true, firstName: true, lastName: true }
+    });
+
+    for (const member of members) {
+      membersByCapid.set(member.capid, { firstName: member.firstName, lastName: member.lastName });
+    }
+  }
+
+  const enrichedItems = items.map((item) => {
+    const member = membersByCapid.get(item.capid);
+    return {
+      ...item,
+      memberFirstName: member?.firstName ?? null,
+      memberLastName: member?.lastName ?? null,
+      memberName: member ? `${member.lastName}, ${member.firstName}` : null
+    };
+  });
+
+  res.json({ items: enrichedItems, total, page: q.page, pageSize: q.pageSize });
 });
 
 tenantRouter.get('/:slug/settings', async (req, res) => {

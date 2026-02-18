@@ -92,6 +92,7 @@ describe('tenant data integration', () => {
 
     prismaMock.dutyPosition.findMany.mockResolvedValue([{ id: 'd1', capid: '123456', dutyName: 'Commander' }]);
     prismaMock.dutyPosition.count.mockResolvedValue(55);
+    prismaMock.member.findMany.mockResolvedValue([{ capid: '123456', firstName: 'Jane', lastName: 'Doe' }]);
 
     const app = createApp();
     const res = await request(app)
@@ -102,6 +103,7 @@ describe('tenant data integration', () => {
     expect(res.body.page).toBe(2);
     expect(res.body.pageSize).toBe(25);
     expect(res.body.total).toBe(55);
+    expect(res.body.items[0].memberName).toBe('Doe, Jane');
 
     const findManyArgs = prismaMock.dutyPosition.findMany.mock.calls[0]?.[0];
     expect(findManyArgs.skip).toBe(25);
@@ -109,5 +111,8 @@ describe('tenant data integration', () => {
     expect(findManyArgs.where.tenantId).toBe('t1');
     expect(findManyArgs.where.capid).toBe('123456');
     expect(findManyArgs.where.dutyCode).toBe('CC');
+
+    const memberFindManyArgs = prismaMock.member.findMany.mock.calls[0]?.[0];
+    expect(memberFindManyArgs.where.capid.in).toEqual(['123456']);
   });
 });
