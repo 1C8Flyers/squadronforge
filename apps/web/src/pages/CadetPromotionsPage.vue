@@ -178,6 +178,47 @@ const needsList = (row: CadetPromotion): string[] => {
   return needs;
 };
 
+const completedList = (row: CadetPromotion): string[] => {
+  const completed: string[] = [];
+
+  if (statusDone(row.ptStatus)) {
+    completed.push('PT complete');
+  }
+
+  const lead = normalizeStatus(row.leadStatus).toUpperCase();
+  if (lead === '★') {
+    completed.push('Leadership complete');
+  } else if (lead === 'X') {
+    if (row.leadershipTestCompleted) completed.push('Leadership test complete');
+    if (row.leadershipModuleCompleted) completed.push('Leadership interactive module complete');
+  }
+
+  const ae = normalizeStatus(row.aeStatus).toUpperCase();
+  if (ae === '★') {
+    completed.push('Aerospace complete');
+  } else if (ae === 'X') {
+    if (row.aeTestCompleted === true) completed.push('Aerospace AE test complete');
+    if (row.aeModuleCompleted === true) completed.push('Aerospace interactive module complete');
+  }
+
+  if (statusDone(row.drillStatus)) {
+    completed.push('Drill complete');
+  }
+
+  const cd = normalizeStatus(row.cdStatus).toUpperCase();
+  if (cd && cd !== 'WC') {
+    completed.push('Character Development complete');
+  }
+
+  if (!isSdaRequired(row)) {
+    completed.push('SDA not required');
+  } else if (statusDone(row.sdaStatus)) {
+    completed.push('SDA complete');
+  }
+
+  return completed;
+};
+
 const toggleNeeds = (id: string) => {
   expandedNeedId.value = expandedNeedId.value === id ? null : id;
 };
@@ -263,6 +304,11 @@ onMounted(loadCadetPromotions);
             <li v-if="needsList(row).length === 0">No blockers found</li>
             <li v-for="need in needsList(row)" :key="`${row.id}-${need}`">{{ need }}</li>
           </ul>
+          <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Already complete</p>
+          <ul class="mt-1 list-disc pl-5 text-xs text-emerald-700 dark:text-emerald-300">
+            <li v-if="completedList(row).length === 0">No completed items yet</li>
+            <li v-for="done in completedList(row)" :key="`${row.id}-done-${done}`">{{ done }}</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -311,6 +357,11 @@ onMounted(loadCadetPromotions);
               <ul class="mt-2 list-disc pl-5 text-sm">
                 <li v-if="needsList(row).length === 0">No blockers found</li>
                 <li v-for="need in needsList(row)" :key="`${row.id}-${need}`">{{ need }}</li>
+              </ul>
+              <p class="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Completed</p>
+              <ul class="mt-2 list-disc pl-5 text-sm text-emerald-700 dark:text-emerald-300">
+                <li v-if="completedList(row).length === 0">No completed items yet</li>
+                <li v-for="done in completedList(row)" :key="`${row.id}-done-${done}`">{{ done }}</li>
               </ul>
             </div>
           </td>

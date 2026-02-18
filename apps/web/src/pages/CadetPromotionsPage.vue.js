@@ -145,6 +145,46 @@ const needsList = (row) => {
     }
     return needs;
 };
+const completedList = (row) => {
+    const completed = [];
+    if (statusDone(row.ptStatus)) {
+        completed.push('PT complete');
+    }
+    const lead = normalizeStatus(row.leadStatus).toUpperCase();
+    if (lead === '★') {
+        completed.push('Leadership complete');
+    }
+    else if (lead === 'X') {
+        if (row.leadershipTestCompleted)
+            completed.push('Leadership test complete');
+        if (row.leadershipModuleCompleted)
+            completed.push('Leadership interactive module complete');
+    }
+    const ae = normalizeStatus(row.aeStatus).toUpperCase();
+    if (ae === '★') {
+        completed.push('Aerospace complete');
+    }
+    else if (ae === 'X') {
+        if (row.aeTestCompleted === true)
+            completed.push('Aerospace AE test complete');
+        if (row.aeModuleCompleted === true)
+            completed.push('Aerospace interactive module complete');
+    }
+    if (statusDone(row.drillStatus)) {
+        completed.push('Drill complete');
+    }
+    const cd = normalizeStatus(row.cdStatus).toUpperCase();
+    if (cd && cd !== 'WC') {
+        completed.push('Character Development complete');
+    }
+    if (!isSdaRequired(row)) {
+        completed.push('SDA not required');
+    }
+    else if (statusDone(row.sdaStatus)) {
+        completed.push('SDA complete');
+    }
+    return completed;
+};
 const toggleNeeds = (id) => {
     expandedNeedId.value = expandedNeedId.value === id ? null : id;
 };
@@ -429,6 +469,33 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
         (need);
         // @ts-ignore
         [formatDate, formatDate, needsList, needsList,];
+    }
+    __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+        ...{ class: "mt-2 text-xs text-slate-500 dark:text-slate-400" },
+    });
+    /** @type {__VLS_StyleScopedClasses['mt-2']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.ul, __VLS_intrinsics.ul)({
+        ...{ class: "mt-1 list-disc pl-5 text-xs text-emerald-700 dark:text-emerald-300" },
+    });
+    /** @type {__VLS_StyleScopedClasses['mt-1']} */ ;
+    /** @type {__VLS_StyleScopedClasses['list-disc']} */ ;
+    /** @type {__VLS_StyleScopedClasses['pl-5']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-emerald-700']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:text-emerald-300']} */ ;
+    if (__VLS_ctx.completedList(row).length === 0) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({});
+    }
+    for (const [done] of __VLS_vFor((__VLS_ctx.completedList(row)))) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({
+            key: (`${row.id}-done-${done}`),
+        });
+        (done);
+        // @ts-ignore
+        [completedList, completedList,];
     }
     // @ts-ignore
     [];
@@ -759,6 +826,36 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
             (need);
             // @ts-ignore
             [needsList, needsList, expandedNeedId,];
+        }
+        __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+            ...{ class: "mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300" },
+        });
+        /** @type {__VLS_StyleScopedClasses['mt-3']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+        /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+        /** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+        /** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-emerald-700']} */ ;
+        /** @type {__VLS_StyleScopedClasses['dark:text-emerald-300']} */ ;
+        __VLS_asFunctionalElement1(__VLS_intrinsics.ul, __VLS_intrinsics.ul)({
+            ...{ class: "mt-2 list-disc pl-5 text-sm text-emerald-700 dark:text-emerald-300" },
+        });
+        /** @type {__VLS_StyleScopedClasses['mt-2']} */ ;
+        /** @type {__VLS_StyleScopedClasses['list-disc']} */ ;
+        /** @type {__VLS_StyleScopedClasses['pl-5']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-emerald-700']} */ ;
+        /** @type {__VLS_StyleScopedClasses['dark:text-emerald-300']} */ ;
+        if (__VLS_ctx.completedList(row).length === 0) {
+            __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({});
+        }
+        for (const [done] of __VLS_vFor((__VLS_ctx.completedList(row)))) {
+            __VLS_asFunctionalElement1(__VLS_intrinsics.li, __VLS_intrinsics.li)({
+                key: (`${row.id}-done-${done}`),
+            });
+            (done);
+            // @ts-ignore
+            [completedList, completedList,];
         }
     }
     // @ts-ignore
