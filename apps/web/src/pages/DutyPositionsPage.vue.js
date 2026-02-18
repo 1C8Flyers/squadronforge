@@ -120,6 +120,13 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
     (row.dutyName);
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+        ...{ class: "text-sm text-slate-600 dark:text-slate-300" },
+    });
+    /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-slate-600']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:text-slate-300']} */ ;
+    (row.memberName ?? 'Unknown member');
+    __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
         ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
     });
     /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
@@ -215,6 +222,11 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
 });
 /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
 /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
+    ...{ class: "px-4 py-3" },
+});
+/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-3']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.tbody, __VLS_intrinsics.tbody)({});
 for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.tr, __VLS_intrinsics.tr)({
@@ -226,6 +238,12 @@ for (const [row] of __VLS_vFor((__VLS_ctx.items))) {
     /** @type {__VLS_StyleScopedClasses['hover:bg-slate-50']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:border-slate-800']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:hover:bg-slate-800/40']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+        ...{ class: "px-4 py-3" },
+    });
+    /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
+    (row.memberName ?? 'Unknown member');
     __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
         ...{ class: "px-4 py-3 font-medium" },
     });

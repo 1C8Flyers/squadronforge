@@ -2,31 +2,38 @@
 
 :root {
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  --sf-navy: #06265b;
-  --sf-navy-2: #0b3a86;
-  --sf-gold: #f2c100;
-  --sf-card: #f3f4f6;
-  --sf-text: #1f2937;
 }
 
 body {
-  margin: 0;
-  background: var(--sf-navy);
-  color: var(--sf-text);
+  color: rgb(30, 41, 59);
+}
+
+.dark body {
+  color: rgb(241, 245, 249);
 }
 
 .card {
   border-radius: 0.75rem;
-  border: 1px solid var(--sf-gold);
-  background: var(--sf-card);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: #ffffff;
   padding: 1.25rem;
-  box-shadow: 0 1px 2px 0 rgba(2, 6, 23, 0.12);
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.06);
+}
+
+.dark .card {
+  border-color: rgb(30, 41, 59);
+  background: rgb(15, 23, 42);
 }
 
 .table-shell {
   overflow: hidden;
   border-radius: 0.75rem;
-  border: 1px solid var(--sf-gold);
+  border: 1px solid rgba(226, 232, 240, 0.8);
   background: #ffffff;
-  box-shadow: 0 1px 2px 0 rgba(2, 6, 23, 0.12);
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.06);
+}
+
+.dark .table-shell {
+  border-color: rgb(30, 41, 59);
+  background: rgb(15, 23, 42);
 }

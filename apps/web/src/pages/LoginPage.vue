@@ -28,23 +28,23 @@ const login = async () => {
 </script>
 
 <template>
-  <div class="grid min-h-screen place-items-center bg-[#06265b] p-4">
-    <form class="w-full max-w-md rounded-[2rem] border-2 border-[#f2c100] bg-[#efefef] p-6 shadow-sm" @submit.prevent="login">
+  <div class="grid min-h-screen place-items-center bg-slate-100 p-4 dark:bg-slate-950">
+    <form class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900" @submit.prevent="login">
       <div class="mb-5 text-center">
-        <p class="text-xs font-semibold uppercase tracking-wide text-[#1d3f8d]">Civil Air Patrol • U.S. Air Force Auxiliary</p>
-        <h1 class="mt-2 text-5xl font-light text-[#1f2937]">eServices</h1>
+        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-500">SquadronForge</p>
+        <h1 class="mt-2 text-3xl font-semibold tracking-tight">Sign in to your account</h1>
       </div>
       <div v-if="error" class="mb-4"><UiAlert tone="danger">{{ error }}</UiAlert></div>
       <div class="space-y-4">
         <div>
-          <label class="mb-1 block text-sm font-semibold text-slate-700">Email</label>
+          <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Email</label>
           <UiInput v-model="email" type="email" />
         </div>
         <div>
-          <label class="mb-1 block text-sm font-semibold text-slate-700">Password</label>
+          <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Password</label>
           <UiInput v-model="password" type="password" />
         </div>
-        <UiButton type="submit" class="w-full !py-2.5 !text-lg">Log in</UiButton>
+        <UiButton type="submit" class="w-full !py-2.5 !text-sm">Log in</UiButton>
       </div>
     </form>
   </div>

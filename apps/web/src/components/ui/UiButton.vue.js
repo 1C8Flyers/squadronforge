@@ -19,8 +19,8 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
     ...{ class: "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition" },
     ...{ class: ({
             'bg-indigo-600 text-white hover:bg-indigo-500': __VLS_ctx.variant === 'primary',
-            'bg-slate-200 text-slate-900 hover:bg-slate-300 dark:bg-slate-700 dark:text-white': __VLS_ctx.variant === 'secondary',
-            'hover:bg-slate-100 dark:hover:bg-slate-800': __VLS_ctx.variant === 'ghost',
+            'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800': __VLS_ctx.variant === 'secondary',
+            'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800': __VLS_ctx.variant === 'ghost',
             'bg-rose-600 text-white hover:bg-rose-500': __VLS_ctx.variant === 'danger'
         }) },
 });
@@ -36,12 +36,18 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
 /** @type {__VLS_StyleScopedClasses['bg-indigo-600']} */ ;
 /** @type {__VLS_StyleScopedClasses['text-white']} */ ;
 /** @type {__VLS_StyleScopedClasses['hover:bg-indigo-500']} */ ;
-/** @type {__VLS_StyleScopedClasses['bg-slate-200']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-slate-900']} */ ;
-/** @type {__VLS_StyleScopedClasses['hover:bg-slate-300']} */ ;
-/** @type {__VLS_StyleScopedClasses['dark:bg-slate-700']} */ ;
-/** @type {__VLS_StyleScopedClasses['dark:text-white']} */ ;
+/** @type {__VLS_StyleScopedClasses['border']} */ ;
+/** @type {__VLS_StyleScopedClasses['border-slate-300']} */ ;
+/** @type {__VLS_StyleScopedClasses['bg-white']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-800']} */ ;
+/** @type {__VLS_StyleScopedClasses['hover:bg-slate-50']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:border-slate-700']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:bg-slate-900']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-100']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:hover:bg-slate-800']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-700']} */ ;
 /** @type {__VLS_StyleScopedClasses['hover:bg-slate-100']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-200']} */ ;
 /** @type {__VLS_StyleScopedClasses['dark:hover:bg-slate-800']} */ ;
 /** @type {__VLS_StyleScopedClasses['bg-rose-600']} */ ;
 /** @type {__VLS_StyleScopedClasses['text-white']} */ ;

@@ -53,19 +53,26 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.form, __VLS_intrinsics.form)({
 /** @type {__VLS_StyleScopedClasses['shadow-sm']} */ ;
 /** @type {__VLS_StyleScopedClasses['dark:border-slate-800']} */ ;
 /** @type {__VLS_StyleScopedClasses['dark:bg-slate-900']} */ ;
-__VLS_asFunctionalElement1(__VLS_intrinsics.h1, __VLS_intrinsics.h1)({
-    ...{ class: "mb-1 text-2xl font-bold" },
+__VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+    ...{ class: "mb-5 text-center" },
 });
-/** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-2xl']} */ ;
-/** @type {__VLS_StyleScopedClasses['font-bold']} */ ;
+/** @type {__VLS_StyleScopedClasses['mb-5']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-center']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
-    ...{ class: "mb-6 text-sm text-slate-500 dark:text-slate-400" },
+    ...{ class: "text-xs font-semibold uppercase tracking-wide text-indigo-500" },
 });
-/** @type {__VLS_StyleScopedClasses['mb-6']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
-/** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['uppercase']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-wide']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-indigo-500']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.h1, __VLS_intrinsics.h1)({
+    ...{ class: "mt-2 text-3xl font-semibold tracking-tight" },
+});
+/** @type {__VLS_StyleScopedClasses['mt-2']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-3xl']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['tracking-tight']} */ ;
 if (__VLS_ctx.error) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "mb-4" },
@@ -91,11 +98,14 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 /** @type {__VLS_StyleScopedClasses['space-y-4']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
 __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
-    ...{ class: "mb-1 block text-sm" },
+    ...{ class: "mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300" },
 });
 /** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
 /** @type {__VLS_StyleScopedClasses['block']} */ ;
 /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-700']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-300']} */ ;
 const __VLS_6 = UiInput;
 // @ts-ignore
 const __VLS_7 = __VLS_asFunctionalComponent1(__VLS_6, new __VLS_6({
@@ -108,11 +118,14 @@ const __VLS_8 = __VLS_7({
 }, ...__VLS_functionalComponentArgsRest(__VLS_7));
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
 __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
-    ...{ class: "mb-1 block text-sm" },
+    ...{ class: "mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300" },
 });
 /** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
 /** @type {__VLS_StyleScopedClasses['block']} */ ;
 /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+/** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-slate-700']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:text-slate-300']} */ ;
 const __VLS_11 = UiInput;
 // @ts-ignore
 const __VLS_12 = __VLS_asFunctionalComponent1(__VLS_11, new __VLS_11({
@@ -127,13 +140,15 @@ const __VLS_16 = UiButton || UiButton;
 // @ts-ignore
 const __VLS_17 = __VLS_asFunctionalComponent1(__VLS_16, new __VLS_16({
     type: "submit",
-    ...{ class: "w-full" },
+    ...{ class: "w-full !py-2.5 !text-sm" },
 }));
 const __VLS_18 = __VLS_17({
     type: "submit",
-    ...{ class: "w-full" },
+    ...{ class: "w-full !py-2.5 !text-sm" },
 }, ...__VLS_functionalComponentArgsRest(__VLS_17));
 /** @type {__VLS_StyleScopedClasses['w-full']} */ ;
+/** @type {__VLS_StyleScopedClasses['!py-2.5']} */ ;
+/** @type {__VLS_StyleScopedClasses['!text-sm']} */ ;
 const { default: __VLS_21 } = __VLS_19.slots;
 // @ts-ignore
 [email, password,];
