@@ -14,9 +14,9 @@ let __VLS_intrinsics;
 let __VLS_directives;
 if (__VLS_ctx.isAuthPage) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "min-h-full" },
+        ...{ class: "min-h-dvh" },
     });
-    /** @type {__VLS_StyleScopedClasses['min-h-full']} */ ;
+    /** @type {__VLS_StyleScopedClasses['min-h-dvh']} */ ;
     let __VLS_0;
     /** @ts-ignore @type {typeof __VLS_components.RouterView} */
     RouterView;
@@ -26,10 +26,10 @@ if (__VLS_ctx.isAuthPage) {
 }
 else {
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "flex min-h-full bg-slate-100 dark:bg-slate-950" },
+        ...{ class: "flex min-h-dvh bg-slate-100 dark:bg-slate-950" },
     });
     /** @type {__VLS_StyleScopedClasses['flex']} */ ;
-    /** @type {__VLS_StyleScopedClasses['min-h-full']} */ ;
+    /** @type {__VLS_StyleScopedClasses['min-h-dvh']} */ ;
     /** @type {__VLS_StyleScopedClasses['bg-slate-100']} */ ;
     /** @type {__VLS_StyleScopedClasses['dark:bg-slate-950']} */ ;
     const __VLS_5 = SidebarNav;
@@ -54,10 +54,11 @@ else {
     var __VLS_8;
     var __VLS_9;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-        ...{ class: "min-w-0 flex-1" },
+        ...{ class: "min-w-0 flex-1 pb-[max(env(safe-area-inset-bottom),0px)]" },
     });
     /** @type {__VLS_StyleScopedClasses['min-w-0']} */ ;
     /** @type {__VLS_StyleScopedClasses['flex-1']} */ ;
+    /** @type {__VLS_StyleScopedClasses['pb-[max(env(safe-area-inset-bottom),0px)]']} */ ;
     const __VLS_12 = TopBar;
     // @ts-ignore
     const __VLS_13 = __VLS_asFunctionalComponent1(__VLS_12, new __VLS_12({
@@ -78,13 +79,14 @@ else {
     var __VLS_15;
     var __VLS_16;
     __VLS_asFunctionalElement1(__VLS_intrinsics.main, __VLS_intrinsics.main)({
-        ...{ class: "mx-auto max-w-7xl p-4 sm:p-6 lg:p-8" },
+        ...{ class: "mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 pb-[max(env(safe-area-inset-bottom),1rem)]" },
     });
     /** @type {__VLS_StyleScopedClasses['mx-auto']} */ ;
     /** @type {__VLS_StyleScopedClasses['max-w-7xl']} */ ;
     /** @type {__VLS_StyleScopedClasses['p-4']} */ ;
     /** @type {__VLS_StyleScopedClasses['sm:p-6']} */ ;
     /** @type {__VLS_StyleScopedClasses['lg:p-8']} */ ;
+    /** @type {__VLS_StyleScopedClasses['pb-[max(env(safe-area-inset-bottom),1rem)]']} */ ;
     let __VLS_19;
     /** @ts-ignore @type {typeof __VLS_components.RouterView} */
     RouterView;

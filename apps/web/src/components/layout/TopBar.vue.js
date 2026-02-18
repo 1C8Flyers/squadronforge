@@ -1,4 +1,4 @@
-import { Menu, Moon, Sun } from 'lucide-vue-next';
+import { LogOut, Menu, Moon, Sun } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
 import { useSession } from '@/state/session';
 const emit = defineEmits();
@@ -41,15 +41,17 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.header, __VLS_intrinsics.header)({
 /** @type {__VLS_StyleScopedClasses['dark:border-slate-800']} */ ;
 /** @type {__VLS_StyleScopedClasses['dark:bg-slate-900/90']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8" },
+    ...{ class: "mx-auto flex min-h-16 max-w-7xl items-center gap-2 px-3 py-2 sm:gap-3 sm:px-6 lg:px-8" },
 });
 /** @type {__VLS_StyleScopedClasses['mx-auto']} */ ;
 /** @type {__VLS_StyleScopedClasses['flex']} */ ;
-/** @type {__VLS_StyleScopedClasses['h-16']} */ ;
+/** @type {__VLS_StyleScopedClasses['min-h-16']} */ ;
 /** @type {__VLS_StyleScopedClasses['max-w-7xl']} */ ;
 /** @type {__VLS_StyleScopedClasses['items-center']} */ ;
-/** @type {__VLS_StyleScopedClasses['gap-3']} */ ;
-/** @type {__VLS_StyleScopedClasses['px-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
+/** @type {__VLS_StyleScopedClasses['px-3']} */ ;
+/** @type {__VLS_StyleScopedClasses['py-2']} */ ;
+/** @type {__VLS_StyleScopedClasses['sm:gap-3']} */ ;
 /** @type {__VLS_StyleScopedClasses['sm:px-6']} */ ;
 /** @type {__VLS_StyleScopedClasses['lg:px-8']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
@@ -77,12 +79,14 @@ const __VLS_2 = __VLS_1({
 }, ...__VLS_functionalComponentArgsRest(__VLS_1));
 /** @type {__VLS_StyleScopedClasses['size-5']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "ml-auto flex items-center gap-3" },
+    ...{ class: "ml-auto flex min-w-0 items-center gap-2 sm:gap-3" },
 });
 /** @type {__VLS_StyleScopedClasses['ml-auto']} */ ;
 /** @type {__VLS_StyleScopedClasses['flex']} */ ;
+/** @type {__VLS_StyleScopedClasses['min-w-0']} */ ;
 /** @type {__VLS_StyleScopedClasses['items-center']} */ ;
-/** @type {__VLS_StyleScopedClasses['gap-3']} */ ;
+/** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
+/** @type {__VLS_StyleScopedClasses['sm:gap-3']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.select, __VLS_intrinsics.select)({
     ...{ onChange: (...[$event]) => {
             __VLS_ctx.setTenantSlug($event.target.value);
@@ -90,17 +94,21 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.select, __VLS_intrinsics.select)({
             [setTenantSlug,];
         } },
     value: (__VLS_ctx.selectedTenantSlug),
-    ...{ class: "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800" },
+    ...{ class: "max-w-[11rem] rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs dark:border-slate-700 dark:bg-slate-800 sm:max-w-none sm:px-3 sm:text-sm" },
 });
+/** @type {__VLS_StyleScopedClasses['max-w-[11rem]']} */ ;
 /** @type {__VLS_StyleScopedClasses['rounded-lg']} */ ;
 /** @type {__VLS_StyleScopedClasses['border']} */ ;
 /** @type {__VLS_StyleScopedClasses['border-slate-300']} */ ;
 /** @type {__VLS_StyleScopedClasses['bg-white']} */ ;
-/** @type {__VLS_StyleScopedClasses['px-3']} */ ;
+/** @type {__VLS_StyleScopedClasses['px-2']} */ ;
 /** @type {__VLS_StyleScopedClasses['py-2']} */ ;
-/** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+/** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
 /** @type {__VLS_StyleScopedClasses['dark:border-slate-700']} */ ;
 /** @type {__VLS_StyleScopedClasses['dark:bg-slate-800']} */ ;
+/** @type {__VLS_StyleScopedClasses['sm:max-w-none']} */ ;
+/** @type {__VLS_StyleScopedClasses['sm:px-3']} */ ;
+/** @type {__VLS_StyleScopedClasses['sm:text-sm']} */ ;
 for (const [tenant] of __VLS_vFor((__VLS_ctx.tenants))) {
     __VLS_asFunctionalElement1(__VLS_intrinsics.option, __VLS_intrinsics.option)({
         key: (tenant.id),
@@ -149,14 +157,17 @@ else {
     /** @type {__VLS_StyleScopedClasses['size-5']} */ ;
 }
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "flex items-center gap-2" },
+    ...{ class: "hidden items-center gap-2 md:flex" },
 });
-/** @type {__VLS_StyleScopedClasses['flex']} */ ;
+/** @type {__VLS_StyleScopedClasses['hidden']} */ ;
 /** @type {__VLS_StyleScopedClasses['items-center']} */ ;
 /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
+/** @type {__VLS_StyleScopedClasses['md:flex']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700" },
+    ...{ class: "max-w-[18rem] truncate rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700" },
 });
+/** @type {__VLS_StyleScopedClasses['max-w-[18rem]']} */ ;
+/** @type {__VLS_StyleScopedClasses['truncate']} */ ;
 /** @type {__VLS_StyleScopedClasses['rounded-lg']} */ ;
 /** @type {__VLS_StyleScopedClasses['border']} */ ;
 /** @type {__VLS_StyleScopedClasses['border-slate-200']} */ ;
@@ -178,8 +189,32 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
 /** @type {__VLS_StyleScopedClasses['hover:bg-slate-100']} */ ;
 /** @type {__VLS_StyleScopedClasses['dark:border-slate-700']} */ ;
 /** @type {__VLS_StyleScopedClasses['dark:hover:bg-slate-800']} */ ;
+__VLS_asFunctionalElement1(__VLS_intrinsics.button, __VLS_intrinsics.button)({
+    ...{ onClick: (__VLS_ctx.signOut) },
+    ...{ class: "rounded-lg border border-slate-200 p-2 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800 md:hidden" },
+    'aria-label': "Logout",
+});
+/** @type {__VLS_StyleScopedClasses['rounded-lg']} */ ;
+/** @type {__VLS_StyleScopedClasses['border']} */ ;
+/** @type {__VLS_StyleScopedClasses['border-slate-200']} */ ;
+/** @type {__VLS_StyleScopedClasses['p-2']} */ ;
+/** @type {__VLS_StyleScopedClasses['hover:bg-slate-100']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:border-slate-700']} */ ;
+/** @type {__VLS_StyleScopedClasses['dark:hover:bg-slate-800']} */ ;
+/** @type {__VLS_StyleScopedClasses['md:hidden']} */ ;
+let __VLS_15;
+/** @ts-ignore @type {typeof __VLS_components.LogOut} */
+LogOut;
 // @ts-ignore
-[dark, me, signOut,];
+const __VLS_16 = __VLS_asFunctionalComponent1(__VLS_15, new __VLS_15({
+    ...{ class: "size-4" },
+}));
+const __VLS_17 = __VLS_16({
+    ...{ class: "size-4" },
+}, ...__VLS_functionalComponentArgsRest(__VLS_16));
+/** @type {__VLS_StyleScopedClasses['size-4']} */ ;
+// @ts-ignore
+[dark, me, signOut, signOut,];
 const __VLS_export = (await import('vue')).defineComponent({
     __typeEmits: {},
 });

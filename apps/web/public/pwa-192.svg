@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" role="img" aria-label="SquadronForge">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1d4ed8" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="36" fill="url(#bg)" />
+  <path d="M96 32 42 62v34c0 42 28 65 54 74 26-9 54-32 54-74V62L96 32Z" fill="#f8fafc" opacity="0.95"/>
+  <path d="M96 56 63 74v21c0 25 16 39 33 46 17-7 33-21 33-46V74L96 56Z" fill="#1e293b"/>
+  <text x="96" y="153" text-anchor="middle" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="700" fill="#e2e8f0">SF</text>
+</svg>

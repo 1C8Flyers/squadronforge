@@ -37,7 +37,7 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div)({
 /** @type {__VLS_StyleScopedClasses['bg-slate-950/50']} */ ;
 /** @type {__VLS_StyleScopedClasses['lg:hidden']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
-    ...{ class: "fixed left-0 top-0 z-50 flex h-full w-72 flex-col border-r border-slate-200 bg-white p-4 transition-transform dark:border-slate-800 dark:bg-slate-900 lg:static lg:z-auto lg:translate-x-0" },
+    ...{ class: "fixed left-0 top-0 z-50 flex h-dvh w-72 flex-col overflow-y-auto border-r border-slate-200 bg-white p-4 pb-[max(env(safe-area-inset-bottom),1rem)] transition-transform dark:border-slate-800 dark:bg-slate-900 lg:static lg:z-auto lg:h-auto lg:translate-x-0 lg:pb-4" },
     ...{ class: (__VLS_ctx.open ? 'translate-x-0' : '-translate-x-full') },
 });
 /** @type {__VLS_StyleScopedClasses['fixed']} */ ;
@@ -45,19 +45,23 @@ __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
 /** @type {__VLS_StyleScopedClasses['top-0']} */ ;
 /** @type {__VLS_StyleScopedClasses['z-50']} */ ;
 /** @type {__VLS_StyleScopedClasses['flex']} */ ;
-/** @type {__VLS_StyleScopedClasses['h-full']} */ ;
+/** @type {__VLS_StyleScopedClasses['h-dvh']} */ ;
 /** @type {__VLS_StyleScopedClasses['w-72']} */ ;
 /** @type {__VLS_StyleScopedClasses['flex-col']} */ ;
+/** @type {__VLS_StyleScopedClasses['overflow-y-auto']} */ ;
 /** @type {__VLS_StyleScopedClasses['border-r']} */ ;
 /** @type {__VLS_StyleScopedClasses['border-slate-200']} */ ;
 /** @type {__VLS_StyleScopedClasses['bg-white']} */ ;
 /** @type {__VLS_StyleScopedClasses['p-4']} */ ;
+/** @type {__VLS_StyleScopedClasses['pb-[max(env(safe-area-inset-bottom),1rem)]']} */ ;
 /** @type {__VLS_StyleScopedClasses['transition-transform']} */ ;
 /** @type {__VLS_StyleScopedClasses['dark:border-slate-800']} */ ;
 /** @type {__VLS_StyleScopedClasses['dark:bg-slate-900']} */ ;
 /** @type {__VLS_StyleScopedClasses['lg:static']} */ ;
 /** @type {__VLS_StyleScopedClasses['lg:z-auto']} */ ;
+/** @type {__VLS_StyleScopedClasses['lg:h-auto']} */ ;
 /** @type {__VLS_StyleScopedClasses['lg:translate-x-0']} */ ;
+/** @type {__VLS_StyleScopedClasses['lg:pb-4']} */ ;
 __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
     ...{ class: "mb-8 flex items-center justify-between" },
 });

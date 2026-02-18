@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180" role="img" aria-label="SquadronForge">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1d4ed8" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+  </defs>
+  <rect width="180" height="180" rx="34" fill="url(#bg)" />
+  <path d="M90 30 40 58v31c0 39 26 60 50 69 24-9 50-30 50-69V58L90 30Z" fill="#f8fafc" opacity="0.95"/>
+  <path d="M90 52 60 69v20c0 23 15 36 30 42 15-6 30-19 30-42V69L90 52Z" fill="#1e293b"/>
+</svg>

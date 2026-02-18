@@ -25,7 +25,7 @@ const navItems = [
     />
 
     <div
-      class="fixed left-0 top-0 z-50 flex h-full w-72 flex-col border-r border-slate-200 bg-white p-4 transition-transform dark:border-slate-800 dark:bg-slate-900 lg:static lg:z-auto lg:translate-x-0"
+      class="fixed left-0 top-0 z-50 flex h-dvh w-72 flex-col overflow-y-auto border-r border-slate-200 bg-white p-4 pb-[max(env(safe-area-inset-bottom),1rem)] transition-transform dark:border-slate-800 dark:bg-slate-900 lg:static lg:z-auto lg:h-auto lg:translate-x-0 lg:pb-4"
       :class="open ? 'translate-x-0' : '-translate-x-full'"
     >
       <div class="mb-8 flex items-center justify-between">
