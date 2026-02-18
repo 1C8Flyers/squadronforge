@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
+import { randomUUID } from 'crypto';
 import { Queue } from 'bullmq';
 import { CronExpressionParser } from 'cron-parser';
 import { requireAuth } from '../middleware/require-auth.js';
@@ -75,6 +76,63 @@ const ensureTenantAdminAccess = async (tenantId: string, auth: { userId: string;
   if (assignment?.role !== 'tenantAdmin') {
     throw new Error('Tenant admin required');
   }
+};
+
+const recurrenceSchema = z
+  .object({
+    frequency: z.enum(['none', 'daily', 'weekly', 'monthly']).default('none'),
+    interval: z.coerce.number().int().min(1).max(52).default(1),
+    occurrences: z.coerce.number().int().min(1).max(365).optional(),
+    until: z.coerce.date().optional()
+  })
+  .default({ frequency: 'none', interval: 1 });
+
+const addMonthsSafe = (date: Date, months: number): Date => {
+  const next = new Date(date.getTime());
+  const day = next.getDate();
+  next.setDate(1);
+  next.setMonth(next.getMonth() + months);
+  const lastDay = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
+  next.setDate(Math.min(day, lastDay));
+  return next;
+};
+
+const buildRecurringInstances = (args: {
+  startsAt: Date;
+  endsAt: Date;
+  frequency: 'none' | 'daily' | 'weekly' | 'monthly';
+  interval: number;
+  occurrences?: number;
+  until?: Date;
+}): Array<{ startsAt: Date; endsAt: Date; index: number }> => {
+  const maxByRequest = args.occurrences ?? (args.frequency === 'none' ? 1 : 12);
+  const maxOccurrences = Math.min(Math.max(maxByRequest, 1), 365);
+  const durationMs = args.endsAt.getTime() - args.startsAt.getTime();
+
+  const instances: Array<{ startsAt: Date; endsAt: Date; index: number }> = [];
+  let cursor = new Date(args.startsAt.getTime());
+
+  while (instances.length < maxOccurrences) {
+    if (args.until && cursor > args.until) {
+      break;
+    }
+
+    instances.push({ startsAt: new Date(cursor.getTime()), endsAt: new Date(cursor.getTime() + durationMs), index: instances.length });
+
+    if (args.frequency === 'none') {
+      break;
+    }
+
+    if (args.frequency === 'daily') {
+      cursor = new Date(cursor.getTime() + args.interval * 24 * 60 * 60 * 1000);
+    } else if (args.frequency === 'weekly') {
+      cursor = new Date(cursor.getTime() + args.interval * 7 * 24 * 60 * 60 * 1000);
+    } else {
+      cursor = addMonthsSafe(cursor, args.interval);
+    }
+  }
+
+  return instances;
 };
 
 tenantRouter.get('/:slug/dashboard', async (req, res) => {
@@ -570,6 +628,7 @@ tenantRouter.post('/:slug/events', async (req, res) => {
       endsAt: z.coerce.date(),
       allDay: z.boolean().default(false),
       visibility: z.enum(['tenant', 'audience']).default('tenant'),
+      recurrence: recurrenceSchema,
       audienceRules: z
         .array(
           z.object({
@@ -585,31 +644,61 @@ tenantRouter.post('/:slug/events', async (req, res) => {
     throw new Error('Event end must be after start');
   }
 
-  const normalizedRules = body.visibility === 'tenant' ? [] : body.audienceRules;
+  if (body.recurrence.until && body.recurrence.until < body.startsAt) {
+    throw new Error('Recurrence end must be after first event start');
+  }
 
-  const created = await prisma.event.create({
-    data: {
-      tenantId,
-      title: body.title,
-      description: body.description,
-      location: body.location,
-      startsAt: body.startsAt,
-      endsAt: body.endsAt,
-      allDay: body.allDay,
-      visibility: body.visibility,
-      createdByUserId: req.auth!.userId,
-      audienceRules: {
-        create: normalizedRules.map((rule) => ({
+  const normalizedRules = body.visibility === 'tenant' ? [] : body.audienceRules;
+  const frequency = body.recurrence.frequency;
+  const interval = body.recurrence.interval;
+  const instances = buildRecurringInstances({
+    startsAt: body.startsAt,
+    endsAt: body.endsAt,
+    frequency,
+    interval,
+    occurrences: body.recurrence.occurrences,
+    until: body.recurrence.until
+  });
+  const recurrenceSeriesId = instances.length > 1 ? randomUUID() : null;
+
+  const created = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const createdEvents: Array<{ id: string }> = [];
+    for (const instance of instances) {
+      const event = await tx.event.create({
+        data: {
           tenantId,
-          memberType: rule.memberType,
-          unitCharter: rule.unitCharter
-        }))
-      }
-    },
-    include: { audienceRules: true }
+          title: body.title,
+          description: body.description,
+          location: body.location,
+          startsAt: instance.startsAt,
+          endsAt: instance.endsAt,
+          allDay: body.allDay,
+          visibility: body.visibility,
+          createdByUserId: req.auth!.userId,
+          recurrenceSeriesId,
+          recurrenceFrequency: frequency,
+          recurrenceInterval: interval,
+          recurrenceUntil: body.recurrence.until ?? null,
+          audienceRules: {
+            create: normalizedRules.map((rule) => ({
+              tenantId,
+              memberType: rule.memberType,
+              unitCharter: rule.unitCharter
+            }))
+          }
+        },
+        select: { id: true }
+      });
+      createdEvents.push(event);
+    }
+
+    return tx.event.findFirst({
+      where: { id: createdEvents[0].id },
+      include: { audienceRules: true }
+    });
   });
 
-  res.status(201).json(created);
+  res.status(201).json({ created, createdCount: instances.length });
 });
 
 tenantRouter.get('/:slug/events/:eventId', async (req, res) => {
@@ -661,6 +750,7 @@ tenantRouter.patch('/:slug/events/:eventId', async (req, res) => {
       endsAt: z.coerce.date().optional(),
       allDay: z.boolean().optional(),
       visibility: z.enum(['tenant', 'audience']).optional(),
+      recurrence: recurrenceSchema.optional(),
       isCancelled: z.boolean().optional(),
       cancelReason: z.string().nullable().optional(),
       audienceRules: z
@@ -683,6 +773,10 @@ tenantRouter.patch('/:slug/events/:eventId', async (req, res) => {
   const endsAt = body.endsAt ?? existing.endsAt;
   if (endsAt < startsAt) {
     throw new Error('Event end must be after start');
+  }
+
+  if (body.recurrence?.until && body.recurrence.until < startsAt) {
+    throw new Error('Recurrence end must be after event start');
   }
 
   const visibility = body.visibility ?? existing.visibility;
@@ -713,6 +807,13 @@ tenantRouter.patch('/:slug/events/:eventId', async (req, res) => {
         ...(body.endsAt !== undefined ? { endsAt: body.endsAt } : {}),
         ...(body.allDay !== undefined ? { allDay: body.allDay } : {}),
         ...(body.visibility !== undefined ? { visibility: body.visibility } : {}),
+        ...(body.recurrence !== undefined
+          ? {
+              recurrenceFrequency: body.recurrence.frequency,
+              recurrenceInterval: body.recurrence.interval,
+              recurrenceUntil: body.recurrence.until ?? null
+            }
+          : {}),
         ...(body.isCancelled !== undefined ? { isCancelled: body.isCancelled } : {}),
         ...(body.cancelReason !== undefined ? { cancelReason: body.cancelReason } : {}),
         updatedByUserId: req.auth!.userId

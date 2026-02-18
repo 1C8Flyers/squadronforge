@@ -65,6 +65,13 @@ enum NotificationStatus {
   skipped
 }
 
+enum RecurrenceFrequency {
+  none
+  daily
+  weekly
+  monthly
+}
+
 model Tenant {
   id               String     @id @default(cuid())
   name             String
@@ -272,6 +279,10 @@ model Event {
   updatedBy       User?           @relation("EventUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
   isCancelled     Boolean         @default(false)
   cancelReason    String?
+  recurrenceSeriesId String?
+  recurrenceFrequency RecurrenceFrequency @default(none)
+  recurrenceInterval Int          @default(1)
+  recurrenceUntil  DateTime?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   audienceRules   EventAudienceRule[]
@@ -280,6 +291,7 @@ model Event {
 
   @@index([tenantId, startsAt])
   @@index([tenantId, isCancelled, startsAt])
+  @@index([tenantId, recurrenceSeriesId])
 }
 
 model EventAudienceRule {

@@ -14,6 +14,8 @@ type AudienceRule = {
   unitCharter: string | null;
 };
 
+type RecurrenceFrequency = 'none' | 'daily' | 'weekly' | 'monthly';
+
 type EventListItem = {
   id: string;
   title: string;
@@ -25,6 +27,9 @@ type EventListItem = {
   visibility: 'tenant' | 'audience';
   isCancelled: boolean;
   cancelReason: string | null;
+  recurrenceFrequency?: RecurrenceFrequency;
+  recurrenceInterval?: number;
+  recurrenceUntil?: string | null;
   counts: { yes: number; no: number; maybe: number; total: number };
   myRsvp: 'yes' | 'no' | 'maybe' | null;
   audienceRules: AudienceRule[];
@@ -51,13 +56,28 @@ const total = ref(0);
 const selectedEventId = ref('');
 const selectedEvent = ref<EventDetail | null>(null);
 
-const formTitle = ref('');
-const formDescription = ref('');
-const formLocation = ref('');
-const formStartsAt = ref('');
-const formEndsAt = ref('');
-const formVisibility = ref<'tenant' | 'audience'>('tenant');
-const formAudienceMemberType = ref<'all' | 'CADET' | 'SENIOR' | 'UNKNOWN'>('all');
+const newTitle = ref('');
+const newDescription = ref('');
+const newLocation = ref('');
+const newStartsAt = ref('');
+const newEndsAt = ref('');
+const newVisibility = ref<'tenant' | 'audience'>('tenant');
+const newAudienceMemberType = ref<'all' | 'CADET' | 'SENIOR' | 'UNKNOWN'>('all');
+const newRecurrenceFrequency = ref<RecurrenceFrequency>('none');
+const newRecurrenceInterval = ref('1');
+const newRecurrenceOccurrences = ref('10');
+const newRecurrenceUntil = ref('');
+
+const editTitle = ref('');
+const editDescription = ref('');
+const editLocation = ref('');
+const editStartsAt = ref('');
+const editEndsAt = ref('');
+const editVisibility = ref<'tenant' | 'audience'>('tenant');
+const editAudienceMemberType = ref<'all' | 'CADET' | 'SENIOR' | 'UNKNOWN'>('all');
+const editRecurrenceFrequency = ref<RecurrenceFrequency>('none');
+const editRecurrenceInterval = ref('1');
+const editRecurrenceUntil = ref('');
 
 const selectedTotal = computed(() => selectedEvent.value?.counts.total ?? 0);
 
@@ -73,9 +93,15 @@ const toDatetimeLocal = (value: string): string => {
 
 const fromDatetimeLocal = (value: string): string => new Date(value).toISOString();
 
-const formatDateTime = (value: string): string => {
-  const d = new Date(value);
-  return d.toLocaleString();
+const formatDateTime = (value: string): string => new Date(value).toLocaleString();
+
+const formatRecurrence = (event: EventDetail): string => {
+  const frequency = event.recurrenceFrequency ?? 'none';
+  if (frequency === 'none') return 'Does not repeat';
+  const interval = event.recurrenceInterval ?? 1;
+  const base = `Repeats every ${interval} ${frequency === 'daily' ? 'day' : frequency === 'weekly' ? 'week' : 'month'}${interval > 1 ? 's' : ''}`;
+  if (!event.recurrenceUntil) return base;
+  return `${base} until ${new Date(event.recurrenceUntil).toLocaleDateString()}`;
 };
 
 const errorMessage = (error: unknown): string => {
@@ -83,28 +109,38 @@ const errorMessage = (error: unknown): string => {
   return maybe.response?.data?.error ?? 'Request failed';
 };
 
-const resetForm = () => {
-  formTitle.value = '';
-  formDescription.value = '';
-  formLocation.value = '';
+const resetNewForm = () => {
+  newTitle.value = '';
+  newDescription.value = '';
+  newLocation.value = '';
   const now = new Date();
   const plusHour = new Date(now.getTime() + 60 * 60 * 1000);
-  formStartsAt.value = toDatetimeLocal(now.toISOString());
-  formEndsAt.value = toDatetimeLocal(plusHour.toISOString());
-  formVisibility.value = 'tenant';
-  formAudienceMemberType.value = 'all';
+  newStartsAt.value = toDatetimeLocal(now.toISOString());
+  newEndsAt.value = toDatetimeLocal(plusHour.toISOString());
+  newVisibility.value = 'tenant';
+  newAudienceMemberType.value = 'all';
+  newRecurrenceFrequency.value = 'none';
+  newRecurrenceInterval.value = '1';
+  newRecurrenceOccurrences.value = '10';
+  newRecurrenceUntil.value = '';
 };
 
-const populateFormFromEvent = (event: EventDetail) => {
-  formTitle.value = event.title;
-  formDescription.value = event.description ?? '';
-  formLocation.value = event.location ?? '';
-  formStartsAt.value = toDatetimeLocal(event.startsAt);
-  formEndsAt.value = toDatetimeLocal(event.endsAt);
-  formVisibility.value = event.visibility;
+const populateEditFormFromEvent = (event: EventDetail) => {
+  editTitle.value = event.title;
+  editDescription.value = event.description ?? '';
+  editLocation.value = event.location ?? '';
+  editStartsAt.value = toDatetimeLocal(event.startsAt);
+  editEndsAt.value = toDatetimeLocal(event.endsAt);
+  editVisibility.value = event.visibility;
   const firstRuleType = event.audienceRules[0]?.memberType ?? null;
-  formAudienceMemberType.value = firstRuleType ?? 'all';
+  editAudienceMemberType.value = firstRuleType ?? 'all';
+  editRecurrenceFrequency.value = event.recurrenceFrequency ?? 'none';
+  editRecurrenceInterval.value = String(event.recurrenceInterval ?? 1);
+  editRecurrenceUntil.value = event.recurrenceUntil ? toDatetimeLocal(event.recurrenceUntil) : '';
 };
+
+const buildAudienceRules = (visibility: 'tenant' | 'audience', memberTypeValue: 'all' | 'CADET' | 'SENIOR' | 'UNKNOWN') =>
+  visibility === 'audience' && memberTypeValue !== 'all' ? [{ memberType: memberTypeValue }] : [];
 
 const loadEvents = async () => {
   if (!selectedTenantSlug.value) {
@@ -164,28 +200,32 @@ const createEvent = async () => {
   saving.value = true;
   actionMessage.value = '';
   try {
-    const audienceRules =
-      formVisibility.value === 'audience' && formAudienceMemberType.value !== 'all'
-        ? [{ memberType: formAudienceMemberType.value }]
-        : [];
+    const audienceRules = buildAudienceRules(newVisibility.value, newAudienceMemberType.value);
+    const recurrence = {
+      frequency: newRecurrenceFrequency.value,
+      interval: Number(newRecurrenceInterval.value || '1'),
+      occurrences: newRecurrenceFrequency.value === 'none' ? undefined : Number(newRecurrenceOccurrences.value || '10'),
+      until: newRecurrenceUntil.value ? fromDatetimeLocal(newRecurrenceUntil.value) : undefined
+    };
 
-    await api.post(`/tenant/${selectedTenantSlug.value}/events`, {
-      title: formTitle.value,
-      description: formDescription.value || undefined,
-      location: formLocation.value || undefined,
-      startsAt: fromDatetimeLocal(formStartsAt.value),
-      endsAt: fromDatetimeLocal(formEndsAt.value),
-      visibility: formVisibility.value,
+    const { data } = await api.post(`/tenant/${selectedTenantSlug.value}/events`, {
+      title: newTitle.value,
+      description: newDescription.value || undefined,
+      location: newLocation.value || undefined,
+      startsAt: fromDatetimeLocal(newStartsAt.value),
+      endsAt: fromDatetimeLocal(newEndsAt.value),
+      visibility: newVisibility.value,
       allDay: false,
-      audienceRules
+      audienceRules,
+      recurrence
     });
-    actionMessage.value = 'Event created.';
+    actionMessage.value = data.createdCount && data.createdCount > 1 ? `Created ${data.createdCount} recurring events.` : 'Event created.';
     await loadEvents();
     if (items.value.length > 0) {
       selectedEventId.value = items.value[0].id;
       await loadEventDetail();
     }
-    resetForm();
+    resetNewForm();
   } catch (error) {
     actionMessage.value = errorMessage(error);
   } finally {
@@ -198,21 +238,23 @@ const saveSelectedEvent = async () => {
   saving.value = true;
   actionMessage.value = '';
   try {
-    const audienceRules =
-      formVisibility.value === 'audience' && formAudienceMemberType.value !== 'all'
-        ? [{ memberType: formAudienceMemberType.value }]
-        : [];
+    const audienceRules = buildAudienceRules(editVisibility.value, editAudienceMemberType.value);
 
     await api.patch(`/tenant/${selectedTenantSlug.value}/events/${selectedEvent.value.id}`, {
-      title: formTitle.value,
-      description: formDescription.value || null,
-      location: formLocation.value || null,
-      startsAt: fromDatetimeLocal(formStartsAt.value),
-      endsAt: fromDatetimeLocal(formEndsAt.value),
-      visibility: formVisibility.value,
-      audienceRules
+      title: editTitle.value,
+      description: editDescription.value || null,
+      location: editLocation.value || null,
+      startsAt: fromDatetimeLocal(editStartsAt.value),
+      endsAt: fromDatetimeLocal(editEndsAt.value),
+      visibility: editVisibility.value,
+      audienceRules,
+      recurrence: {
+        frequency: editRecurrenceFrequency.value,
+        interval: Number(editRecurrenceInterval.value || '1'),
+        until: editRecurrenceUntil.value ? fromDatetimeLocal(editRecurrenceUntil.value) : undefined
+      }
     });
-    actionMessage.value = 'Event updated.';
+    actionMessage.value = 'Selected event updated.';
     await loadEvents();
     await loadEventDetail();
   } catch (error) {
@@ -228,7 +270,7 @@ const cancelSelectedEvent = async () => {
   actionMessage.value = '';
   try {
     await api.delete(`/tenant/${selectedTenantSlug.value}/events/${selectedEvent.value.id}`);
-    actionMessage.value = 'Event cancelled.';
+    actionMessage.value = 'Selected event cancelled.';
     await loadEvents();
     await loadEventDetail();
   } catch (error) {
@@ -263,22 +305,58 @@ watch([page, pageSize], loadEvents);
 watch(selectedEventId, async () => {
   await loadEventDetail();
   if (selectedEvent.value) {
-    populateFormFromEvent(selectedEvent.value);
+    populateEditFormFromEvent(selectedEvent.value);
   }
 });
 
 onMounted(async () => {
-  resetForm();
+  resetNewForm();
   await loadEvents();
   await loadEventDetail();
   if (selectedEvent.value) {
-    populateFormFromEvent(selectedEvent.value);
+    populateEditFormFromEvent(selectedEvent.value);
   }
 });
 </script>
 
 <template>
-  <PageHeader title="Events" subtitle="Tenant event calendar, RSVPs, and attendance" />
+  <PageHeader title="Events" subtitle="Event-centric details, RSVPs, and recurring event creation" />
+
+  <section class="card mb-4">
+    <h3 class="text-lg font-semibold">New event form</h3>
+    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Create one-time or recurring events. RSVP actions live inside each selected event.</p>
+    <form class="mt-3 grid gap-2 md:grid-cols-2" @submit.prevent="createEvent">
+      <UiInput v-model="newTitle" placeholder="Event title" />
+      <UiInput v-model="newLocation" placeholder="Location (manual entry supported)" />
+      <div class="md:col-span-2">
+        <UiInput v-model="newDescription" placeholder="Description" />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Starts</label>
+        <UiInput v-model="newStartsAt" type="datetime-local" />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ends</label>
+        <UiInput v-model="newEndsAt" type="datetime-local" />
+      </div>
+      <UiSelect v-model="newVisibility" :options="[{ label: 'Tenant-wide', value: 'tenant' }, { label: 'Audience filtered', value: 'audience' }]" />
+      <UiSelect
+        v-if="newVisibility === 'audience'"
+        v-model="newAudienceMemberType"
+        :options="[{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]"
+      />
+
+      <UiSelect v-model="newRecurrenceFrequency" :options="[{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]" />
+      <UiInput v-model="newRecurrenceInterval" type="number" placeholder="Repeat interval (e.g. 1)" />
+
+      <UiInput v-if="newRecurrenceFrequency !== 'none'" v-model="newRecurrenceOccurrences" type="number" placeholder="Occurrences (e.g. 10)" />
+      <UiInput v-if="newRecurrenceFrequency !== 'none'" v-model="newRecurrenceUntil" type="datetime-local" placeholder="Until (optional)" />
+
+      <div class="md:col-span-2 flex flex-wrap gap-2">
+        <UiButton type="submit" :disabled="saving || !newTitle || !newStartsAt || !newEndsAt">{{ saving ? 'Saving...' : 'Create event' }}</UiButton>
+      </div>
+    </form>
+  </section>
 
   <div class="mb-4 grid gap-3 md:grid-cols-6">
     <UiInput v-model="query" placeholder="Search title, location, description" />
@@ -289,14 +367,14 @@ onMounted(async () => {
     <UiButton :disabled="loading" @click="loadEvents">{{ loading ? 'Loading...' : 'Refresh' }}</UiButton>
   </div>
 
-  <div class="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+  <div class="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
     <div>
       <UiTable class="hidden md:block">
         <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/50">
           <tr>
             <th class="px-4 py-3">Title</th>
             <th class="px-4 py-3">Starts</th>
-            <th class="px-4 py-3">Location</th>
+            <th class="px-4 py-3">Recurrence</th>
             <th class="px-4 py-3">RSVP</th>
           </tr>
         </thead>
@@ -310,10 +388,12 @@ onMounted(async () => {
           >
             <td class="px-4 py-3">
               <p class="font-medium">{{ item.title }}</p>
-              <p class="text-xs text-slate-500 dark:text-slate-400">{{ item.isCancelled ? 'Cancelled' : 'Active' }} · {{ item.visibility }}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">{{ item.location ?? 'No location' }}</p>
             </td>
             <td class="px-4 py-3">{{ formatDateTime(item.startsAt) }}</td>
-            <td class="px-4 py-3">{{ item.location ?? '—' }}</td>
+            <td class="px-4 py-3 text-xs">
+              {{ item.recurrenceFrequency && item.recurrenceFrequency !== 'none' ? `${item.recurrenceFrequency} x${item.recurrenceInterval ?? 1}` : 'None' }}
+            </td>
             <td class="px-4 py-3">Y {{ item.counts.yes }} / M {{ item.counts.maybe }} / N {{ item.counts.no }}</td>
           </tr>
           <tr v-if="items.length === 0" class="border-t border-slate-200 dark:border-slate-800">
@@ -323,17 +403,10 @@ onMounted(async () => {
       </UiTable>
 
       <div class="grid gap-3 md:hidden">
-        <button
-          v-for="item in items"
-          :key="`mobile-${item.id}`"
-          class="card text-left"
-          :class="selectedEventId === item.id ? 'ring-2 ring-indigo-400' : ''"
-          @click="selectedEventId = item.id"
-        >
+        <button v-for="item in items" :key="`mobile-${item.id}`" class="card text-left" :class="selectedEventId === item.id ? 'ring-2 ring-indigo-400' : ''" @click="selectedEventId = item.id">
           <p class="font-semibold">{{ item.title }}</p>
           <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatDateTime(item.startsAt) }}</p>
           <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ item.location ?? 'No location' }}</p>
-          <p class="mt-2 text-xs">Y {{ item.counts.yes }} / M {{ item.counts.maybe }} / N {{ item.counts.no }}</p>
         </button>
       </div>
 
@@ -349,56 +422,64 @@ onMounted(async () => {
     </div>
 
     <div class="space-y-4">
-      <section class="card">
-        <h3 class="text-lg font-semibold">My RSVP</h3>
-        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400" v-if="selectedEvent">Current: {{ selectedEvent.myRsvp ?? 'No response yet' }}</p>
-        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400" v-else>Select an event.</p>
-        <div class="mt-3 flex flex-wrap gap-2">
-          <UiButton :disabled="!selectedEvent || selectedEvent.isCancelled" @click="rsvp('yes')">Yes</UiButton>
-          <UiButton variant="secondary" :disabled="!selectedEvent || selectedEvent.isCancelled" @click="rsvp('maybe')">Maybe</UiButton>
-          <UiButton variant="danger" :disabled="!selectedEvent || selectedEvent.isCancelled" @click="rsvp('no')">No</UiButton>
+      <section v-if="selectedEvent" class="card">
+        <h3 class="text-lg font-semibold">{{ selectedEvent.title }}</h3>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ selectedEvent.isCancelled ? 'Cancelled event' : 'Active event' }}</p>
+        <div class="mt-3 space-y-1 text-sm">
+          <p><span class="font-medium">Starts:</span> {{ formatDateTime(selectedEvent.startsAt) }}</p>
+          <p><span class="font-medium">Ends:</span> {{ formatDateTime(selectedEvent.endsAt) }}</p>
+          <p><span class="font-medium">Location:</span> {{ selectedEvent.location ?? '—' }}</p>
+          <p><span class="font-medium">Audience:</span> {{ selectedEvent.visibility }}</p>
+          <p><span class="font-medium">Recurrence:</span> {{ formatRecurrence(selectedEvent) }}</p>
         </div>
-        <div v-if="selectedEvent" class="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-          <div class="rounded-lg bg-emerald-100 px-2 py-1 font-semibold text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">Yes {{ selectedEvent.counts.yes }}</div>
-          <div class="rounded-lg bg-amber-100 px-2 py-1 font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Maybe {{ selectedEvent.counts.maybe }}</div>
-          <div class="rounded-lg bg-rose-100 px-2 py-1 font-semibold text-rose-800 dark:bg-rose-900/30 dark:text-rose-300">No {{ selectedEvent.counts.no }}</div>
-        </div>
-        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400" v-if="selectedEvent">Total responses: {{ selectedTotal }}</p>
-      </section>
 
-      <section class="card">
-        <h3 class="text-lg font-semibold">Event form</h3>
-        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Create new events, or edit the selected event.</p>
-        <form class="mt-3 grid gap-2" @submit.prevent="createEvent">
-          <UiInput v-model="formTitle" placeholder="Event title" />
-          <UiInput v-model="formDescription" placeholder="Description" />
-          <UiInput v-model="formLocation" placeholder="Location" />
-          <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Starts</label>
-          <UiInput v-model="formStartsAt" type="datetime-local" />
-          <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ends</label>
-          <UiInput v-model="formEndsAt" type="datetime-local" />
-          <UiSelect v-model="formVisibility" :options="[{ label: 'Tenant-wide', value: 'tenant' }, { label: 'Audience filtered', value: 'audience' }]" />
-          <UiSelect
-            v-if="formVisibility === 'audience'"
-            v-model="formAudienceMemberType"
-            :options="[{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]"
-          />
-
-          <div class="mt-2 flex flex-wrap gap-2">
-            <UiButton type="submit" :disabled="saving || !formTitle || !formStartsAt || !formEndsAt">{{ saving ? 'Saving...' : 'Create event' }}</UiButton>
-            <UiButton variant="secondary" type="button" :disabled="saving || !selectedEvent" @click="saveSelectedEvent">Update selected</UiButton>
-            <UiButton variant="danger" type="button" :disabled="saving || !selectedEvent || selectedEvent.isCancelled" @click="cancelSelectedEvent">Cancel selected</UiButton>
+        <div class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
+          <h4 class="text-base font-semibold">My RSVP</h4>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Current: {{ selectedEvent.myRsvp ?? 'No response yet' }}</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <UiButton :disabled="selectedEvent.isCancelled" @click="rsvp('yes')">Yes</UiButton>
+            <UiButton variant="secondary" :disabled="selectedEvent.isCancelled" @click="rsvp('maybe')">Maybe</UiButton>
+            <UiButton variant="danger" :disabled="selectedEvent.isCancelled" @click="rsvp('no')">No</UiButton>
           </div>
-        </form>
+          <div class="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+            <div class="rounded-lg bg-emerald-100 px-2 py-1 font-semibold text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">Yes {{ selectedEvent.counts.yes }}</div>
+            <div class="rounded-lg bg-amber-100 px-2 py-1 font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Maybe {{ selectedEvent.counts.maybe }}</div>
+            <div class="rounded-lg bg-rose-100 px-2 py-1 font-semibold text-rose-800 dark:bg-rose-900/30 dark:text-rose-300">No {{ selectedEvent.counts.no }}</div>
+          </div>
+          <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Total responses: {{ selectedTotal }}</p>
+        </div>
+
+        <div class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
+          <h4 class="text-base font-semibold">Edit selected event</h4>
+          <form class="mt-3 grid gap-2" @submit.prevent="saveSelectedEvent">
+            <UiInput v-model="editTitle" placeholder="Event title" />
+            <UiInput v-model="editDescription" placeholder="Description" />
+            <UiInput v-model="editLocation" placeholder="Location" />
+            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Starts</label>
+            <UiInput v-model="editStartsAt" type="datetime-local" />
+            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ends</label>
+            <UiInput v-model="editEndsAt" type="datetime-local" />
+            <UiSelect v-model="editVisibility" :options="[{ label: 'Tenant-wide', value: 'tenant' }, { label: 'Audience filtered', value: 'audience' }]" />
+            <UiSelect
+              v-if="editVisibility === 'audience'"
+              v-model="editAudienceMemberType"
+              :options="[{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]"
+            />
+            <UiSelect v-model="editRecurrenceFrequency" :options="[{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]" />
+            <UiInput v-model="editRecurrenceInterval" type="number" placeholder="Repeat interval" />
+            <UiInput v-if="editRecurrenceFrequency !== 'none'" v-model="editRecurrenceUntil" type="datetime-local" placeholder="Recurrence until (optional)" />
+
+            <div class="mt-2 flex flex-wrap gap-2">
+              <UiButton type="submit" :disabled="saving">{{ saving ? 'Saving...' : 'Update selected' }}</UiButton>
+              <UiButton variant="danger" type="button" :disabled="saving || selectedEvent.isCancelled" @click="cancelSelectedEvent">Cancel selected</UiButton>
+            </div>
+          </form>
+        </div>
       </section>
 
-      <section class="card" v-if="selectedEvent">
-        <h3 class="text-lg font-semibold">Selected event details</h3>
-        <p class="mt-2 text-sm"><span class="font-medium">Title:</span> {{ selectedEvent.title }}</p>
-        <p class="text-sm"><span class="font-medium">Starts:</span> {{ formatDateTime(selectedEvent.startsAt) }}</p>
-        <p class="text-sm"><span class="font-medium">Ends:</span> {{ formatDateTime(selectedEvent.endsAt) }}</p>
-        <p class="text-sm"><span class="font-medium">Location:</span> {{ selectedEvent.location ?? '—' }}</p>
-        <p class="text-sm"><span class="font-medium">Audience:</span> {{ selectedEvent.visibility }}</p>
+      <section v-else class="card">
+        <h3 class="text-lg font-semibold">Select an event</h3>
+        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Choose an event from the list to view RSVP and edit it in place.</p>
       </section>
 
       <p v-if="actionMessage" class="text-sm text-slate-500 dark:text-slate-400">{{ actionMessage }}</p>
