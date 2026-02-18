@@ -69,13 +69,13 @@ const sortLabel = (column: 'memberName' | 'rank' | 'capid' | 'achievementName') 
 
 const needsFor = (row: PromotionNeedsRow): string[] => row.needs ?? [];
 
-const escapeHtml = (value: string): string =>
-  value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+const escapeHtml = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 const exportPdf = () => {
   const generatedAt = new Date().toLocaleString();
@@ -98,6 +98,7 @@ const exportPdf = () => {
   const popup = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=850');
   if (!popup) return;
 
+  popup.document.open();
   popup.document.write(`
     <!doctype html>
     <html>
@@ -138,7 +139,9 @@ const exportPdf = () => {
   `);
   popup.document.close();
   popup.focus();
-  popup.print();
+  window.setTimeout(() => {
+    popup.print();
+  }, 250);
 };
 
 const readyCount = computed(() => items.value.filter((row) => row.ready).length);
