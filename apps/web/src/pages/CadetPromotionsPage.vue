@@ -8,6 +8,7 @@ import UiTable from '@/components/ui/UiTable.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
 import { api } from '@/lib';
 import { useSession } from '@/state/session';
+import { formatRankDisplay } from '@/utils/rank-display';
 
 type CadetPromotion = {
   id: string;
@@ -241,7 +242,7 @@ onMounted(loadCadetPromotions);
       <div class="flex items-start justify-between gap-2">
         <div>
           <p class="text-base font-semibold">{{ row.memberName ?? 'Unknown cadet' }}</p>
-          <p class="text-xs text-slate-500 dark:text-slate-400">{{ row.rank ?? '—' }} • CAPID {{ row.capid }}</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatRankDisplay(row.rank) }} • CAPID {{ row.capid }}</p>
         </div>
         <UiBadge :tone="rowStatusTone(row)">{{ rowStatusText(row) }}</UiBadge>
       </div>
@@ -302,7 +303,7 @@ onMounted(loadCadetPromotions);
       <template v-for="row in items" :key="row.id">
         <tr class="border-t border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40">
         <td class="px-4 py-3">{{ row.memberName ?? 'Unknown cadet' }}</td>
-        <td class="px-4 py-3">{{ row.rank ?? '—' }}</td>
+        <td class="px-4 py-3">{{ formatRankDisplay(row.rank) }}</td>
         <td class="px-4 py-3 font-medium">{{ row.capid }}</td>
         <td class="px-4 py-3">{{ row.achievementName ?? '—' }}</td>
         <td class="px-4 py-3">{{ formatDate(row.datePromotionEligible) }}</td>

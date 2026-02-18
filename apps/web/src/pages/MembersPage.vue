@@ -9,6 +9,7 @@ import UiBadge from '@/components/ui/UiBadge.vue';
 import UiModal from '@/components/ui/UiModal.vue';
 import { api } from '@/lib';
 import { useSession } from '@/state/session';
+import { formatRankDisplay } from '@/utils/rank-display';
 
 const query = ref('');
 const status = ref('all');
@@ -177,7 +178,7 @@ onMounted(loadMembers);
       <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
         <div>
           <p class="text-xs text-slate-500 dark:text-slate-400">Rank</p>
-          <p>{{ row.grade ?? '—' }}</p>
+          <p>{{ formatRankDisplay(row.grade) }}</p>
         </div>
         <div>
           <p class="text-xs text-slate-500 dark:text-slate-400">Type</p>
@@ -208,7 +209,7 @@ onMounted(loadMembers);
     <tbody>
       <tr v-for="row in members" :key="row.capid" class="border-t border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40">
         <td class="px-4 py-3 font-medium">{{ row.capid }}</td>
-        <td class="px-4 py-3">{{ row.grade ?? '—' }}</td>
+        <td class="px-4 py-3">{{ formatRankDisplay(row.grade) }}</td>
         <td class="px-4 py-3">
           <button class="text-left hover:underline" @click="loadMemberDetail(row.capid)">{{ row.lastName }}, {{ row.firstName }}</button>
         </td>
@@ -238,7 +239,7 @@ onMounted(loadMembers);
       <section class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/50">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p class="text-lg font-semibold">{{ memberDetail.member.grade ? `${memberDetail.member.grade} ` : '' }}{{ memberDetail.member.lastName }}, {{ memberDetail.member.firstName }}</p>
+            <p class="text-lg font-semibold">{{ memberDetail.member.grade ? `${formatRankDisplay(memberDetail.member.grade)} ` : '' }}{{ memberDetail.member.lastName }}, {{ memberDetail.member.firstName }}</p>
             <p class="text-slate-500 dark:text-slate-400">CAPID {{ memberDetail.member.capid }}</p>
           </div>
           <div class="flex items-center gap-2">
