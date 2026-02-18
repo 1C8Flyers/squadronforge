@@ -72,6 +72,12 @@ enum RecurrenceFrequency {
   monthly
 }
 
+enum UniformOfDay {
+  PT
+  ABU_OCP
+  BLUES
+}
+
 model Tenant {
   id               String     @id @default(cuid())
   name             String
@@ -269,6 +275,7 @@ model Event {
   title           String
   description     String?
   location        String?
+  uniformOfDay    UniformOfDay?
   startsAt        DateTime
   endsAt          DateTime
   allDay          Boolean         @default(false)

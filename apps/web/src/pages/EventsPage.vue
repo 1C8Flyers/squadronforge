@@ -15,12 +15,14 @@ type AudienceRule = {
 };
 
 type RecurrenceFrequency = 'none' | 'daily' | 'weekly' | 'monthly';
+type UniformOfDay = 'PT' | 'ABU_OCP' | 'BLUES';
 
 type EventListItem = {
   id: string;
   title: string;
   description: string | null;
   location: string | null;
+  uniformOfDay: UniformOfDay | null;
   startsAt: string;
   endsAt: string;
   allDay: boolean;
@@ -61,6 +63,7 @@ const showEditForm = ref(false);
 const newTitle = ref('');
 const newDescription = ref('');
 const newLocation = ref('');
+const newUniformOfDay = ref<UniformOfDay | ''>('');
 const newStartsAt = ref('');
 const newEndsAt = ref('');
 const newVisibility = ref<'tenant' | 'audience'>('tenant');
@@ -73,6 +76,7 @@ const newRecurrenceUntil = ref('');
 const editTitle = ref('');
 const editDescription = ref('');
 const editLocation = ref('');
+const editUniformOfDay = ref<UniformOfDay | ''>('');
 const editStartsAt = ref('');
 const editEndsAt = ref('');
 const editVisibility = ref<'tenant' | 'audience'>('tenant');
@@ -97,6 +101,12 @@ const fromDatetimeLocal = (value: string): string => new Date(value).toISOString
 
 const formatDateTime = (value: string): string => new Date(value).toLocaleString();
 
+const formatUniformOfDay = (value: UniformOfDay | null | undefined): string => {
+  if (!value) return 'Not set';
+  if (value === 'ABU_OCP') return 'ABU/OCP';
+  return value;
+};
+
 const formatRecurrence = (event: EventDetail): string => {
   const frequency = event.recurrenceFrequency ?? 'none';
   if (frequency === 'none') return 'Does not repeat';
@@ -115,6 +125,7 @@ const resetNewForm = () => {
   newTitle.value = '';
   newDescription.value = '';
   newLocation.value = '';
+  newUniformOfDay.value = '';
   const now = new Date();
   const plusHour = new Date(now.getTime() + 60 * 60 * 1000);
   newStartsAt.value = toDatetimeLocal(now.toISOString());
@@ -131,6 +142,7 @@ const populateEditFormFromEvent = (event: EventDetail) => {
   editTitle.value = event.title;
   editDescription.value = event.description ?? '';
   editLocation.value = event.location ?? '';
+  editUniformOfDay.value = event.uniformOfDay ?? '';
   editStartsAt.value = toDatetimeLocal(event.startsAt);
   editEndsAt.value = toDatetimeLocal(event.endsAt);
   editVisibility.value = event.visibility;
@@ -214,6 +226,7 @@ const createEvent = async () => {
       title: newTitle.value,
       description: newDescription.value || undefined,
       location: newLocation.value || undefined,
+      uniformOfDay: newUniformOfDay.value || undefined,
       startsAt: fromDatetimeLocal(newStartsAt.value),
       endsAt: fromDatetimeLocal(newEndsAt.value),
       visibility: newVisibility.value,
@@ -247,6 +260,7 @@ const saveSelectedEvent = async () => {
       title: editTitle.value,
       description: editDescription.value || null,
       location: editLocation.value || null,
+      uniformOfDay: editUniformOfDay.value || null,
       startsAt: fromDatetimeLocal(editStartsAt.value),
       endsAt: fromDatetimeLocal(editEndsAt.value),
       visibility: editVisibility.value,
@@ -373,6 +387,15 @@ const startEditingEvent = (eventId: string) => {
     <form class="mt-3 grid gap-2 md:grid-cols-2" @submit.prevent="createEvent">
       <UiInput v-model="newTitle" placeholder="Event title" />
       <UiInput v-model="newLocation" placeholder="Location (manual entry supported)" />
+      <UiSelect
+        v-model="newUniformOfDay"
+        :options="[
+          { label: 'Uniform of the Day (optional)', value: '' },
+          { label: 'PT', value: 'PT' },
+          { label: 'ABU/OCP', value: 'ABU_OCP' },
+          { label: 'Blues', value: 'BLUES' }
+        ]"
+      />
       <div class="md:col-span-2">
         <UiInput v-model="newDescription" placeholder="Description" />
       </div>
@@ -425,6 +448,7 @@ const startEditingEvent = (eventId: string) => {
         <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/50">
           <tr>
             <th class="px-4 py-3">Title</th>
+            <th class="px-4 py-3">UOD</th>
             <th class="px-4 py-3">Starts</th>
             <th class="px-4 py-3">Recurrence</th>
             <th class="px-4 py-3">RSVP</th>
@@ -443,6 +467,7 @@ const startEditingEvent = (eventId: string) => {
               <p class="font-medium">{{ item.title }}</p>
               <p class="text-xs text-slate-500 dark:text-slate-400">{{ item.location ?? 'No location' }}</p>
             </td>
+            <td class="px-4 py-3">{{ formatUniformOfDay(item.uniformOfDay) }}</td>
             <td class="px-4 py-3">{{ formatDateTime(item.startsAt) }}</td>
             <td class="px-4 py-3 text-xs">
               {{ item.recurrenceFrequency && item.recurrenceFrequency !== 'none' ? `${item.recurrenceFrequency} x${item.recurrenceInterval ?? 1}` : 'None' }}
@@ -453,7 +478,7 @@ const startEditingEvent = (eventId: string) => {
             </td>
           </tr>
           <tr v-if="items.length === 0" class="border-t border-slate-200 dark:border-slate-800">
-            <td colspan="5" class="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">No events found.</td>
+            <td colspan="6" class="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">No events found.</td>
           </tr>
         </tbody>
       </UiTable>
@@ -464,6 +489,7 @@ const startEditingEvent = (eventId: string) => {
             <p class="font-semibold">{{ item.title }}</p>
             <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatDateTime(item.startsAt) }}</p>
             <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ item.location ?? 'No location' }}</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">UOD: {{ formatUniformOfDay(item.uniformOfDay) }}</p>
             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Current RSVP: {{ item.myRsvp ?? 'No response' }}</p>
           </button>
 
@@ -495,6 +521,7 @@ const startEditingEvent = (eventId: string) => {
           <p><span class="font-medium">Starts:</span> {{ formatDateTime(selectedEvent.startsAt) }}</p>
           <p><span class="font-medium">Ends:</span> {{ formatDateTime(selectedEvent.endsAt) }}</p>
           <p><span class="font-medium">Location:</span> {{ selectedEvent.location ?? '—' }}</p>
+          <p><span class="font-medium">Uniform:</span> {{ formatUniformOfDay(selectedEvent.uniformOfDay) }}</p>
           <p><span class="font-medium">Audience:</span> {{ selectedEvent.visibility }}</p>
           <p><span class="font-medium">Recurrence:</span> {{ formatRecurrence(selectedEvent) }}</p>
         </div>
@@ -521,6 +548,15 @@ const startEditingEvent = (eventId: string) => {
             <UiInput v-model="editTitle" placeholder="Event title" />
             <UiInput v-model="editDescription" placeholder="Description" />
             <UiInput v-model="editLocation" placeholder="Location" />
+            <UiSelect
+              v-model="editUniformOfDay"
+              :options="[
+                { label: 'Uniform of the Day (optional)', value: '' },
+                { label: 'PT', value: 'PT' },
+                { label: 'ABU/OCP', value: 'ABU_OCP' },
+                { label: 'Blues', value: 'BLUES' }
+              ]"
+            />
             <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Starts</label>
             <UiInput v-model="editStartsAt" type="datetime-local" />
             <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ends</label>
