@@ -548,6 +548,7 @@ tenantRouter.get('/:slug/events', async (req, res) => {
       q: z.string().optional(),
       from: z.coerce.date().optional(),
       to: z.coerce.date().optional(),
+      includePast: queryBoolean.default(false),
       status: z.enum(['active', 'cancelled', 'all']).default('active'),
       memberType: z.enum(['CADET', 'SENIOR', 'UNKNOWN']).optional(),
       sortBy: z.enum(['startsAt', 'title', 'updatedAt', 'createdAt']).default('startsAt'),
@@ -572,6 +573,13 @@ tenantRouter.get('/:slug/events', async (req, res) => {
           startsAt: {
             ...(q.from ? { gte: q.from } : {}),
             ...(q.to ? { lte: q.to } : {})
+          }
+        }
+      : {}),
+    ...(!q.includePast
+      ? {
+          endsAt: {
+            gte: new Date()
           }
         }
       : {}),
