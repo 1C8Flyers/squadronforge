@@ -264,6 +264,17 @@ const parseDutyPositionFile = async (dutyFile: string): Promise<ParsedDutyPositi
   return rows.filter((r) => r.capid.length > 0 && r.dutyName.length > 0);
 };
 
+const setRunStage = async (runId: string, stage: string) => {
+  await prisma.syncRun.update({
+    where: { id: runId },
+    data: {
+      fileListJson: {
+        stage
+      }
+    }
+  });
+};
+
 const scheduleLoop = async () => {
   const tenants = await prisma.tenant.findMany({ where: { isEnabled: true } });
   const now = new Date();
@@ -312,16 +323,24 @@ new Worker(
       data: {
         tenantId,
         startedAt: new Date(),
-        status: 'running'
+        status: 'running',
+        fileListJson: {
+          stage: 'queued'
+        }
       }
     });
     let tempDir: string | undefined;
 
     try {
+      await setRunStage(run.id, 'downloading');
       const download = await downloadZip(tenant.orgid, tenant.unitOnly, tenant.credentialsRef);
       tempDir = download.tempDir;
+
+      await setRunStage(run.id, 'extracting');
       const extracted = await extractZip(download.zipPath);
       const mapping = (tenant.fileMappingJson ?? undefined) as Record<string, string> | undefined;
+
+      await setRunStage(run.id, 'parsing');
       const discovery = await discoverCapwatchFiles(extracted, mapping);
 
       if (!discovery.membership) {
@@ -333,6 +352,8 @@ new Worker(
       let upsertCount = 0;
       let activeCount = 0;
       let dutyUpserted = 0;
+
+      await setRunStage(run.id, 'importing');
 
       await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         for (const member of members) {
@@ -390,6 +411,7 @@ new Worker(
           membersActive: activeCount,
           membersUpserted: upsertCount,
           fileListJson: {
+            stage: 'success',
             files: discovery.files,
             organizationFile: discovery.organization ? path.relative(extracted, discovery.organization) : null,
             membershipFile: path.relative(extracted, discovery.membership),
@@ -406,6 +428,9 @@ new Worker(
         data: {
           finishedAt: new Date(),
           status: 'failed',
+          fileListJson: {
+            stage: 'failed'
+          },
           errorMessage: error instanceof Error ? error.message : 'unknown error'
         }
       });
