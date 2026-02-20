@@ -118,6 +118,26 @@ const formatUniformOfDay = (value: UniformOfDay | null | undefined): string => {
   return value;
 };
 
+const formatAudienceRule = (rule: AudienceRule): string => {
+  const memberTypeLabel =
+    rule.memberType === 'CADET'
+      ? 'Cadets'
+      : rule.memberType === 'SENIOR'
+      ? 'Seniors'
+      : rule.memberType === 'UNKNOWN'
+      ? 'Unknown member type'
+      : 'All members';
+
+  if (!rule.unitCharter) return memberTypeLabel;
+  return `${memberTypeLabel} (${rule.unitCharter})`;
+};
+
+const formatAudience = (event: EventDetail): string => {
+  if (event.visibility === 'tenant') return 'All members (tenant-wide)';
+  if (event.audienceRules.length === 0) return 'Filtered audience';
+  return event.audienceRules.map(formatAudienceRule).join(', ');
+};
+
 const formatRecurrence = (event: EventDetail): string => {
   const frequency = event.recurrenceFrequency ?? 'none';
   if (frequency === 'none') return 'Does not repeat';
@@ -565,7 +585,7 @@ const startEditingEvent = (eventId: string) => {
           <p><span class="font-medium">Ends:</span> {{ formatDateTime(selectedEvent.endsAt) }}</p>
           <p><span class="font-medium">Location:</span> {{ selectedEvent.location ?? '—' }}</p>
           <p><span class="font-medium">Uniform:</span> {{ formatUniformOfDay(selectedEvent.uniformOfDay) }}</p>
-          <p><span class="font-medium">Audience:</span> {{ selectedEvent.visibility }}</p>
+          <p><span class="font-medium">Audience:</span> {{ formatAudience(selectedEvent) }}</p>
           <p><span class="font-medium">Recurrence:</span> {{ formatRecurrence(selectedEvent) }}</p>
         </div>
 
