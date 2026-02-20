@@ -376,7 +376,6 @@ watch([page, pageSize], loadEvents);
 
 watch(selectedEventId, async () => {
   await loadEventDetail();
-  showEditForm.value = false;
   if (selectedEvent.value) {
     populateEditFormFromEvent(selectedEvent.value);
   }
@@ -396,8 +395,16 @@ const startNewEvent = () => {
   showNewEventForm.value = true;
 };
 
+const selectEvent = (eventId: string) => {
+  selectedEventId.value = eventId;
+  showEditForm.value = false;
+};
+
 const startEditingEvent = (eventId: string) => {
   selectedEventId.value = eventId;
+  if (selectedEvent.value?.id === eventId) {
+    populateEditFormFromEvent(selectedEvent.value);
+  }
   showEditForm.value = true;
 };
 </script>
@@ -497,7 +504,7 @@ const startEditingEvent = (eventId: string) => {
             :key="item.id"
             class="cursor-pointer border-t border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40"
             :class="selectedEventId === item.id ? 'bg-indigo-50/70 dark:bg-indigo-500/10' : ''"
-            @click="selectedEventId = item.id"
+            @click="selectEvent(item.id)"
           >
             <td class="px-4 py-3">
               <p class="font-medium">{{ item.title }}</p>
@@ -521,7 +528,7 @@ const startEditingEvent = (eventId: string) => {
 
       <div class="grid gap-3 md:hidden">
         <div v-for="item in items" :key="`mobile-${item.id}`" class="card" :class="selectedEventId === item.id ? 'ring-2 ring-indigo-400' : ''">
-          <button class="w-full text-left" @click="selectedEventId = item.id">
+          <button class="w-full text-left" @click="selectEvent(item.id)">
             <p class="font-semibold">{{ item.title }}</p>
             <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatDateTime(item.startsAt) }}</p>
             <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ item.location ?? 'No location' }}</p>
