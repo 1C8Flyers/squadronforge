@@ -22,6 +22,10 @@ const sendingTestEmail = ref(false);
 const testEmailTo = ref('');
 const testEmailSubject = ref('');
 const testEmailMessage = ref('');
+const sendingTestEventRsvp = ref(false);
+const testEventRecipient = ref('');
+const testEventId = ref('');
+const eventOptions = ref([]);
 const notificationLogs = ref([]);
 const loadingNotificationLogs = ref(false);
 let pollHandle = null;
@@ -167,6 +171,29 @@ const loadNotificationLogs = async () => {
         loadingNotificationLogs.value = false;
     }
 };
+const loadEventOptions = async () => {
+    if (!selectedTenantSlug.value) {
+        eventOptions.value = [];
+        return;
+    }
+    const { data } = await api.get(`/tenant/${selectedTenantSlug.value}/events`, {
+        params: {
+            page: 1,
+            pageSize: 100,
+            status: 'active',
+            sortBy: 'startsAt',
+            sortDir: 'asc'
+        }
+    });
+    eventOptions.value = (data.items ?? []).map((item) => ({
+        id: item.id,
+        title: item.title,
+        startsAt: item.startsAt
+    }));
+    if (!eventOptions.value.some((item) => item.id === testEventId.value)) {
+        testEventId.value = eventOptions.value[0]?.id ?? '';
+    }
+};
 const sendTestEmail = async () => {
     if (!selectedTenantSlug.value)
         return;
@@ -186,6 +213,30 @@ const sendTestEmail = async () => {
     }
     finally {
         sendingTestEmail.value = false;
+    }
+};
+const sendTestEventRsvp = async () => {
+    if (!selectedTenantSlug.value)
+        return;
+    if (!testEventRecipient.value.trim()) {
+        actionMessage.value = 'Enter a recipient email address for RSVP test.';
+        return;
+    }
+    if (!testEventId.value) {
+        actionMessage.value = 'Select an event for RSVP test.';
+        return;
+    }
+    sendingTestEventRsvp.value = true;
+    actionMessage.value = '';
+    try {
+        await api.post(`/tenant/${selectedTenantSlug.value}/settings/test-event-rsvp`, {
+            eventId: testEventId.value,
+            to: testEventRecipient.value.trim()
+        });
+        actionMessage.value = 'Test event RSVP email queued.';
+    }
+    finally {
+        sendingTestEventRsvp.value = false;
     }
 };
 const saveSettings = async () => {
@@ -227,6 +278,7 @@ watch(selectedTenantSlug, async () => {
     queuedAt.value = null;
     await loadSettings();
     await loadSyncRuns();
+    await loadEventOptions();
     await loadNotificationLogs();
     if (latestRun.value?.status === 'running') {
         startPolling();
@@ -255,6 +307,7 @@ onMounted(async () => {
     activeTab.value = activeTabFromRoute();
     await loadSettings();
     await loadSyncRuns();
+    await loadEventOptions();
     await loadNotificationLogs();
     if (latestRun.value?.status === 'running') {
         startPolling();
@@ -673,6 +726,87 @@ if (__VLS_ctx.activeTab === 'settings') {
     [loadingNotificationLogs, loadingNotificationLogs, loadNotificationLogs,];
     var __VLS_79;
     var __VLS_80;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.form, __VLS_intrinsics.form)({
+        ...{ onSubmit: (__VLS_ctx.sendTestEventRsvp) },
+        ...{ class: "mt-4 grid gap-3 md:grid-cols-2" },
+    });
+    /** @type {__VLS_StyleScopedClasses['mt-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['grid']} */ ;
+    /** @type {__VLS_StyleScopedClasses['gap-3']} */ ;
+    /** @type {__VLS_StyleScopedClasses['md:grid-cols-2']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "md:col-span-2" },
+    });
+    /** @type {__VLS_StyleScopedClasses['md:col-span-2']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+        ...{ class: "mb-1 block text-sm" },
+    });
+    /** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
+    /** @type {__VLS_StyleScopedClasses['block']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+    const __VLS_84 = UiInput;
+    // @ts-ignore
+    const __VLS_85 = __VLS_asFunctionalComponent1(__VLS_84, new __VLS_84({
+        modelValue: (__VLS_ctx.testEventRecipient),
+        placeholder: "name@example.com",
+    }));
+    const __VLS_86 = __VLS_85({
+        modelValue: (__VLS_ctx.testEventRecipient),
+        placeholder: "name@example.com",
+    }, ...__VLS_functionalComponentArgsRest(__VLS_85));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "md:col-span-2" },
+    });
+    /** @type {__VLS_StyleScopedClasses['md:col-span-2']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.label, __VLS_intrinsics.label)({
+        ...{ class: "mb-1 block text-sm" },
+    });
+    /** @type {__VLS_StyleScopedClasses['mb-1']} */ ;
+    /** @type {__VLS_StyleScopedClasses['block']} */ ;
+    /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+    const __VLS_89 = UiSelect;
+    // @ts-ignore
+    const __VLS_90 = __VLS_asFunctionalComponent1(__VLS_89, new __VLS_89({
+        modelValue: (__VLS_ctx.testEventId),
+        options: ([
+            ...__VLS_ctx.eventOptions.map((event) => ({
+                label: `${event.title} (${new Date(event.startsAt).toLocaleString()})`,
+                value: event.id
+            }))
+        ]),
+    }));
+    const __VLS_91 = __VLS_90({
+        modelValue: (__VLS_ctx.testEventId),
+        options: ([
+            ...__VLS_ctx.eventOptions.map((event) => ({
+                label: `${event.title} (${new Date(event.startsAt).toLocaleString()})`,
+                value: event.id
+            }))
+        ]),
+    }, ...__VLS_functionalComponentArgsRest(__VLS_90));
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "md:col-span-2 flex flex-wrap items-center gap-2" },
+    });
+    /** @type {__VLS_StyleScopedClasses['md:col-span-2']} */ ;
+    /** @type {__VLS_StyleScopedClasses['flex']} */ ;
+    /** @type {__VLS_StyleScopedClasses['flex-wrap']} */ ;
+    /** @type {__VLS_StyleScopedClasses['items-center']} */ ;
+    /** @type {__VLS_StyleScopedClasses['gap-2']} */ ;
+    const __VLS_94 = UiButton || UiButton;
+    // @ts-ignore
+    const __VLS_95 = __VLS_asFunctionalComponent1(__VLS_94, new __VLS_94({
+        type: "submit",
+        disabled: (__VLS_ctx.sendingTestEventRsvp || !__VLS_ctx.testEventId),
+    }));
+    const __VLS_96 = __VLS_95({
+        type: "submit",
+        disabled: (__VLS_ctx.sendingTestEventRsvp || !__VLS_ctx.testEventId),
+    }, ...__VLS_functionalComponentArgsRest(__VLS_95));
+    const { default: __VLS_99 } = __VLS_97.slots;
+    (__VLS_ctx.sendingTestEventRsvp ? 'Queueing…' : 'Send test event RSVP email');
+    // @ts-ignore
+    [sendTestEventRsvp, testEventRecipient, testEventId, testEventId, eventOptions, sendingTestEventRsvp, sendingTestEventRsvp,];
+    var __VLS_97;
     __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
         ...{ class: "mt-4 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800" },
     });
@@ -788,19 +922,19 @@ if (__VLS_ctx.activeTab === 'settings') {
         });
         /** @type {__VLS_StyleScopedClasses['px-3']} */ ;
         /** @type {__VLS_StyleScopedClasses['py-2']} */ ;
-        const __VLS_84 = UiBadge || UiBadge;
+        const __VLS_100 = UiBadge || UiBadge;
         // @ts-ignore
-        const __VLS_85 = __VLS_asFunctionalComponent1(__VLS_84, new __VLS_84({
+        const __VLS_101 = __VLS_asFunctionalComponent1(__VLS_100, new __VLS_100({
             tone: (log.status === 'sent' ? 'success' : log.status === 'failed' ? 'warn' : 'neutral'),
         }));
-        const __VLS_86 = __VLS_85({
+        const __VLS_102 = __VLS_101({
             tone: (log.status === 'sent' ? 'success' : log.status === 'failed' ? 'warn' : 'neutral'),
-        }, ...__VLS_functionalComponentArgsRest(__VLS_85));
-        const { default: __VLS_89 } = __VLS_87.slots;
+        }, ...__VLS_functionalComponentArgsRest(__VLS_101));
+        const { default: __VLS_105 } = __VLS_103.slots;
         (log.status);
         // @ts-ignore
         [notificationLogs,];
-        var __VLS_87;
+        var __VLS_103;
         __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
             ...{ class: "px-3 py-2 text-xs text-slate-500 dark:text-slate-400" },
         });
@@ -873,19 +1007,19 @@ else {
         /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
         /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
         (new Date(run.startedAt).toLocaleString());
-        const __VLS_90 = UiBadge || UiBadge;
+        const __VLS_106 = UiBadge || UiBadge;
         // @ts-ignore
-        const __VLS_91 = __VLS_asFunctionalComponent1(__VLS_90, new __VLS_90({
+        const __VLS_107 = __VLS_asFunctionalComponent1(__VLS_106, new __VLS_106({
             tone: (run.status === 'success' ? 'success' : 'warn'),
         }));
-        const __VLS_92 = __VLS_91({
+        const __VLS_108 = __VLS_107({
             tone: (run.status === 'success' ? 'success' : 'warn'),
-        }, ...__VLS_functionalComponentArgsRest(__VLS_91));
-        const { default: __VLS_95 } = __VLS_93.slots;
+        }, ...__VLS_functionalComponentArgsRest(__VLS_107));
+        const { default: __VLS_111 } = __VLS_109.slots;
         (run.status);
         // @ts-ignore
         [];
-        var __VLS_93;
+        var __VLS_109;
         __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
             ...{ class: "mt-2 text-sm text-slate-600 dark:text-slate-300" },
         });
@@ -976,19 +1110,19 @@ else {
         });
         /** @type {__VLS_StyleScopedClasses['px-4']} */ ;
         /** @type {__VLS_StyleScopedClasses['py-3']} */ ;
-        const __VLS_96 = UiBadge || UiBadge;
+        const __VLS_112 = UiBadge || UiBadge;
         // @ts-ignore
-        const __VLS_97 = __VLS_asFunctionalComponent1(__VLS_96, new __VLS_96({
+        const __VLS_113 = __VLS_asFunctionalComponent1(__VLS_112, new __VLS_112({
             tone: (run.status === 'success' ? 'success' : 'warn'),
         }));
-        const __VLS_98 = __VLS_97({
+        const __VLS_114 = __VLS_113({
             tone: (run.status === 'success' ? 'success' : 'warn'),
-        }, ...__VLS_functionalComponentArgsRest(__VLS_97));
-        const { default: __VLS_101 } = __VLS_99.slots;
+        }, ...__VLS_functionalComponentArgsRest(__VLS_113));
+        const { default: __VLS_117 } = __VLS_115.slots;
         (run.status);
         // @ts-ignore
         [];
-        var __VLS_99;
+        var __VLS_115;
         __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
             ...{ class: "px-4 py-3" },
         });

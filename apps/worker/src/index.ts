@@ -1292,6 +1292,85 @@ const dispatchTestEmail = async (payload: {
   return { status: 'sent', message: `Test email sent to ${payload.to}` };
 };
 
+const dispatchTestEventRsvpEmail = async (payload: {
+  tenantId: string;
+  eventId: string;
+  to: string;
+  requestedByUserId: string;
+  requestedAt?: string;
+}): Promise<{ status: 'sent' | 'failed' | 'skipped'; message: string }> => {
+  const transporter = getEmailTransporter();
+  if (!transporter) {
+    return { status: 'skipped', message: 'SMTP not configured' };
+  }
+
+  const event = await prisma.event.findFirst({
+    where: { id: payload.eventId, tenantId: payload.tenantId },
+    select: {
+      id: true,
+      title: true,
+      startsAt: true,
+      endsAt: true,
+      location: true,
+      isCancelled: true
+    }
+  });
+
+  if (!event) {
+    return { status: 'failed', message: 'Event not found for RSVP test email' };
+  }
+  if (event.isCancelled) {
+    return { status: 'skipped', message: 'Event is cancelled' };
+  }
+
+  const expiresAt = Math.floor(Date.now() / 1000) + 72 * 60 * 60;
+  const yesLink = buildRsvpLink({
+    tenantId: payload.tenantId,
+    eventId: payload.eventId,
+    userId: payload.requestedByUserId,
+    status: 'yes',
+    source: 'email-link',
+    exp: expiresAt
+  });
+  const maybeLink = buildRsvpLink({
+    tenantId: payload.tenantId,
+    eventId: payload.eventId,
+    userId: payload.requestedByUserId,
+    status: 'maybe',
+    source: 'email-link',
+    exp: expiresAt
+  });
+  const noLink = buildRsvpLink({
+    tenantId: payload.tenantId,
+    eventId: payload.eventId,
+    userId: payload.requestedByUserId,
+    status: 'no',
+    source: 'email-link',
+    exp: expiresAt
+  });
+
+  await transporter.sendMail({
+    from: EMAIL_FROM,
+    to: payload.to,
+    subject: `[SquadronForge] Test RSVP links for ${event.title}`,
+    html: `
+      <p>This is a test RSVP notification email.</p>
+      <p><strong>${event.title}</strong></p>
+      <p>Starts: ${event.startsAt.toLocaleString()}<br/>Ends: ${event.endsAt.toLocaleString()}<br/>Location: ${event.location ?? 'TBD'}</p>
+      <p>Test links:</p>
+      <p>
+        <a href="${yesLink}">Yes</a> |
+        <a href="${maybeLink}">Maybe</a> |
+        <a href="${noLink}">No</a>
+      </p>
+      <hr />
+      <p><strong>Requested at:</strong> ${payload.requestedAt ?? new Date().toISOString()}</p>
+    `
+  });
+
+  return { status: 'sent', message: `Test event RSVP email sent to ${payload.to}` };
+};
+
 const scheduleLoop = async () => {
   const tenants = await prisma.tenant.findMany({ where: { isEnabled: true } });
   const now = new Date();
@@ -1333,6 +1412,64 @@ setInterval(() => {
 new Worker(
   'event-notifications',
   async (job) => {
+    if (job.name === 'send-test-event-rsvp') {
+      const data = job.data as {
+        logId: string;
+        tenantId: string;
+        eventId: string;
+        to: string;
+        requestedByUserId: string;
+        requestedAt?: string;
+      };
+
+      try {
+        const result = await dispatchTestEventRsvpEmail(data);
+        if (result.status === 'failed') {
+          await prisma.testEmailLog.update({
+            where: { id: data.logId },
+            data: {
+              status: 'failed',
+              errorMessage: result.message,
+              sentAt: null
+            }
+          });
+          throw new Error(result.message);
+        }
+        if (result.status === 'skipped') {
+          await prisma.testEmailLog.update({
+            where: { id: data.logId },
+            data: {
+              status: 'skipped',
+              errorMessage: result.message,
+              sentAt: null
+            }
+          });
+          console.warn(JSON.stringify({ level: 'warn', msg: 'test_event_rsvp_email_skipped', reason: result.message, to: data.to }));
+        } else {
+          await prisma.testEmailLog.update({
+            where: { id: data.logId },
+            data: {
+              status: 'sent',
+              errorMessage: null,
+              sentAt: new Date()
+            }
+          });
+          console.log(JSON.stringify({ level: 'info', msg: 'test_event_rsvp_email_sent', to: data.to, eventId: data.eventId }));
+        }
+        return;
+      } catch (error) {
+        await prisma.testEmailLog.update({
+          where: { id: data.logId },
+          data: {
+            status: 'failed',
+            errorMessage: error instanceof Error ? error.message : 'Test event RSVP email failed',
+            sentAt: null
+          }
+        });
+        throw error;
+      }
+    }
+
     if (job.name === 'send-test-email') {
       const data = job.data as {
         logId: string;

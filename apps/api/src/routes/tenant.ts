@@ -1364,6 +1364,77 @@ tenantRouter.post('/:slug/settings/test-email', async (req, res) => {
   res.status(202).json({ enqueued: true, jobId: job.id, logId: testLog.id });
 });
 
+tenantRouter.post('/:slug/settings/test-event-rsvp', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+  await ensureTenantAdminAccess(tenantId, req.auth!);
+
+  const body = z
+    .object({
+      eventId: z.string().min(1),
+      to: z.string().email()
+    })
+    .parse(req.body);
+
+  const [tenant, event] = await Promise.all([
+    prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true, slug: true } }),
+    prisma.event.findFirst({
+      where: { id: body.eventId, tenantId },
+      select: {
+        id: true,
+        title: true,
+        startsAt: true,
+        endsAt: true,
+        location: true,
+        isCancelled: true
+      }
+    })
+  ]);
+
+  if (!tenant) {
+    return res.status(404).json({ error: 'Tenant not found' });
+  }
+
+  if (!event) {
+    return res.status(404).json({ error: 'Event not found' });
+  }
+
+  if (event.isCancelled) {
+    return res.status(409).json({ error: 'Cannot send test RSVP for a cancelled event' });
+  }
+
+  const subject = `[SquadronForge] Test RSVP links for ${event.title}`;
+  const testLog = await prisma.testEmailLog.create({
+    data: {
+      tenantId,
+      toEmail: body.to,
+      subject,
+      status: 'queued',
+      requestedByUserId: req.auth!.userId
+    },
+    select: { id: true }
+  });
+
+  const job = await notificationQueue.add(
+    'send-test-event-rsvp',
+    {
+      logId: testLog.id,
+      tenantId,
+      eventId: event.id,
+      to: body.to,
+      requestedByUserId: req.auth!.userId,
+      requestedAt: new Date().toISOString()
+    },
+    { removeOnComplete: 50, removeOnFail: 200 }
+  );
+
+  await prisma.testEmailLog.update({
+    where: { id: testLog.id },
+    data: { jobId: String(job.id ?? '') }
+  });
+
+  res.status(202).json({ enqueued: true, jobId: job.id, logId: testLog.id, event: { id: event.id, title: event.title } });
+});
+
 tenantRouter.get('/:slug/settings', async (req, res) => {
   const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
   const tenant = await prisma.tenant.findUnique({

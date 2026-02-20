@@ -40,6 +40,12 @@ type NotificationLog = {
   } | null;
 };
 
+type EventOption = {
+  id: string;
+  title: string;
+  startsAt: string;
+};
+
 const orgid = ref('1092');
 const unitOnly = ref('1');
 const timezone = ref('America/Chicago');
@@ -55,6 +61,10 @@ const sendingTestEmail = ref(false);
 const testEmailTo = ref('');
 const testEmailSubject = ref('');
 const testEmailMessage = ref('');
+const sendingTestEventRsvp = ref(false);
+const testEventRecipient = ref('');
+const testEventId = ref('');
+const eventOptions = ref<EventOption[]>([]);
 const notificationLogs = ref<NotificationLog[]>([]);
 const loadingNotificationLogs = ref(false);
 let pollHandle: ReturnType<typeof setInterval> | null = null;
@@ -220,6 +230,33 @@ const loadNotificationLogs = async () => {
   }
 };
 
+const loadEventOptions = async () => {
+  if (!selectedTenantSlug.value) {
+    eventOptions.value = [];
+    return;
+  }
+
+  const { data } = await api.get(`/tenant/${selectedTenantSlug.value}/events`, {
+    params: {
+      page: 1,
+      pageSize: 100,
+      status: 'active',
+      sortBy: 'startsAt',
+      sortDir: 'asc'
+    }
+  });
+
+  eventOptions.value = (data.items ?? []).map((item: { id: string; title: string; startsAt: string }) => ({
+    id: item.id,
+    title: item.title,
+    startsAt: item.startsAt
+  }));
+
+  if (!eventOptions.value.some((item) => item.id === testEventId.value)) {
+    testEventId.value = eventOptions.value[0]?.id ?? '';
+  }
+};
+
 const sendTestEmail = async () => {
   if (!selectedTenantSlug.value) return;
   if (!testEmailTo.value.trim()) {
@@ -238,6 +275,30 @@ const sendTestEmail = async () => {
     actionMessage.value = 'Test email queued.';
   } finally {
     sendingTestEmail.value = false;
+  }
+};
+
+const sendTestEventRsvp = async () => {
+  if (!selectedTenantSlug.value) return;
+  if (!testEventRecipient.value.trim()) {
+    actionMessage.value = 'Enter a recipient email address for RSVP test.';
+    return;
+  }
+  if (!testEventId.value) {
+    actionMessage.value = 'Select an event for RSVP test.';
+    return;
+  }
+
+  sendingTestEventRsvp.value = true;
+  actionMessage.value = '';
+  try {
+    await api.post(`/tenant/${selectedTenantSlug.value}/settings/test-event-rsvp`, {
+      eventId: testEventId.value,
+      to: testEventRecipient.value.trim()
+    });
+    actionMessage.value = 'Test event RSVP email queued.';
+  } finally {
+    sendingTestEventRsvp.value = false;
   }
 };
 
@@ -279,6 +340,7 @@ watch(selectedTenantSlug, async () => {
   queuedAt.value = null;
   await loadSettings();
   await loadSyncRuns();
+  await loadEventOptions();
   await loadNotificationLogs();
   if (latestRun.value?.status === 'running') {
     startPolling();
@@ -312,6 +374,7 @@ onMounted(async () => {
   activeTab.value = activeTabFromRoute();
   await loadSettings();
   await loadSyncRuns();
+  await loadEventOptions();
   await loadNotificationLogs();
   if (latestRun.value?.status === 'running') {
     startPolling();
@@ -396,6 +459,28 @@ onUnmounted(() => {
         <div class="md:col-span-2 flex flex-wrap items-center gap-2">
           <UiButton type="submit" :disabled="sendingTestEmail">{{ sendingTestEmail ? 'Queueing…' : 'Send test email' }}</UiButton>
           <UiButton type="button" variant="secondary" :disabled="loadingNotificationLogs" @click="loadNotificationLogs">{{ loadingNotificationLogs ? 'Loading…' : 'Refresh logs' }}</UiButton>
+        </div>
+      </form>
+
+      <form class="mt-4 grid gap-3 md:grid-cols-2" @submit.prevent="sendTestEventRsvp">
+        <div class="md:col-span-2">
+          <label class="mb-1 block text-sm">Test event RSVP recipient</label>
+          <UiInput v-model="testEventRecipient" placeholder="name@example.com" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="mb-1 block text-sm">Event</label>
+          <UiSelect
+            v-model="testEventId"
+            :options="[
+              ...eventOptions.map((event) => ({
+                label: `${event.title} (${new Date(event.startsAt).toLocaleString()})`,
+                value: event.id
+              }))
+            ]"
+          />
+        </div>
+        <div class="md:col-span-2 flex flex-wrap items-center gap-2">
+          <UiButton type="submit" :disabled="sendingTestEventRsvp || !testEventId">{{ sendingTestEventRsvp ? 'Queueing…' : 'Send test event RSVP email' }}</UiButton>
         </div>
       </form>
 
