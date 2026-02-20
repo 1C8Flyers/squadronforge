@@ -1220,6 +1220,85 @@ tenantRouter.delete('/:slug/notifications/push-subscriptions', async (req, res) 
   res.status(204).send();
 });
 
+tenantRouter.get('/:slug/notification-logs', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+  await ensureTenantAdminAccess(tenantId, req.auth!);
+
+  const q = z
+    .object({
+      page: z.coerce.number().int().min(1).default(1),
+      pageSize: z.coerce.number().int().min(1).max(200).default(25)
+    })
+    .parse(req.query);
+
+  const [items, total] = await Promise.all([
+    prisma.eventNotification.findMany({
+      where: { tenantId },
+      orderBy: [{ createdAt: 'desc' }],
+      skip: (q.page - 1) * q.pageSize,
+      take: q.pageSize,
+      select: {
+        id: true,
+        channel: true,
+        type: true,
+        status: true,
+        scheduledAt: true,
+        sentAt: true,
+        errorMessage: true,
+        createdAt: true,
+        event: {
+          select: {
+            id: true,
+            title: true,
+            startsAt: true
+          }
+        }
+      }
+    }),
+    prisma.eventNotification.count({ where: { tenantId } })
+  ]);
+
+  res.json({ items, total, page: q.page, pageSize: q.pageSize });
+});
+
+tenantRouter.post('/:slug/settings/test-email', async (req, res) => {
+  const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
+  await ensureTenantAdminAccess(tenantId, req.auth!);
+
+  const body = z
+    .object({
+      to: z.string().email(),
+      subject: z.string().max(200).optional(),
+      message: z.string().max(2000).optional()
+    })
+    .parse(req.body);
+
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true, slug: true } });
+  if (!tenant) {
+    return res.status(404).json({ error: 'Tenant not found' });
+  }
+
+  const subject = body.subject?.trim() || `[SquadronForge] Test email for ${tenant.name}`;
+  const message =
+    body.message?.trim() ||
+    `This is a SquadronForge notification test email for tenant "${tenant.name}" (${tenant.slug}). If you received this, SMTP delivery is working.`;
+
+  const job = await notificationQueue.add(
+    'send-test-email',
+    {
+      tenantId,
+      to: body.to,
+      subject,
+      message,
+      requestedByUserId: req.auth!.userId,
+      requestedAt: new Date().toISOString()
+    },
+    { removeOnComplete: 50, removeOnFail: 200 }
+  );
+
+  res.status(202).json({ enqueued: true, jobId: job.id });
+});
+
 tenantRouter.get('/:slug/settings', async (req, res) => {
   const tenantId = await ensureTenantAccess(req.auth!.userId, req.params.slug);
   const tenant = await prisma.tenant.findUnique({

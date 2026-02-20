@@ -1261,6 +1261,37 @@ const dispatchPushNotification = async (notificationId: string): Promise<{ statu
   return { status: 'skipped', message: 'No push notifications delivered' };
 };
 
+const dispatchTestEmail = async (payload: {
+  tenantId: string;
+  to: string;
+  subject: string;
+  message: string;
+  requestedByUserId?: string;
+  requestedAt?: string;
+}): Promise<{ status: 'sent' | 'failed' | 'skipped'; message: string }> => {
+  const transporter = getEmailTransporter();
+  if (!transporter) {
+    return { status: 'skipped', message: 'SMTP not configured' };
+  }
+
+  const tenant = await prisma.tenant.findUnique({ where: { id: payload.tenantId }, select: { name: true, slug: true } });
+
+  await transporter.sendMail({
+    from: EMAIL_FROM,
+    to: payload.to,
+    subject: payload.subject,
+    html: `
+      <p>${payload.message}</p>
+      <hr />
+      <p><strong>Tenant:</strong> ${tenant?.name ?? payload.tenantId} (${tenant?.slug ?? 'unknown'})</p>
+      <p><strong>Requested at:</strong> ${payload.requestedAt ?? new Date().toISOString()}</p>
+      <p><strong>Requested by user:</strong> ${payload.requestedByUserId ?? 'unknown'}</p>
+    `
+  });
+
+  return { status: 'sent', message: `Test email sent to ${payload.to}` };
+};
+
 const scheduleLoop = async () => {
   const tenants = await prisma.tenant.findMany({ where: { isEnabled: true } });
   const now = new Date();
@@ -1302,6 +1333,28 @@ setInterval(() => {
 new Worker(
   'event-notifications',
   async (job) => {
+    if (job.name === 'send-test-email') {
+      const data = job.data as {
+        tenantId: string;
+        to: string;
+        subject: string;
+        message: string;
+        requestedByUserId?: string;
+        requestedAt?: string;
+      };
+
+      const result = await dispatchTestEmail(data);
+      if (result.status === 'failed') {
+        throw new Error(result.message);
+      }
+      if (result.status === 'skipped') {
+        console.warn(JSON.stringify({ level: 'warn', msg: 'test_email_skipped', reason: result.message, to: data.to }));
+      } else {
+        console.log(JSON.stringify({ level: 'info', msg: 'test_email_sent', to: data.to }));
+      }
+      return;
+    }
+
     const notificationId = String(job.data.notificationId ?? '');
     if (!notificationId) {
       throw new Error('notificationId is required');

@@ -21,6 +21,22 @@ type SyncRun = {
   fileListJson: Record<string, unknown> | null;
 };
 
+type NotificationLog = {
+  id: string;
+  channel: 'email' | 'push';
+  type: 'publish' | 'update' | 'reminder' | 'cancel';
+  status: 'queued' | 'sent' | 'failed' | 'skipped';
+  scheduledAt: string;
+  sentAt: string | null;
+  errorMessage: string | null;
+  createdAt: string;
+  event: {
+    id: string;
+    title: string;
+    startsAt: string;
+  } | null;
+};
+
 const orgid = ref('1092');
 const unitOnly = ref('1');
 const timezone = ref('America/Chicago');
@@ -32,6 +48,12 @@ const syncRuns = ref<SyncRun[]>([]);
 const selectedRunId = ref('');
 const activeTab = ref<'settings' | 'sync-log'>('settings');
 const queuedAt = ref<number | null>(null);
+const sendingTestEmail = ref(false);
+const testEmailTo = ref('');
+const testEmailSubject = ref('');
+const testEmailMessage = ref('');
+const notificationLogs = ref<NotificationLog[]>([]);
+const loadingNotificationLogs = ref(false);
 let pollHandle: ReturnType<typeof setInterval> | null = null;
 const { selectedTenantSlug } = useSession();
 const route = useRoute();
@@ -178,6 +200,44 @@ const loadSettings = async () => {
   cron.value = data.syncScheduleCron;
 };
 
+const loadNotificationLogs = async () => {
+  if (!selectedTenantSlug.value) {
+    notificationLogs.value = [];
+    return;
+  }
+
+  loadingNotificationLogs.value = true;
+  try {
+    const { data } = await api.get(`/tenant/${selectedTenantSlug.value}/notification-logs`, {
+      params: { page: 1, pageSize: 25 }
+    });
+    notificationLogs.value = data.items as NotificationLog[];
+  } finally {
+    loadingNotificationLogs.value = false;
+  }
+};
+
+const sendTestEmail = async () => {
+  if (!selectedTenantSlug.value) return;
+  if (!testEmailTo.value.trim()) {
+    actionMessage.value = 'Enter a recipient email address for test email.';
+    return;
+  }
+
+  sendingTestEmail.value = true;
+  actionMessage.value = '';
+  try {
+    await api.post(`/tenant/${selectedTenantSlug.value}/settings/test-email`, {
+      to: testEmailTo.value.trim(),
+      subject: testEmailSubject.value.trim() || undefined,
+      message: testEmailMessage.value.trim() || undefined
+    });
+    actionMessage.value = 'Test email queued.';
+  } finally {
+    sendingTestEmail.value = false;
+  }
+};
+
 const saveSettings = async () => {
   if (!selectedTenantSlug.value) return;
   saving.value = true;
@@ -216,6 +276,7 @@ watch(selectedTenantSlug, async () => {
   queuedAt.value = null;
   await loadSettings();
   await loadSyncRuns();
+  await loadNotificationLogs();
   if (latestRun.value?.status === 'running') {
     startPolling();
   }
@@ -248,6 +309,7 @@ onMounted(async () => {
   activeTab.value = activeTabFromRoute();
   await loadSettings();
   await loadSyncRuns();
+  await loadNotificationLogs();
   if (latestRun.value?.status === 'running') {
     startPolling();
   }
@@ -310,6 +372,59 @@ onUnmounted(() => {
         </p>
       </div>
       <p v-else class="mt-3 text-sm text-slate-500 dark:text-slate-400">No sync runs yet.</p>
+    </section>
+
+    <section class="card mt-4">
+      <h3 class="text-lg font-semibold">Notification test + logs</h3>
+
+      <form class="mt-3 grid gap-3 md:grid-cols-2" @submit.prevent="sendTestEmail">
+        <div class="md:col-span-2">
+          <label class="mb-1 block text-sm">Test email recipient</label>
+          <UiInput v-model="testEmailTo" placeholder="name@example.com" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="mb-1 block text-sm">Subject (optional)</label>
+          <UiInput v-model="testEmailSubject" placeholder="SMTP test" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="mb-1 block text-sm">Message (optional)</label>
+          <UiInput v-model="testEmailMessage" placeholder="If you receive this, email delivery is working." />
+        </div>
+        <div class="md:col-span-2 flex flex-wrap items-center gap-2">
+          <UiButton type="submit" :disabled="sendingTestEmail">{{ sendingTestEmail ? 'Queueing…' : 'Send test email' }}</UiButton>
+          <UiButton type="button" variant="secondary" :disabled="loadingNotificationLogs" @click="loadNotificationLogs">{{ loadingNotificationLogs ? 'Loading…' : 'Refresh logs' }}</UiButton>
+        </div>
+      </form>
+
+      <div class="mt-4 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/50">
+            <tr>
+              <th class="px-3 py-2">Created</th>
+              <th class="px-3 py-2">Event</th>
+              <th class="px-3 py-2">Type</th>
+              <th class="px-3 py-2">Channel</th>
+              <th class="px-3 py-2">Status</th>
+              <th class="px-3 py-2">Message</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="log in notificationLogs" :key="log.id" class="border-t border-slate-200 dark:border-slate-800">
+              <td class="px-3 py-2">{{ new Date(log.createdAt).toLocaleString() }}</td>
+              <td class="px-3 py-2">{{ log.event?.title ?? '—' }}</td>
+              <td class="px-3 py-2">{{ log.type }}</td>
+              <td class="px-3 py-2">{{ log.channel }}</td>
+              <td class="px-3 py-2">
+                <UiBadge :tone="log.status === 'sent' ? 'success' : log.status === 'failed' ? 'warn' : 'neutral'">{{ log.status }}</UiBadge>
+              </td>
+              <td class="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">{{ log.errorMessage ?? (log.sentAt ? `Sent ${new Date(log.sentAt).toLocaleString()}` : '—') }}</td>
+            </tr>
+            <tr v-if="notificationLogs.length === 0" class="border-t border-slate-200 dark:border-slate-800">
+              <td colspan="6" class="px-3 py-4 text-center text-sm text-slate-500 dark:text-slate-400">No notification logs yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
   </template>
 
