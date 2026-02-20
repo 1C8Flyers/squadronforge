@@ -1344,40 +1344,52 @@ new Worker(
         requestedAt?: string;
       };
 
-      const result = await dispatchTestEmail(data);
-      if (result.status === 'failed') {
+      try {
+        const result = await dispatchTestEmail(data);
+        if (result.status === 'failed') {
+          await prisma.testEmailLog.update({
+            where: { id: data.logId },
+            data: {
+              status: 'failed',
+              errorMessage: result.message,
+              sentAt: null
+            }
+          });
+          throw new Error(result.message);
+        }
+        if (result.status === 'skipped') {
+          await prisma.testEmailLog.update({
+            where: { id: data.logId },
+            data: {
+              status: 'skipped',
+              errorMessage: result.message,
+              sentAt: null
+            }
+          });
+          console.warn(JSON.stringify({ level: 'warn', msg: 'test_email_skipped', reason: result.message, to: data.to }));
+        } else {
+          await prisma.testEmailLog.update({
+            where: { id: data.logId },
+            data: {
+              status: 'sent',
+              errorMessage: null,
+              sentAt: new Date()
+            }
+          });
+          console.log(JSON.stringify({ level: 'info', msg: 'test_email_sent', to: data.to }));
+        }
+        return;
+      } catch (error) {
         await prisma.testEmailLog.update({
           where: { id: data.logId },
           data: {
             status: 'failed',
-            errorMessage: result.message,
+            errorMessage: error instanceof Error ? error.message : 'Test email failed',
             sentAt: null
           }
         });
-        throw new Error(result.message);
+        throw error;
       }
-      if (result.status === 'skipped') {
-        await prisma.testEmailLog.update({
-          where: { id: data.logId },
-          data: {
-            status: 'skipped',
-            errorMessage: result.message,
-            sentAt: null
-          }
-        });
-        console.warn(JSON.stringify({ level: 'warn', msg: 'test_email_skipped', reason: result.message, to: data.to }));
-      } else {
-        await prisma.testEmailLog.update({
-          where: { id: data.logId },
-          data: {
-            status: 'sent',
-            errorMessage: null,
-            sentAt: new Date()
-          }
-        });
-        console.log(JSON.stringify({ level: 'info', msg: 'test_email_sent', to: data.to }));
-      }
-      return;
     }
 
     const notificationId = String(job.data.notificationId ?? '');
