@@ -54,6 +54,11 @@ type EventDetail = EventListItem & {
   }>;
 };
 
+type ExternalRecipientInput = {
+  name: string;
+  email: string;
+};
+
 const { selectedTenantSlug } = useSession();
 
 const query = ref('');
@@ -87,7 +92,7 @@ const newEndsAt = ref('');
 const newVisibility = ref<'tenant' | 'audience'>('tenant');
 const newAudienceMemberType = ref<'all' | 'CADET' | 'SENIOR' | 'UNKNOWN'>('all');
 const newAudienceCapids = ref('');
-const newExternalRecipients = ref('');
+const newExternalRecipients = ref<ExternalRecipientInput[]>([]);
 const newRecurrenceFrequency = ref<RecurrenceFrequency>('none');
 const newRecurrenceInterval = ref('1');
 const newRecurrenceOccurrences = ref('10');
@@ -102,7 +107,7 @@ const editEndsAt = ref('');
 const editVisibility = ref<'tenant' | 'audience'>('tenant');
 const editAudienceMemberType = ref<'all' | 'CADET' | 'SENIOR' | 'UNKNOWN'>('all');
 const editAudienceCapids = ref('');
-const editExternalRecipients = ref('');
+const editExternalRecipients = ref<ExternalRecipientInput[]>([]);
 const editRecurrenceFrequency = ref<RecurrenceFrequency>('none');
 const editRecurrenceInterval = ref('1');
 const editRecurrenceUntil = ref('');
@@ -135,30 +140,35 @@ const rsvpResponderLabel = (rsvp: EventDetail['rsvps'][number]): string => {
 const parseCapids = (value: string): Array<{ capid: string }> =>
   [...new Set(value.split(/[\s,]+/).map((token) => token.trim()).filter(Boolean))].map((capid) => ({ capid }));
 
-const parseExternalRecipients = (value: string): Array<{ name?: string; email: string }> => {
-  const lines = value
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  const parsed = lines
-    .map((line) => {
-      const match = line.match(/^(.*?)\s*<([^<>\s]+@[^<>\s]+)>$/);
-      if (match) {
-        return { name: match[1].trim() || undefined, email: match[2].trim() };
-      }
-      return { email: line };
-    })
-    .filter((recipient) => /^\S+@\S+\.\S+$/.test(recipient.email));
-
+const normalizeExternalRecipients = (value: ExternalRecipientInput[]): Array<{ name?: string; email: string }> => {
   const unique = new Map<string, { name?: string; email: string }>();
-  for (const recipient of parsed) {
-    unique.set(recipient.email.trim().toLowerCase(), {
-      name: recipient.name,
-      email: recipient.email.trim().toLowerCase()
+  for (const recipient of value) {
+    const email = recipient.email.trim().toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(email)) continue;
+    unique.set(email, {
+      name: recipient.name.trim() || undefined,
+      email
     });
   }
   return [...unique.values()];
+};
+
+const blankRecipient = (): ExternalRecipientInput => ({ name: '', email: '' });
+
+const addNewExternalRecipient = () => {
+  newExternalRecipients.value.push(blankRecipient());
+};
+
+const removeNewExternalRecipient = (index: number) => {
+  newExternalRecipients.value.splice(index, 1);
+};
+
+const addEditExternalRecipient = () => {
+  editExternalRecipients.value.push(blankRecipient());
+};
+
+const removeEditExternalRecipient = (index: number) => {
+  editExternalRecipients.value.splice(index, 1);
 };
 
 const formatUniformOfDay = (value: UniformOfDay | null | undefined): string => {
@@ -223,7 +233,7 @@ const resetNewForm = () => {
   newVisibility.value = 'tenant';
   newAudienceMemberType.value = 'all';
   newAudienceCapids.value = '';
-  newExternalRecipients.value = '';
+  newExternalRecipients.value = [blankRecipient()];
   newRecurrenceFrequency.value = 'none';
   newRecurrenceInterval.value = '1';
   newRecurrenceOccurrences.value = '10';
@@ -241,9 +251,13 @@ const populateEditFormFromEvent = (event: EventDetail) => {
   const firstRuleType = event.audienceRules[0]?.memberType ?? null;
   editAudienceMemberType.value = firstRuleType ?? 'all';
   editAudienceCapids.value = event.audienceMembers.map((member) => member.capid).join(', ');
-  editExternalRecipients.value = event.externalRecipients
-    .map((recipient) => (recipient.name ? `${recipient.name} <${recipient.email}>` : recipient.email))
-    .join('\n');
+  editExternalRecipients.value =
+    event.externalRecipients.length > 0
+      ? event.externalRecipients.map((recipient) => ({
+          name: recipient.name ?? '',
+          email: recipient.email
+        }))
+      : [blankRecipient()];
   editRecurrenceFrequency.value = event.recurrenceFrequency ?? 'none';
   editRecurrenceInterval.value = String(event.recurrenceInterval ?? 1);
   editRecurrenceUntil.value = event.recurrenceUntil ? toDatetimeLocal(event.recurrenceUntil) : '';
@@ -312,7 +326,7 @@ const createEvent = async () => {
   try {
     const audienceRules = buildAudienceRules(newVisibility.value, newAudienceMemberType.value);
     const audienceMembers = newVisibility.value === 'audience' ? parseCapids(newAudienceCapids.value) : [];
-    const externalRecipients = newVisibility.value === 'audience' ? parseExternalRecipients(newExternalRecipients.value) : [];
+    const externalRecipients = newVisibility.value === 'audience' ? normalizeExternalRecipients(newExternalRecipients.value) : [];
     const recurrence = {
       frequency: newRecurrenceFrequency.value,
       interval: Number(newRecurrenceInterval.value || '1'),
@@ -356,7 +370,7 @@ const saveSelectedEvent = async () => {
   try {
     const audienceRules = buildAudienceRules(editVisibility.value, editAudienceMemberType.value);
     const audienceMembers = editVisibility.value === 'audience' ? parseCapids(editAudienceCapids.value) : [];
-    const externalRecipients = editVisibility.value === 'audience' ? parseExternalRecipients(editExternalRecipients.value) : [];
+    const externalRecipients = editVisibility.value === 'audience' ? normalizeExternalRecipients(editExternalRecipients.value) : [];
 
     await api.patch(`/tenant/${selectedTenantSlug.value}/events/${selectedEvent.value.id}`, {
       title: editTitle.value,
@@ -555,12 +569,14 @@ const startEditingEvent = (eventId: string) => {
       </div>
       <div v-if="newVisibility === 'audience'" class="md:col-span-2">
         <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Extra recipients (optional)</label>
-        <textarea
-          v-model="newExternalRecipients"
-          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-          rows="3"
-          placeholder="One per line: name <email> or email"
-        />
+        <div class="space-y-2">
+          <div v-for="(recipient, index) in newExternalRecipients" :key="`new-recipient-${index}`" class="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+            <UiInput v-model="recipient.name" placeholder="Name (optional)" />
+            <UiInput v-model="recipient.email" placeholder="Email" />
+            <UiButton type="button" variant="secondary" @click="removeNewExternalRecipient(index)">Remove</UiButton>
+          </div>
+          <UiButton type="button" variant="secondary" @click="addNewExternalRecipient">Add recipient</UiButton>
+        </div>
       </div>
 
       <div>
@@ -784,12 +800,14 @@ const startEditingEvent = (eventId: string) => {
             </div>
             <div v-if="editVisibility === 'audience'">
               <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Extra recipients (optional)</label>
-              <textarea
-                v-model="editExternalRecipients"
-                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-                rows="3"
-                placeholder="One per line: name <email> or email"
-              />
+              <div class="space-y-2">
+                <div v-for="(recipient, index) in editExternalRecipients" :key="`edit-recipient-${index}`" class="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+                  <UiInput v-model="recipient.name" placeholder="Name (optional)" />
+                  <UiInput v-model="recipient.email" placeholder="Email" />
+                  <UiButton type="button" variant="secondary" @click="removeEditExternalRecipient(index)">Remove</UiButton>
+                </div>
+                <UiButton type="button" variant="secondary" @click="addEditExternalRecipient">Add recipient</UiButton>
+              </div>
             </div>
             <div>
               <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Repeat</label>
