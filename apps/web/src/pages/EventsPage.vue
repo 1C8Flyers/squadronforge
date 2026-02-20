@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import PageHeader from '@/components/layout/PageHeader.vue';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiInput from '@/components/ui/UiInput.vue';
+import UiModal from '@/components/ui/UiModal.vue';
 import UiSelect from '@/components/ui/UiSelect.vue';
 import UiTable from '@/components/ui/UiTable.vue';
 import { api } from '@/lib';
@@ -529,84 +530,6 @@ const startEditingEvent = (eventId: string) => {
     <UiButton @click="startNewEvent">New event</UiButton>
   </div>
 
-  <section v-if="showNewEventForm" class="card mb-4">
-    <div class="mb-2 flex items-center justify-between gap-2">
-      <h3 class="text-lg font-semibold">New event</h3>
-      <UiButton variant="secondary" @click="showNewEventForm = false">Close</UiButton>
-    </div>
-    <form class="mt-3 grid gap-2 md:grid-cols-2" @submit.prevent="createEvent">
-      <UiInput v-model="newTitle" placeholder="Event title" />
-      <UiInput v-model="newLocation" placeholder="Location (manual entry supported)" />
-      <UiSelect
-        v-model="newUniformOfDay"
-        :options="[
-          { label: 'Uniform of the Day (optional)', value: '' },
-          { label: 'PT', value: 'PT' },
-          { label: 'ABU/OCP', value: 'ABU_OCP' },
-          { label: 'Blues', value: 'BLUES' }
-        ]"
-      />
-      <div class="md:col-span-2">
-        <UiInput v-model="newDescription" placeholder="Description" />
-      </div>
-      <div>
-        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Starts</label>
-        <UiInput v-model="newStartsAt" type="datetime-local" />
-      </div>
-      <div>
-        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ends</label>
-        <UiInput v-model="newEndsAt" type="datetime-local" />
-      </div>
-      <UiSelect v-model="newVisibility" :options="[{ label: 'Tenant-wide', value: 'tenant' }, { label: 'Audience filtered', value: 'audience' }]" />
-      <UiSelect
-        v-if="newVisibility === 'audience'"
-        v-model="newAudienceMemberType"
-        :options="[{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]"
-      />
-      <div v-if="newVisibility === 'audience'" class="md:col-span-2">
-        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Include CAPIDs (optional)</label>
-        <UiInput v-model="newAudienceCapids" placeholder="Comma or space separated CAPIDs" />
-      </div>
-      <div v-if="newVisibility === 'audience'" class="md:col-span-2">
-        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Extra recipients (optional)</label>
-        <div class="space-y-2">
-          <div v-for="(recipient, index) in newExternalRecipients" :key="`new-recipient-${index}`" class="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-            <UiInput v-model="recipient.name" placeholder="Name (optional)" />
-            <UiInput v-model="recipient.email" placeholder="Email" />
-            <UiButton type="button" variant="secondary" @click="removeNewExternalRecipient(index)">Remove</UiButton>
-          </div>
-          <UiButton type="button" variant="secondary" @click="addNewExternalRecipient">Add recipient</UiButton>
-        </div>
-      </div>
-
-      <div>
-        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Repeat</label>
-        <UiSelect v-model="newRecurrenceFrequency" :options="[{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]" />
-      </div>
-      <div>
-        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Interval</label>
-        <UiInput v-model="newRecurrenceInterval" type="number" placeholder="1 = every week/day/month" />
-      </div>
-
-      <div v-if="newRecurrenceFrequency !== 'none'">
-        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Occurrences</label>
-        <UiInput v-model="newRecurrenceOccurrences" type="number" placeholder="How many events to create (e.g. 10)" />
-      </div>
-      <div v-if="newRecurrenceFrequency !== 'none'">
-        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Until (optional)</label>
-        <UiInput v-model="newRecurrenceUntil" type="datetime-local" placeholder="Stop date for recurrence" />
-      </div>
-
-      <p v-if="newRecurrenceFrequency !== 'none'" class="md:col-span-2 text-xs text-slate-500 dark:text-slate-400">
-        Example: Weekly + Interval 1 + Occurrences 10 creates 10 weekly events.
-      </p>
-
-      <div class="md:col-span-2 flex flex-wrap gap-2">
-        <UiButton type="submit" :disabled="saving || !newTitle || !newStartsAt || !newEndsAt">{{ saving ? 'Saving...' : 'Create event' }}</UiButton>
-      </div>
-    </form>
-  </section>
-
   <div class="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
     <div>
       <UiTable class="hidden md:block">
@@ -769,66 +692,6 @@ const startEditingEvent = (eventId: string) => {
           </div>
         </div>
 
-        <div v-if="showEditForm" class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
-          <h4 class="text-base font-semibold">Edit selected event</h4>
-          <form class="mt-3 grid gap-2" @submit.prevent="saveSelectedEvent">
-            <UiInput v-model="editTitle" placeholder="Event title" />
-            <UiInput v-model="editDescription" placeholder="Description" />
-            <UiInput v-model="editLocation" placeholder="Location" />
-            <UiSelect
-              v-model="editUniformOfDay"
-              :options="[
-                { label: 'Uniform of the Day (optional)', value: '' },
-                { label: 'PT', value: 'PT' },
-                { label: 'ABU/OCP', value: 'ABU_OCP' },
-                { label: 'Blues', value: 'BLUES' }
-              ]"
-            />
-            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Starts</label>
-            <UiInput v-model="editStartsAt" type="datetime-local" />
-            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ends</label>
-            <UiInput v-model="editEndsAt" type="datetime-local" />
-            <UiSelect v-model="editVisibility" :options="[{ label: 'Tenant-wide', value: 'tenant' }, { label: 'Audience filtered', value: 'audience' }]" />
-            <UiSelect
-              v-if="editVisibility === 'audience'"
-              v-model="editAudienceMemberType"
-              :options="[{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]"
-            />
-            <div v-if="editVisibility === 'audience'">
-              <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Include CAPIDs (optional)</label>
-              <UiInput v-model="editAudienceCapids" placeholder="Comma or space separated CAPIDs" />
-            </div>
-            <div v-if="editVisibility === 'audience'">
-              <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Extra recipients (optional)</label>
-              <div class="space-y-2">
-                <div v-for="(recipient, index) in editExternalRecipients" :key="`edit-recipient-${index}`" class="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-                  <UiInput v-model="recipient.name" placeholder="Name (optional)" />
-                  <UiInput v-model="recipient.email" placeholder="Email" />
-                  <UiButton type="button" variant="secondary" @click="removeEditExternalRecipient(index)">Remove</UiButton>
-                </div>
-                <UiButton type="button" variant="secondary" @click="addEditExternalRecipient">Add recipient</UiButton>
-              </div>
-            </div>
-            <div>
-              <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Repeat</label>
-              <UiSelect v-model="editRecurrenceFrequency" :options="[{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]" />
-            </div>
-            <div>
-              <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Interval</label>
-              <UiInput v-model="editRecurrenceInterval" type="number" placeholder="1 = every week/day/month" />
-            </div>
-            <div v-if="editRecurrenceFrequency !== 'none'">
-              <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Until (optional)</label>
-              <UiInput v-model="editRecurrenceUntil" type="datetime-local" placeholder="Stop date for recurrence" />
-            </div>
-
-            <div class="mt-2 flex flex-wrap gap-2">
-              <UiButton type="submit" :disabled="saving">{{ saving ? 'Saving...' : 'Update selected' }}</UiButton>
-              <UiButton variant="secondary" type="button" :disabled="saving" @click="showEditForm = false">Close</UiButton>
-              <UiButton variant="danger" type="button" :disabled="saving || selectedEvent.isCancelled" @click="cancelSelectedEvent">Cancel selected</UiButton>
-            </div>
-          </form>
-        </div>
       </section>
 
       <section v-else class="card">
@@ -839,4 +702,139 @@ const startEditingEvent = (eventId: string) => {
       <p v-if="actionMessage" class="text-sm text-slate-500 dark:text-slate-400">{{ actionMessage }}</p>
     </div>
   </div>
+
+  <UiModal :open="showNewEventForm" title="New event" @close="showNewEventForm = false">
+    <form class="grid gap-2 md:grid-cols-2" @submit.prevent="createEvent">
+      <UiInput v-model="newTitle" placeholder="Event title" />
+      <UiInput v-model="newLocation" placeholder="Location (manual entry supported)" />
+      <UiSelect
+        v-model="newUniformOfDay"
+        :options="[
+          { label: 'Uniform of the Day (optional)', value: '' },
+          { label: 'PT', value: 'PT' },
+          { label: 'ABU/OCP', value: 'ABU_OCP' },
+          { label: 'Blues', value: 'BLUES' }
+        ]"
+      />
+      <div class="md:col-span-2">
+        <UiInput v-model="newDescription" placeholder="Description" />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Starts</label>
+        <UiInput v-model="newStartsAt" type="datetime-local" />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ends</label>
+        <UiInput v-model="newEndsAt" type="datetime-local" />
+      </div>
+      <UiSelect v-model="newVisibility" :options="[{ label: 'Tenant-wide', value: 'tenant' }, { label: 'Audience filtered', value: 'audience' }]" />
+      <UiSelect
+        v-if="newVisibility === 'audience'"
+        v-model="newAudienceMemberType"
+        :options="[{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]"
+      />
+      <div v-if="newVisibility === 'audience'" class="md:col-span-2">
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Include CAPIDs (optional)</label>
+        <UiInput v-model="newAudienceCapids" placeholder="Comma or space separated CAPIDs" />
+      </div>
+      <div v-if="newVisibility === 'audience'" class="md:col-span-2">
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Extra recipients (optional)</label>
+        <div class="space-y-2">
+          <div v-for="(recipient, index) in newExternalRecipients" :key="`new-recipient-${index}`" class="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+            <UiInput v-model="recipient.name" placeholder="Name (optional)" />
+            <UiInput v-model="recipient.email" placeholder="Email" />
+            <UiButton type="button" variant="secondary" @click="removeNewExternalRecipient(index)">Remove</UiButton>
+          </div>
+          <UiButton type="button" variant="secondary" @click="addNewExternalRecipient">Add recipient</UiButton>
+        </div>
+      </div>
+
+      <div>
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Repeat</label>
+        <UiSelect v-model="newRecurrenceFrequency" :options="[{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]" />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Interval</label>
+        <UiInput v-model="newRecurrenceInterval" type="number" placeholder="1 = every week/day/month" />
+      </div>
+
+      <div v-if="newRecurrenceFrequency !== 'none'">
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Occurrences</label>
+        <UiInput v-model="newRecurrenceOccurrences" type="number" placeholder="How many events to create (e.g. 10)" />
+      </div>
+      <div v-if="newRecurrenceFrequency !== 'none'">
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Until (optional)</label>
+        <UiInput v-model="newRecurrenceUntil" type="datetime-local" placeholder="Stop date for recurrence" />
+      </div>
+
+      <p v-if="newRecurrenceFrequency !== 'none'" class="md:col-span-2 text-xs text-slate-500 dark:text-slate-400">
+        Example: Weekly + Interval 1 + Occurrences 10 creates 10 weekly events.
+      </p>
+
+      <div class="md:col-span-2 mt-2 flex flex-wrap gap-2">
+        <UiButton type="submit" :disabled="saving || !newTitle || !newStartsAt || !newEndsAt">{{ saving ? 'Saving...' : 'Create event' }}</UiButton>
+      </div>
+    </form>
+  </UiModal>
+
+  <UiModal :open="showEditForm" title="Edit selected event" @close="showEditForm = false">
+    <form v-if="selectedEvent" class="grid gap-2" @submit.prevent="saveSelectedEvent">
+      <UiInput v-model="editTitle" placeholder="Event title" />
+      <UiInput v-model="editDescription" placeholder="Description" />
+      <UiInput v-model="editLocation" placeholder="Location" />
+      <UiSelect
+        v-model="editUniformOfDay"
+        :options="[
+          { label: 'Uniform of the Day (optional)', value: '' },
+          { label: 'PT', value: 'PT' },
+          { label: 'ABU/OCP', value: 'ABU_OCP' },
+          { label: 'Blues', value: 'BLUES' }
+        ]"
+      />
+      <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Starts</label>
+      <UiInput v-model="editStartsAt" type="datetime-local" />
+      <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ends</label>
+      <UiInput v-model="editEndsAt" type="datetime-local" />
+      <UiSelect v-model="editVisibility" :options="[{ label: 'Tenant-wide', value: 'tenant' }, { label: 'Audience filtered', value: 'audience' }]" />
+      <UiSelect
+        v-if="editVisibility === 'audience'"
+        v-model="editAudienceMemberType"
+        :options="[{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]"
+      />
+      <div v-if="editVisibility === 'audience'">
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Include CAPIDs (optional)</label>
+        <UiInput v-model="editAudienceCapids" placeholder="Comma or space separated CAPIDs" />
+      </div>
+      <div v-if="editVisibility === 'audience'">
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Extra recipients (optional)</label>
+        <div class="space-y-2">
+          <div v-for="(recipient, index) in editExternalRecipients" :key="`edit-recipient-${index}`" class="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+            <UiInput v-model="recipient.name" placeholder="Name (optional)" />
+            <UiInput v-model="recipient.email" placeholder="Email" />
+            <UiButton type="button" variant="secondary" @click="removeEditExternalRecipient(index)">Remove</UiButton>
+          </div>
+          <UiButton type="button" variant="secondary" @click="addEditExternalRecipient">Add recipient</UiButton>
+        </div>
+      </div>
+      <div>
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Repeat</label>
+        <UiSelect v-model="editRecurrenceFrequency" :options="[{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]" />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Interval</label>
+        <UiInput v-model="editRecurrenceInterval" type="number" placeholder="1 = every week/day/month" />
+      </div>
+      <div v-if="editRecurrenceFrequency !== 'none'">
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Until (optional)</label>
+        <UiInput v-model="editRecurrenceUntil" type="datetime-local" placeholder="Stop date for recurrence" />
+      </div>
+
+      <div class="mt-2 flex flex-wrap gap-2">
+        <UiButton type="submit" :disabled="saving">{{ saving ? 'Saving...' : 'Update selected' }}</UiButton>
+        <UiButton variant="secondary" type="button" :disabled="saving" @click="showEditForm = false">Close</UiButton>
+        <UiButton variant="danger" type="button" :disabled="saving || selectedEvent.isCancelled" @click="cancelSelectedEvent">Cancel selected</UiButton>
+      </div>
+    </form>
+    <p v-else class="text-sm text-slate-500 dark:text-slate-400">Select an event first.</p>
+  </UiModal>
 </template>
