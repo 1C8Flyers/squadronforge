@@ -38,7 +38,20 @@ type EventListItem = {
 };
 
 type EventDetail = EventListItem & {
-  rsvps: Array<{ id: string; status: 'yes' | 'no' | 'maybe'; note: string | null; respondedAt: string; capid?: string | null; memberName?: string | null; source?: string; user?: { email: string } | null }>;
+  audienceMembers: Array<{ id: string; capid: string }>;
+  externalRecipients: Array<{ id: string; name: string | null; email: string }>;
+  rsvps: Array<{
+    id: string;
+    status: 'yes' | 'no' | 'maybe';
+    note: string | null;
+    respondedAt: string;
+    capid?: string | null;
+    memberName?: string | null;
+    externalEmail?: string | null;
+    externalName?: string | null;
+    source?: string;
+    user?: { email: string } | null;
+  }>;
 };
 
 const { selectedTenantSlug } = useSession();
@@ -73,6 +86,8 @@ const newStartsAt = ref('');
 const newEndsAt = ref('');
 const newVisibility = ref<'tenant' | 'audience'>('tenant');
 const newAudienceMemberType = ref<'all' | 'CADET' | 'SENIOR' | 'UNKNOWN'>('all');
+const newAudienceCapids = ref('');
+const newExternalRecipients = ref('');
 const newRecurrenceFrequency = ref<RecurrenceFrequency>('none');
 const newRecurrenceInterval = ref('1');
 const newRecurrenceOccurrences = ref('10');
@@ -86,6 +101,8 @@ const editStartsAt = ref('');
 const editEndsAt = ref('');
 const editVisibility = ref<'tenant' | 'audience'>('tenant');
 const editAudienceMemberType = ref<'all' | 'CADET' | 'SENIOR' | 'UNKNOWN'>('all');
+const editAudienceCapids = ref('');
+const editExternalRecipients = ref('');
 const editRecurrenceFrequency = ref<RecurrenceFrequency>('none');
 const editRecurrenceInterval = ref('1');
 const editRecurrenceUntil = ref('');
@@ -108,9 +125,40 @@ const formatDateTime = (value: string): string => new Date(value).toLocaleString
 
 const rsvpResponderLabel = (rsvp: EventDetail['rsvps'][number]): string => {
   if (rsvp.user?.email) return rsvp.user.email;
+  if (rsvp.externalName) return rsvp.externalName;
+  if (rsvp.externalEmail) return rsvp.externalEmail;
   if (rsvp.memberName) return rsvp.memberName;
   if (rsvp.capid) return `CAPID ${rsvp.capid}`;
   return 'Unknown responder';
+};
+
+const parseCapids = (value: string): Array<{ capid: string }> =>
+  [...new Set(value.split(/[\s,]+/).map((token) => token.trim()).filter(Boolean))].map((capid) => ({ capid }));
+
+const parseExternalRecipients = (value: string): Array<{ name?: string; email: string }> => {
+  const lines = value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const parsed = lines
+    .map((line) => {
+      const match = line.match(/^(.*?)\s*<([^<>\s]+@[^<>\s]+)>$/);
+      if (match) {
+        return { name: match[1].trim() || undefined, email: match[2].trim() };
+      }
+      return { email: line };
+    })
+    .filter((recipient) => /^\S+@\S+\.\S+$/.test(recipient.email));
+
+  const unique = new Map<string, { name?: string; email: string }>();
+  for (const recipient of parsed) {
+    unique.set(recipient.email.trim().toLowerCase(), {
+      name: recipient.name,
+      email: recipient.email.trim().toLowerCase()
+    });
+  }
+  return [...unique.values()];
 };
 
 const formatUniformOfDay = (value: UniformOfDay | null | undefined): string => {
@@ -135,8 +183,18 @@ const formatAudienceRule = (rule: AudienceRule): string => {
 
 const formatAudience = (event: EventDetail): string => {
   if (event.visibility === 'tenant') return 'All members (tenant-wide)';
-  if (event.audienceRules.length === 0) return 'Filtered audience';
-  return event.audienceRules.map(formatAudienceRule).join(', ');
+  const parts: string[] = [];
+  if (event.audienceRules.length > 0) {
+    parts.push(event.audienceRules.map(formatAudienceRule).join(', '));
+  }
+  if (event.audienceMembers.length > 0) {
+    parts.push(`${event.audienceMembers.length} specific member${event.audienceMembers.length === 1 ? '' : 's'}`);
+  }
+  if (event.externalRecipients.length > 0) {
+    parts.push(`${event.externalRecipients.length} external recipient${event.externalRecipients.length === 1 ? '' : 's'}`);
+  }
+  if (parts.length === 0) return 'Filtered audience';
+  return parts.join(' + ');
 };
 
 const formatRecurrence = (event: EventDetail): string => {
@@ -164,6 +222,8 @@ const resetNewForm = () => {
   newEndsAt.value = toDatetimeLocal(plusHour.toISOString());
   newVisibility.value = 'tenant';
   newAudienceMemberType.value = 'all';
+  newAudienceCapids.value = '';
+  newExternalRecipients.value = '';
   newRecurrenceFrequency.value = 'none';
   newRecurrenceInterval.value = '1';
   newRecurrenceOccurrences.value = '10';
@@ -180,6 +240,10 @@ const populateEditFormFromEvent = (event: EventDetail) => {
   editVisibility.value = event.visibility;
   const firstRuleType = event.audienceRules[0]?.memberType ?? null;
   editAudienceMemberType.value = firstRuleType ?? 'all';
+  editAudienceCapids.value = event.audienceMembers.map((member) => member.capid).join(', ');
+  editExternalRecipients.value = event.externalRecipients
+    .map((recipient) => (recipient.name ? `${recipient.name} <${recipient.email}>` : recipient.email))
+    .join('\n');
   editRecurrenceFrequency.value = event.recurrenceFrequency ?? 'none';
   editRecurrenceInterval.value = String(event.recurrenceInterval ?? 1);
   editRecurrenceUntil.value = event.recurrenceUntil ? toDatetimeLocal(event.recurrenceUntil) : '';
@@ -247,6 +311,8 @@ const createEvent = async () => {
   actionMessage.value = '';
   try {
     const audienceRules = buildAudienceRules(newVisibility.value, newAudienceMemberType.value);
+    const audienceMembers = newVisibility.value === 'audience' ? parseCapids(newAudienceCapids.value) : [];
+    const externalRecipients = newVisibility.value === 'audience' ? parseExternalRecipients(newExternalRecipients.value) : [];
     const recurrence = {
       frequency: newRecurrenceFrequency.value,
       interval: Number(newRecurrenceInterval.value || '1'),
@@ -264,6 +330,8 @@ const createEvent = async () => {
       visibility: newVisibility.value,
       allDay: false,
       audienceRules,
+      audienceMembers,
+      externalRecipients,
       recurrence
     });
     actionMessage.value = data.createdCount && data.createdCount > 1 ? `Created ${data.createdCount} recurring events.` : 'Event created.';
@@ -287,6 +355,8 @@ const saveSelectedEvent = async () => {
   actionMessage.value = '';
   try {
     const audienceRules = buildAudienceRules(editVisibility.value, editAudienceMemberType.value);
+    const audienceMembers = editVisibility.value === 'audience' ? parseCapids(editAudienceCapids.value) : [];
+    const externalRecipients = editVisibility.value === 'audience' ? parseExternalRecipients(editExternalRecipients.value) : [];
 
     await api.patch(`/tenant/${selectedTenantSlug.value}/events/${selectedEvent.value.id}`, {
       title: editTitle.value,
@@ -297,6 +367,8 @@ const saveSelectedEvent = async () => {
       endsAt: fromDatetimeLocal(editEndsAt.value),
       visibility: editVisibility.value,
       audienceRules,
+      audienceMembers,
+      externalRecipients,
       recurrence: {
         frequency: editRecurrenceFrequency.value,
         interval: Number(editRecurrenceInterval.value || '1'),
@@ -477,6 +549,19 @@ const startEditingEvent = (eventId: string) => {
         v-model="newAudienceMemberType"
         :options="[{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]"
       />
+      <div v-if="newVisibility === 'audience'" class="md:col-span-2">
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Include CAPIDs (optional)</label>
+        <UiInput v-model="newAudienceCapids" placeholder="Comma or space separated CAPIDs" />
+      </div>
+      <div v-if="newVisibility === 'audience'" class="md:col-span-2">
+        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Extra recipients (optional)</label>
+        <textarea
+          v-model="newExternalRecipients"
+          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          rows="3"
+          placeholder="One per line: name <email> or email"
+        />
+      </div>
 
       <div>
         <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Repeat</label>
@@ -693,6 +778,19 @@ const startEditingEvent = (eventId: string) => {
               v-model="editAudienceMemberType"
               :options="[{ label: 'Any member type', value: 'all' }, { label: 'Cadets', value: 'CADET' }, { label: 'Seniors', value: 'SENIOR' }, { label: 'Unknown', value: 'UNKNOWN' }]"
             />
+            <div v-if="editVisibility === 'audience'">
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Include CAPIDs (optional)</label>
+              <UiInput v-model="editAudienceCapids" placeholder="Comma or space separated CAPIDs" />
+            </div>
+            <div v-if="editVisibility === 'audience'">
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Extra recipients (optional)</label>
+              <textarea
+                v-model="editExternalRecipients"
+                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                rows="3"
+                placeholder="One per line: name <email> or email"
+              />
+            </div>
             <div>
               <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Repeat</label>
               <UiSelect v-model="editRecurrenceFrequency" :options="[{ label: 'Does not repeat', value: 'none' }, { label: 'Daily', value: 'daily' }, { label: 'Weekly', value: 'weekly' }, { label: 'Monthly', value: 'monthly' }]" />

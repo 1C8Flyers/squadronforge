@@ -1028,6 +1028,8 @@ type SignedRsvpPayload = {
   exp: number;
   userId?: string;
   capid?: string;
+  email?: string;
+  name?: string;
 };
 
 const signRsvpToken = (payload: SignedRsvpPayload): string => {
@@ -1084,7 +1086,7 @@ const scheduleEventNotificationsLoop = async () => {
   });
 
   await Promise.all(
-    due.map((row) =>
+    due.map((row: (typeof due)[number]) =>
       notificationQueue.add('dispatch-notification', { notificationId: row.id }, { jobId: `event-notification-${row.id}`, removeOnComplete: 200, removeOnFail: 500 })
     )
   );
@@ -1100,7 +1102,7 @@ const dispatchEmailNotification = async (notificationId: string): Promise<{ stat
     where: { id: notificationId },
     include: {
       event: {
-        include: { audienceRules: true }
+        include: { audienceRules: true, audienceMembers: true, externalRecipients: true }
       }
     }
   });
@@ -1109,11 +1111,11 @@ const dispatchEmailNotification = async (notificationId: string): Promise<{ stat
     return { status: 'failed', message: 'Event notification record not found' };
   }
 
-  const members = await prisma.member.findMany({
+  const groupMembers = await prisma.member.findMany({
     where: buildAudienceMemberWhere({
       tenantId: notification.tenantId,
       visibility: notification.event.visibility,
-      audienceRules: notification.event.audienceRules.map((rule) => ({
+      audienceRules: notification.event.audienceRules.map((rule: (typeof notification.event.audienceRules)[number]) => ({
         memberType: rule.memberType,
         unitCharter: rule.unitCharter
       }))
@@ -1126,11 +1128,45 @@ const dispatchEmailNotification = async (notificationId: string): Promise<{ stat
     }
   });
 
-  const uniqueByEmail = new Map<string, (typeof members)[number]>();
-  for (const member of members) {
+  const explicitCapids = [...new Set(notification.event.audienceMembers.map((member: (typeof notification.event.audienceMembers)[number]) => member.capid).filter(Boolean))];
+  const explicitMembers =
+    explicitCapids.length > 0
+      ? await prisma.member.findMany({
+          where: {
+            tenantId: notification.tenantId,
+            capid: { in: explicitCapids },
+            email: { not: null as any }
+          },
+          select: {
+            email: true,
+            capid: true,
+            firstName: true,
+            lastName: true
+          }
+        })
+      : [];
+
+  const uniqueByEmail = new Map<string, { email: string; name: string; capid?: string; externalName?: string }>();
+
+  for (const member of [...groupMembers, ...explicitMembers]) {
     const email = (member.email ?? '').trim().toLowerCase();
     if (email) {
-      uniqueByEmail.set(email, member);
+      uniqueByEmail.set(email, {
+        email,
+        name: `${member.firstName} ${member.lastName}`.trim() || 'member',
+        capid: member.capid
+      });
+    }
+  }
+
+  for (const recipient of notification.event.externalRecipients) {
+    const email = recipient.email.trim().toLowerCase();
+    if (email) {
+      uniqueByEmail.set(email, {
+        email,
+        name: recipient.name?.trim() || email,
+        externalName: recipient.name?.trim() || undefined
+      });
     }
   }
 
@@ -1144,10 +1180,17 @@ const dispatchEmailNotification = async (notificationId: string): Promise<{ stat
 
   let sentCount = 0;
   for (const recipient of uniqueByEmail.values()) {
+    const identity = recipient.capid
+      ? { capid: recipient.capid }
+      : {
+          email: recipient.email,
+          ...(recipient.externalName ? { name: recipient.externalName } : {})
+        };
+
     const yesLink = buildRsvpLink({
       tenantId: notification.tenantId,
       eventId: notification.eventId,
-      capid: recipient.capid,
+      ...identity,
       status: 'yes',
       source: 'email-link',
       exp: expiresAt
@@ -1155,7 +1198,7 @@ const dispatchEmailNotification = async (notificationId: string): Promise<{ stat
     const maybeLink = buildRsvpLink({
       tenantId: notification.tenantId,
       eventId: notification.eventId,
-      capid: recipient.capid,
+      ...identity,
       status: 'maybe',
       source: 'email-link',
       exp: expiresAt
@@ -1163,20 +1206,18 @@ const dispatchEmailNotification = async (notificationId: string): Promise<{ stat
     const noLink = buildRsvpLink({
       tenantId: notification.tenantId,
       eventId: notification.eventId,
-      capid: recipient.capid,
+      ...identity,
       status: 'no',
       source: 'email-link',
       exp: expiresAt
     });
 
-    const name = `${recipient.firstName} ${recipient.lastName}`.trim();
-
     await transporter.sendMail({
       from: EMAIL_FROM,
-      to: recipient.email!,
+      to: recipient.email,
       subject: `[SquadronForge] ${notification.type.toUpperCase()}: ${notification.event.title}`,
       html: `
-        <p>Hello ${name || 'member'},</p>
+        <p>Hello ${recipient.name || 'member'},</p>
         <p><strong>${notification.event.title}</strong></p>
         <p>Starts: ${eventStarts}<br/>Ends: ${eventEnds}<br/>Location: ${notification.event.location ?? 'TBD'}</p>
         <p>Quick RSVP:</p>

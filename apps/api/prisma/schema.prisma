@@ -100,6 +100,8 @@ model Tenant {
   syncRuns         SyncRun[]
   events           Event[]
   eventAudienceRules EventAudienceRule[]
+  eventAudienceMembers EventAudienceMember[]
+  eventExternalRecipients EventExternalRecipient[]
   eventRsvps       EventRsvp[]
   eventNotifications EventNotification[]
   testEmailLogs    TestEmailLog[]
@@ -294,6 +296,8 @@ model Event {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   audienceRules   EventAudienceRule[]
+  audienceMembers EventAudienceMember[]
+  externalRecipients EventExternalRecipient[]
   rsvps           EventRsvp[]
   notifications   EventNotification[]
 
@@ -315,6 +319,33 @@ model EventAudienceRule {
   @@index([tenantId, eventId])
 }
 
+model EventAudienceMember {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  capid     String
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, eventId, capid])
+  @@index([tenantId, eventId])
+}
+
+model EventExternalRecipient {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name      String?
+  email     String
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, eventId, email])
+  @@index([tenantId, eventId])
+}
+
 model EventRsvp {
   id          String     @id @default(cuid())
   tenantId    String
@@ -324,6 +355,8 @@ model EventRsvp {
   userId      String?
   user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
   capid       String?
+  externalEmail String?
+  externalName  String?
   status      RsvpStatus
   note        String?
   source      String     @default("web")
@@ -332,6 +365,7 @@ model EventRsvp {
   updatedAt   DateTime   @updatedAt
 
   @@unique([tenantId, eventId, userId])
+  @@unique([tenantId, eventId, externalEmail])
   @@index([tenantId, eventId, status])
   @@index([tenantId, capid])
 }

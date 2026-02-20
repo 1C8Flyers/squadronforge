@@ -23,6 +23,8 @@ type SignedRsvpPayload = {
   exp: number;
   userId?: string;
   capid?: string;
+  email?: string;
+  name?: string;
 };
 
 const fromBase64Url = (value: string): string => Buffer.from(value, 'base64url').toString('utf8');
@@ -50,7 +52,9 @@ const verifySignedRsvpToken = (token: string): SignedRsvpPayload | null => {
         source: z.enum(['email-link', 'push-link']),
         exp: z.coerce.number().int().positive(),
         userId: z.string().min(1).optional(),
-        capid: z.string().min(1).optional()
+        capid: z.string().min(1).optional(),
+        email: z.email().optional(),
+        name: z.string().min(1).optional()
       })
       .parse(parsed);
   } catch {
@@ -152,6 +156,31 @@ tenantRouter.get('/rsvp/:token', async (req, res) => {
         }
       });
     }
+  } else if (payload.email) {
+    await prisma.eventRsvp.upsert({
+      where: {
+        tenantId_eventId_externalEmail: {
+          tenantId: payload.tenantId,
+          eventId: payload.eventId,
+          externalEmail: payload.email
+        }
+      },
+      create: {
+        tenantId: payload.tenantId,
+        eventId: payload.eventId,
+        externalEmail: payload.email,
+        externalName: payload.name ?? null,
+        status: payload.status,
+        source: payload.source,
+        respondedAt: new Date()
+      },
+      update: {
+        externalName: payload.name ?? null,
+        status: payload.status,
+        source: payload.source,
+        respondedAt: new Date()
+      }
+    });
   } else {
     return res.status(400).send(rsvpActionHtml('Invalid RSVP link', 'This RSVP link is missing a recipient identity.'));
   }
@@ -808,6 +837,21 @@ tenantRouter.post('/:slug/events', async (req, res) => {
             unitCharter: z.string().optional()
           })
         )
+        .default([]),
+      audienceMembers: z
+        .array(
+          z.object({
+            capid: z.string().min(1)
+          })
+        )
+        .default([]),
+      externalRecipients: z
+        .array(
+          z.object({
+            name: z.string().min(1).optional(),
+            email: z.email()
+          })
+        )
         .default([])
     })
     .parse(req.body);
@@ -821,6 +865,19 @@ tenantRouter.post('/:slug/events', async (req, res) => {
   }
 
   const normalizedRules = body.visibility === 'tenant' ? [] : body.audienceRules;
+  const normalizedAudienceMembers =
+    body.visibility === 'tenant'
+      ? []
+      : body.audienceMembers.map((member) => ({
+          capid: member.capid.trim()
+        }));
+  const normalizedExternalRecipients =
+    body.visibility === 'tenant'
+      ? []
+      : body.externalRecipients.map((recipient) => ({
+          name: recipient.name?.trim() || null,
+          email: recipient.email.trim().toLowerCase()
+        }));
   const frequency = body.recurrence.frequency;
   const interval = body.recurrence.interval;
   const instances = buildRecurringInstances({
@@ -858,6 +915,19 @@ tenantRouter.post('/:slug/events', async (req, res) => {
               memberType: rule.memberType,
               unitCharter: rule.unitCharter
             }))
+          },
+          audienceMembers: {
+            create: normalizedAudienceMembers.map((member) => ({
+              tenantId,
+              capid: member.capid
+            }))
+          },
+          externalRecipients: {
+            create: normalizedExternalRecipients.map((recipient) => ({
+              tenantId,
+              name: recipient.name,
+              email: recipient.email
+            }))
           }
         },
         select: { id: true }
@@ -867,7 +937,7 @@ tenantRouter.post('/:slug/events', async (req, res) => {
 
     return tx.event.findFirst({
       where: { id: createdEvents[0].id },
-      include: { audienceRules: true }
+      include: { audienceRules: true, audienceMembers: true, externalRecipients: true }
     });
   });
 
@@ -882,6 +952,8 @@ tenantRouter.get('/:slug/events/:eventId', async (req, res) => {
     where: { tenantId, id: eventId },
     include: {
       audienceRules: true,
+      audienceMembers: true,
+      externalRecipients: true,
       rsvps: {
         orderBy: { respondedAt: 'desc' },
         include: {
@@ -960,6 +1032,21 @@ tenantRouter.patch('/:slug/events/:eventId', async (req, res) => {
             unitCharter: z.string().optional()
           })
         )
+        .optional(),
+      audienceMembers: z
+        .array(
+          z.object({
+            capid: z.string().min(1)
+          })
+        )
+        .optional(),
+      externalRecipients: z
+        .array(
+          z.object({
+            name: z.string().min(1).optional(),
+            email: z.email()
+          })
+        )
         .optional()
     })
     .parse(req.body);
@@ -982,9 +1069,26 @@ tenantRouter.patch('/:slug/events/:eventId', async (req, res) => {
   const visibility = body.visibility ?? existing.visibility;
 
   const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    if (body.audienceRules || visibility === 'tenant') {
+    if (body.audienceRules || body.audienceMembers || body.externalRecipients || visibility === 'tenant') {
       await tx.eventAudienceRule.deleteMany({ where: { tenantId, eventId } });
-      const nextRules = visibility === 'tenant' ? [] : (body.audienceRules ?? []);
+      await tx.eventAudienceMember.deleteMany({ where: { tenantId, eventId } });
+      await tx.eventExternalRecipient.deleteMany({ where: { tenantId, eventId } });
+
+      const nextRules = visibility === 'tenant' ? [] : body.audienceRules ?? [];
+      const nextAudienceMembers =
+        visibility === 'tenant'
+          ? []
+          : (body.audienceMembers ?? []).map((member) => ({
+              capid: member.capid.trim()
+            }));
+      const nextExternalRecipients =
+        visibility === 'tenant'
+          ? []
+          : (body.externalRecipients ?? []).map((recipient) => ({
+              name: recipient.name?.trim() || null,
+              email: recipient.email.trim().toLowerCase()
+            }));
+
       if (nextRules.length > 0) {
         await tx.eventAudienceRule.createMany({
           data: nextRules.map((rule) => ({
@@ -992,6 +1096,27 @@ tenantRouter.patch('/:slug/events/:eventId', async (req, res) => {
             eventId,
             memberType: rule.memberType,
             unitCharter: rule.unitCharter
+          }))
+        });
+      }
+
+      if (nextAudienceMembers.length > 0) {
+        await tx.eventAudienceMember.createMany({
+          data: nextAudienceMembers.map((member) => ({
+            tenantId,
+            eventId,
+            capid: member.capid
+          }))
+        });
+      }
+
+      if (nextExternalRecipients.length > 0) {
+        await tx.eventExternalRecipient.createMany({
+          data: nextExternalRecipients.map((recipient) => ({
+            tenantId,
+            eventId,
+            name: recipient.name,
+            email: recipient.email
           }))
         });
       }
@@ -1019,7 +1144,7 @@ tenantRouter.patch('/:slug/events/:eventId', async (req, res) => {
         ...(body.cancelReason !== undefined ? { cancelReason: body.cancelReason } : {}),
         updatedByUserId: req.auth!.userId
       },
-      include: { audienceRules: true }
+      include: { audienceRules: true, audienceMembers: true, externalRecipients: true }
     });
   });
 
