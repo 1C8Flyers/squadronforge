@@ -10,7 +10,7 @@ import { formatRankDisplay } from '@/utils/rank-display';
 const { selectedTenantSlug } = useSession();
 const reportType = ref('next-promotion-needs');
 const query = ref('');
-const includeReady = ref('false');
+const includeReady = ref('true');
 const page = ref(1);
 const pageSize = ref('100');
 const total = ref(0);
