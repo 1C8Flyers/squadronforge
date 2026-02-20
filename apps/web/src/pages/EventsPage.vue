@@ -38,7 +38,7 @@ type EventListItem = {
 };
 
 type EventDetail = EventListItem & {
-  rsvps: Array<{ id: string; status: 'yes' | 'no' | 'maybe'; note: string | null; respondedAt: string; capid?: string | null; source?: string; user?: { email: string } | null }>;
+  rsvps: Array<{ id: string; status: 'yes' | 'no' | 'maybe'; note: string | null; respondedAt: string; capid?: string | null; memberName?: string | null; source?: string; user?: { email: string } | null }>;
 };
 
 const { selectedTenantSlug } = useSession();
@@ -108,6 +108,7 @@ const formatDateTime = (value: string): string => new Date(value).toLocaleString
 
 const rsvpResponderLabel = (rsvp: EventDetail['rsvps'][number]): string => {
   if (rsvp.user?.email) return rsvp.user.email;
+  if (rsvp.memberName) return rsvp.memberName;
   if (rsvp.capid) return `CAPID ${rsvp.capid}`;
   return 'Unknown responder';
 };

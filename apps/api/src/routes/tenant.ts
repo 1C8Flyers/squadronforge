@@ -901,9 +901,35 @@ tenantRouter.get('/:slug/events/:eventId', async (req, res) => {
   const noCount = event.rsvps.filter((rsvp: { status: string }) => rsvp.status === 'no').length;
   const maybeCount = event.rsvps.filter((rsvp: { status: string }) => rsvp.status === 'maybe').length;
   const myRsvp = event.rsvps.find((rsvp: { userId: string | null; status: string }) => rsvp.userId === req.auth!.userId)?.status ?? null;
+  const capids = [...new Set(event.rsvps.map((rsvp: { capid: string | null }) => rsvp.capid).filter((capid: string | null): capid is string => Boolean(capid)))];
+
+  const membersByCapid = new Map<string, string>();
+  if (capids.length > 0) {
+    const members = await prisma.member.findMany({
+      where: {
+        tenantId,
+        capid: { in: capids }
+      },
+      select: {
+        capid: true,
+        firstName: true,
+        lastName: true
+      }
+    });
+
+    for (const member of members) {
+      membersByCapid.set(member.capid, `${member.firstName} ${member.lastName}`.trim());
+    }
+  }
+
+  const rsvps = event.rsvps.map((rsvp: (typeof event.rsvps)[number]) => ({
+    ...rsvp,
+    memberName: rsvp.capid ? membersByCapid.get(rsvp.capid) ?? null : null
+  }));
 
   res.json({
     ...event,
+    rsvps,
     counts: { yes: yesCount, no: noCount, maybe: maybeCount, total: event.rsvps.length },
     myRsvp
   });
@@ -1050,7 +1076,32 @@ tenantRouter.get('/:slug/events/:eventId/rsvps', async (req, res) => {
     }
   });
 
-  res.json(rsvps);
+  const capids = [...new Set(rsvps.map((rsvp: (typeof rsvps)[number]) => rsvp.capid).filter((capid: string | null): capid is string => Boolean(capid)))];
+  const membersByCapid = new Map<string, string>();
+  if (capids.length > 0) {
+    const members = await prisma.member.findMany({
+      where: {
+        tenantId,
+        capid: { in: capids }
+      },
+      select: {
+        capid: true,
+        firstName: true,
+        lastName: true
+      }
+    });
+
+    for (const member of members) {
+      membersByCapid.set(member.capid, `${member.firstName} ${member.lastName}`.trim());
+    }
+  }
+
+  res.json(
+    rsvps.map((rsvp: (typeof rsvps)[number]) => ({
+      ...rsvp,
+      memberName: rsvp.capid ? membersByCapid.get(rsvp.capid) ?? null : null
+    }))
+  );
 });
 
 tenantRouter.put('/:slug/events/:eventId/rsvp', async (req, res) => {
@@ -1150,7 +1201,7 @@ tenantRouter.post('/:slug/events/:eventId/notify', async (req, res) => {
 
   if (scheduledAt.getTime() <= Date.now()) {
     await Promise.all(
-      created.map((row) =>
+      created.map((row: (typeof created)[number]) =>
         notificationQueue.add('dispatch-notification', { notificationId: row.id }, { jobId: `event-notification-${row.id}`, removeOnComplete: 50, removeOnFail: 200 })
       )
     );
@@ -1273,7 +1324,7 @@ tenantRouter.get('/:slug/notification-logs', async (req, res) => {
   ]);
 
   const combined = [
-    ...eventItems.map((item) => ({
+    ...eventItems.map((item: (typeof eventItems)[number]) => ({
       id: item.id,
       kind: 'event' as const,
       channel: item.channel,
@@ -1287,7 +1338,7 @@ tenantRouter.get('/:slug/notification-logs', async (req, res) => {
       subject: null,
       event: item.event
     })),
-    ...testEmailItems.map((item) => ({
+    ...testEmailItems.map((item: (typeof testEmailItems)[number]) => ({
       id: item.id,
       kind: 'test-email' as const,
       channel: 'email' as const,
