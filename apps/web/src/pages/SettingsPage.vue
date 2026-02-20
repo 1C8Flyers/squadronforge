@@ -23,6 +23,7 @@ type SyncRun = {
 
 type NotificationLog = {
   id: string;
+  kind: 'event' | 'test-email';
   channel: 'email' | 'push';
   type: 'publish' | 'update' | 'reminder' | 'cancel';
   status: 'queued' | 'sent' | 'failed' | 'skipped';
@@ -30,6 +31,8 @@ type NotificationLog = {
   sentAt: string | null;
   errorMessage: string | null;
   createdAt: string;
+  recipient: string | null;
+  subject: string | null;
   event: {
     id: string;
     title: string;
@@ -401,7 +404,9 @@ onUnmounted(() => {
           <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/50">
             <tr>
               <th class="px-3 py-2">Created</th>
+              <th class="px-3 py-2">Kind</th>
               <th class="px-3 py-2">Event</th>
+              <th class="px-3 py-2">Recipient</th>
               <th class="px-3 py-2">Type</th>
               <th class="px-3 py-2">Channel</th>
               <th class="px-3 py-2">Status</th>
@@ -411,7 +416,9 @@ onUnmounted(() => {
           <tbody>
             <tr v-for="log in notificationLogs" :key="log.id" class="border-t border-slate-200 dark:border-slate-800">
               <td class="px-3 py-2">{{ new Date(log.createdAt).toLocaleString() }}</td>
-              <td class="px-3 py-2">{{ log.event?.title ?? '—' }}</td>
+              <td class="px-3 py-2">{{ log.kind }}</td>
+              <td class="px-3 py-2">{{ log.event?.title ?? log.subject ?? '—' }}</td>
+              <td class="px-3 py-2">{{ log.recipient ?? '—' }}</td>
               <td class="px-3 py-2">{{ log.type }}</td>
               <td class="px-3 py-2">{{ log.channel }}</td>
               <td class="px-3 py-2">
@@ -420,7 +427,7 @@ onUnmounted(() => {
               <td class="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">{{ log.errorMessage ?? (log.sentAt ? `Sent ${new Date(log.sentAt).toLocaleString()}` : '—') }}</td>
             </tr>
             <tr v-if="notificationLogs.length === 0" class="border-t border-slate-200 dark:border-slate-800">
-              <td colspan="6" class="px-3 py-4 text-center text-sm text-slate-500 dark:text-slate-400">No notification logs yet.</td>
+              <td colspan="8" class="px-3 py-4 text-center text-sm text-slate-500 dark:text-slate-400">No notification logs yet.</td>
             </tr>
           </tbody>
         </table>

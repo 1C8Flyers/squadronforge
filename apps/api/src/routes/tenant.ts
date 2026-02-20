@@ -1231,12 +1231,11 @@ tenantRouter.get('/:slug/notification-logs', async (req, res) => {
     })
     .parse(req.query);
 
-  const [items, total] = await Promise.all([
+  const [eventItems, testEmailItems, eventTotal, testTotal] = await Promise.all([
     prisma.eventNotification.findMany({
       where: { tenantId },
       orderBy: [{ createdAt: 'desc' }],
-      skip: (q.page - 1) * q.pageSize,
-      take: q.pageSize,
+      take: 250,
       select: {
         id: true,
         channel: true,
@@ -1255,10 +1254,59 @@ tenantRouter.get('/:slug/notification-logs', async (req, res) => {
         }
       }
     }),
-    prisma.eventNotification.count({ where: { tenantId } })
+    prisma.testEmailLog.findMany({
+      where: { tenantId },
+      orderBy: [{ createdAt: 'desc' }],
+      take: 250,
+      select: {
+        id: true,
+        toEmail: true,
+        subject: true,
+        status: true,
+        sentAt: true,
+        errorMessage: true,
+        createdAt: true
+      }
+    }),
+    prisma.eventNotification.count({ where: { tenantId } }),
+    prisma.testEmailLog.count({ where: { tenantId } })
   ]);
 
-  res.json({ items, total, page: q.page, pageSize: q.pageSize });
+  const combined = [
+    ...eventItems.map((item) => ({
+      id: item.id,
+      kind: 'event' as const,
+      channel: item.channel,
+      type: item.type,
+      status: item.status,
+      scheduledAt: item.scheduledAt,
+      sentAt: item.sentAt,
+      errorMessage: item.errorMessage,
+      createdAt: item.createdAt,
+      recipient: null,
+      subject: null,
+      event: item.event
+    })),
+    ...testEmailItems.map((item) => ({
+      id: item.id,
+      kind: 'test-email' as const,
+      channel: 'email' as const,
+      type: 'reminder' as const,
+      status: item.status,
+      scheduledAt: item.createdAt,
+      sentAt: item.sentAt,
+      errorMessage: item.errorMessage,
+      createdAt: item.createdAt,
+      recipient: item.toEmail,
+      subject: item.subject,
+      event: null
+    }))
+  ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+  const start = (q.page - 1) * q.pageSize;
+  const paged = combined.slice(start, start + q.pageSize);
+
+  res.json({ items: paged, total: eventTotal + testTotal, page: q.page, pageSize: q.pageSize });
 });
 
 tenantRouter.post('/:slug/settings/test-email', async (req, res) => {
@@ -1283,9 +1331,21 @@ tenantRouter.post('/:slug/settings/test-email', async (req, res) => {
     body.message?.trim() ||
     `This is a SquadronForge notification test email for tenant "${tenant.name}" (${tenant.slug}). If you received this, SMTP delivery is working.`;
 
+  const testLog = await prisma.testEmailLog.create({
+    data: {
+      tenantId,
+      toEmail: body.to,
+      subject,
+      status: 'queued',
+      requestedByUserId: req.auth!.userId
+    },
+    select: { id: true }
+  });
+
   const job = await notificationQueue.add(
     'send-test-email',
     {
+      logId: testLog.id,
       tenantId,
       to: body.to,
       subject,
@@ -1296,7 +1356,12 @@ tenantRouter.post('/:slug/settings/test-email', async (req, res) => {
     { removeOnComplete: 50, removeOnFail: 200 }
   );
 
-  res.status(202).json({ enqueued: true, jobId: job.id });
+  await prisma.testEmailLog.update({
+    where: { id: testLog.id },
+    data: { jobId: String(job.id ?? '') }
+  });
+
+  res.status(202).json({ enqueued: true, jobId: job.id, logId: testLog.id });
 });
 
 tenantRouter.get('/:slug/settings', async (req, res) => {

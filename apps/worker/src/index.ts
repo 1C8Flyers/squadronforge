@@ -1335,6 +1335,7 @@ new Worker(
   async (job) => {
     if (job.name === 'send-test-email') {
       const data = job.data as {
+        logId: string;
         tenantId: string;
         to: string;
         subject: string;
@@ -1345,11 +1346,35 @@ new Worker(
 
       const result = await dispatchTestEmail(data);
       if (result.status === 'failed') {
+        await prisma.testEmailLog.update({
+          where: { id: data.logId },
+          data: {
+            status: 'failed',
+            errorMessage: result.message,
+            sentAt: null
+          }
+        });
         throw new Error(result.message);
       }
       if (result.status === 'skipped') {
+        await prisma.testEmailLog.update({
+          where: { id: data.logId },
+          data: {
+            status: 'skipped',
+            errorMessage: result.message,
+            sentAt: null
+          }
+        });
         console.warn(JSON.stringify({ level: 'warn', msg: 'test_email_skipped', reason: result.message, to: data.to }));
       } else {
+        await prisma.testEmailLog.update({
+          where: { id: data.logId },
+          data: {
+            status: 'sent',
+            errorMessage: null,
+            sentAt: new Date()
+          }
+        });
         console.log(JSON.stringify({ level: 'info', msg: 'test_email_sent', to: data.to }));
       }
       return;

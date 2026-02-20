@@ -728,6 +728,16 @@ if (__VLS_ctx.activeTab === 'settings') {
     });
     /** @type {__VLS_StyleScopedClasses['px-3']} */ ;
     /** @type {__VLS_StyleScopedClasses['py-2']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
+        ...{ class: "px-3 py-2" },
+    });
+    /** @type {__VLS_StyleScopedClasses['px-3']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-2']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.th, __VLS_intrinsics.th)({
+        ...{ class: "px-3 py-2" },
+    });
+    /** @type {__VLS_StyleScopedClasses['px-3']} */ ;
+    /** @type {__VLS_StyleScopedClasses['py-2']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.tbody, __VLS_intrinsics.tbody)({});
     for (const [log] of __VLS_vFor((__VLS_ctx.notificationLogs))) {
         __VLS_asFunctionalElement1(__VLS_intrinsics.tr, __VLS_intrinsics.tr)({
@@ -748,7 +758,19 @@ if (__VLS_ctx.activeTab === 'settings') {
         });
         /** @type {__VLS_StyleScopedClasses['px-3']} */ ;
         /** @type {__VLS_StyleScopedClasses['py-2']} */ ;
-        (log.event?.title ?? '—');
+        (log.kind);
+        __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+            ...{ class: "px-3 py-2" },
+        });
+        /** @type {__VLS_StyleScopedClasses['px-3']} */ ;
+        /** @type {__VLS_StyleScopedClasses['py-2']} */ ;
+        (log.event?.title ?? log.subject ?? '—');
+        __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
+            ...{ class: "px-3 py-2" },
+        });
+        /** @type {__VLS_StyleScopedClasses['px-3']} */ ;
+        /** @type {__VLS_StyleScopedClasses['py-2']} */ ;
+        (log.recipient ?? '—');
         __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
             ...{ class: "px-3 py-2" },
         });
@@ -799,7 +821,7 @@ if (__VLS_ctx.activeTab === 'settings') {
         /** @type {__VLS_StyleScopedClasses['border-slate-200']} */ ;
         /** @type {__VLS_StyleScopedClasses['dark:border-slate-800']} */ ;
         __VLS_asFunctionalElement1(__VLS_intrinsics.td, __VLS_intrinsics.td)({
-            colspan: "6",
+            colspan: "8",
             ...{ class: "px-3 py-4 text-center text-sm text-slate-500 dark:text-slate-400" },
         });
         /** @type {__VLS_StyleScopedClasses['px-3']} */ ;

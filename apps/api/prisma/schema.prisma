@@ -102,6 +102,7 @@ model Tenant {
   eventAudienceRules EventAudienceRule[]
   eventRsvps       EventRsvp[]
   eventNotifications EventNotification[]
+  testEmailLogs    TestEmailLog[]
   pushSubscriptions PushSubscription[]
 }
 
@@ -353,6 +354,24 @@ model EventNotification {
 
   @@index([tenantId, status, scheduledAt])
   @@index([tenantId, eventId, channel, type])
+}
+
+model TestEmailLog {
+  id                String             @id @default(cuid())
+  tenantId          String
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  toEmail           String
+  subject           String
+  status            NotificationStatus @default(queued)
+  sentAt            DateTime?
+  errorMessage      String?
+  requestedByUserId String?
+  jobId             String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, status])
 }
 
 model PushSubscription {
