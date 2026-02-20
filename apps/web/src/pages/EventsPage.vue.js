@@ -63,6 +63,13 @@ const toDatetimeLocal = (value) => {
 };
 const fromDatetimeLocal = (value) => new Date(value).toISOString();
 const formatDateTime = (value) => new Date(value).toLocaleString();
+const rsvpResponderLabel = (rsvp) => {
+    if (rsvp.user?.email)
+        return rsvp.user.email;
+    if (rsvp.capid)
+        return `CAPID ${rsvp.capid}`;
+    return 'Unknown responder';
+};
 const formatUniformOfDay = (value) => {
     if (!value)
         return 'Not set';
@@ -1410,6 +1417,106 @@ if (__VLS_ctx.selectedEvent) {
     });
     /** @type {__VLS_StyleScopedClasses['text-base']} */ ;
     /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+    if (__VLS_ctx.selectedEvent.rsvps.length > 0) {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+            ...{ class: "mt-3 space-y-2" },
+        });
+        /** @type {__VLS_StyleScopedClasses['mt-3']} */ ;
+        /** @type {__VLS_StyleScopedClasses['space-y-2']} */ ;
+        for (const [rsvpItem] of __VLS_vFor((__VLS_ctx.selectedEvent.rsvps))) {
+            __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+                key: (rsvpItem.id),
+                ...{ class: "rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700" },
+            });
+            /** @type {__VLS_StyleScopedClasses['rounded-lg']} */ ;
+            /** @type {__VLS_StyleScopedClasses['border']} */ ;
+            /** @type {__VLS_StyleScopedClasses['border-slate-200']} */ ;
+            /** @type {__VLS_StyleScopedClasses['px-3']} */ ;
+            /** @type {__VLS_StyleScopedClasses['py-2']} */ ;
+            /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+            /** @type {__VLS_StyleScopedClasses['dark:border-slate-700']} */ ;
+            __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+                ...{ class: "flex items-start justify-between gap-3" },
+            });
+            /** @type {__VLS_StyleScopedClasses['flex']} */ ;
+            /** @type {__VLS_StyleScopedClasses['items-start']} */ ;
+            /** @type {__VLS_StyleScopedClasses['justify-between']} */ ;
+            /** @type {__VLS_StyleScopedClasses['gap-3']} */ ;
+            __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({});
+            __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+                ...{ class: "font-medium" },
+            });
+            /** @type {__VLS_StyleScopedClasses['font-medium']} */ ;
+            (__VLS_ctx.rsvpResponderLabel(rsvpItem));
+            __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+                ...{ class: "text-xs text-slate-500 dark:text-slate-400" },
+            });
+            /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+            /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+            /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+            (__VLS_ctx.formatDateTime(rsvpItem.respondedAt));
+            __VLS_asFunctionalElement1(__VLS_intrinsics.span, __VLS_intrinsics.span)({
+                ...{ class: "rounded-full px-2.5 py-1 text-xs font-semibold" },
+                ...{ class: ({
+                        'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300': rsvpItem.status === 'yes',
+                        'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300': rsvpItem.status === 'maybe',
+                        'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300': rsvpItem.status === 'no'
+                    }) },
+            });
+            /** @type {__VLS_StyleScopedClasses['rounded-full']} */ ;
+            /** @type {__VLS_StyleScopedClasses['px-2.5']} */ ;
+            /** @type {__VLS_StyleScopedClasses['py-1']} */ ;
+            /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+            /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
+            /** @type {__VLS_StyleScopedClasses['bg-emerald-100']} */ ;
+            /** @type {__VLS_StyleScopedClasses['text-emerald-800']} */ ;
+            /** @type {__VLS_StyleScopedClasses['dark:bg-emerald-900/30']} */ ;
+            /** @type {__VLS_StyleScopedClasses['dark:text-emerald-300']} */ ;
+            /** @type {__VLS_StyleScopedClasses['bg-amber-100']} */ ;
+            /** @type {__VLS_StyleScopedClasses['text-amber-800']} */ ;
+            /** @type {__VLS_StyleScopedClasses['dark:bg-amber-900/30']} */ ;
+            /** @type {__VLS_StyleScopedClasses['dark:text-amber-300']} */ ;
+            /** @type {__VLS_StyleScopedClasses['bg-rose-100']} */ ;
+            /** @type {__VLS_StyleScopedClasses['text-rose-800']} */ ;
+            /** @type {__VLS_StyleScopedClasses['dark:bg-rose-900/30']} */ ;
+            /** @type {__VLS_StyleScopedClasses['dark:text-rose-300']} */ ;
+            (rsvpItem.status.toUpperCase());
+            if (rsvpItem.note) {
+                __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+                    ...{ class: "mt-1 text-xs text-slate-600 dark:text-slate-300" },
+                });
+                /** @type {__VLS_StyleScopedClasses['mt-1']} */ ;
+                /** @type {__VLS_StyleScopedClasses['text-xs']} */ ;
+                /** @type {__VLS_StyleScopedClasses['text-slate-600']} */ ;
+                /** @type {__VLS_StyleScopedClasses['dark:text-slate-300']} */ ;
+                (rsvpItem.note);
+            }
+            // @ts-ignore
+            [formatDateTime, selectedEvent, selectedEvent, selectedEvent, selectedEvent, selectedEvent, selectedTotal, rsvpResponderLabel,];
+        }
+    }
+    else {
+        __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
+            ...{ class: "mt-2 text-sm text-slate-500 dark:text-slate-400" },
+        });
+        /** @type {__VLS_StyleScopedClasses['mt-2']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-sm']} */ ;
+        /** @type {__VLS_StyleScopedClasses['text-slate-500']} */ ;
+        /** @type {__VLS_StyleScopedClasses['dark:text-slate-400']} */ ;
+    }
+    __VLS_asFunctionalElement1(__VLS_intrinsics.div, __VLS_intrinsics.div)({
+        ...{ class: "mt-4 border-t border-slate-200 pt-4 dark:border-slate-700" },
+    });
+    /** @type {__VLS_StyleScopedClasses['mt-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['border-t']} */ ;
+    /** @type {__VLS_StyleScopedClasses['border-slate-200']} */ ;
+    /** @type {__VLS_StyleScopedClasses['pt-4']} */ ;
+    /** @type {__VLS_StyleScopedClasses['dark:border-slate-700']} */ ;
+    __VLS_asFunctionalElement1(__VLS_intrinsics.h4, __VLS_intrinsics.h4)({
+        ...{ class: "text-base font-semibold" },
+    });
+    /** @type {__VLS_StyleScopedClasses['text-base']} */ ;
+    /** @type {__VLS_StyleScopedClasses['font-semibold']} */ ;
     __VLS_asFunctionalElement1(__VLS_intrinsics.p, __VLS_intrinsics.p)({
         ...{ class: "mt-1 text-xs text-slate-500 dark:text-slate-400" },
     });
@@ -1509,7 +1616,7 @@ if (__VLS_ctx.selectedEvent) {
     const { default: __VLS_228 } = __VLS_224.slots;
     (__VLS_ctx.notifying ? 'Sending…' : 'Send/Schedule notification');
     // @ts-ignore
-    [selectedEvent, selectedEvent, selectedEvent, selectedTotal, notifyType, notifyScheduledAt, notifyEmail, notifyPush, notifying, notifying, sendNotificationForSelectedEvent,];
+    [notifyType, notifyScheduledAt, notifyEmail, notifyPush, notifying, notifying, sendNotificationForSelectedEvent,];
     var __VLS_224;
     var __VLS_225;
     if (__VLS_ctx.showEditForm) {

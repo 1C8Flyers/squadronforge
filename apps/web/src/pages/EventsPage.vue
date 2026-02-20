@@ -38,7 +38,7 @@ type EventListItem = {
 };
 
 type EventDetail = EventListItem & {
-  rsvps: Array<{ id: string; status: 'yes' | 'no' | 'maybe'; note: string | null; respondedAt: string; user?: { email: string } | null }>;
+  rsvps: Array<{ id: string; status: 'yes' | 'no' | 'maybe'; note: string | null; respondedAt: string; capid?: string | null; source?: string; user?: { email: string } | null }>;
 };
 
 const { selectedTenantSlug } = useSession();
@@ -105,6 +105,12 @@ const toDatetimeLocal = (value: string): string => {
 const fromDatetimeLocal = (value: string): string => new Date(value).toISOString();
 
 const formatDateTime = (value: string): string => new Date(value).toLocaleString();
+
+const rsvpResponderLabel = (rsvp: EventDetail['rsvps'][number]): string => {
+  if (rsvp.user?.email) return rsvp.user.email;
+  if (rsvp.capid) return `CAPID ${rsvp.capid}`;
+  return 'Unknown responder';
+};
 
 const formatUniformOfDay = (value: UniformOfDay | null | undefined): string => {
   if (!value) return 'Not set';
@@ -570,6 +576,36 @@ const startEditingEvent = (eventId: string) => {
             <div class="rounded-lg bg-rose-100 px-2 py-1 font-semibold text-rose-800 dark:bg-rose-900/30 dark:text-rose-300">No {{ selectedEvent.counts.no }}</div>
           </div>
           <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Total responses: {{ selectedTotal }}</p>
+        </div>
+
+        <div class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
+          <h4 class="text-base font-semibold">Who has RSVP’d</h4>
+          <div v-if="selectedEvent.rsvps.length > 0" class="mt-3 space-y-2">
+            <div
+              v-for="rsvpItem in selectedEvent.rsvps"
+              :key="rsvpItem.id"
+              class="rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="font-medium">{{ rsvpResponderLabel(rsvpItem) }}</p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatDateTime(rsvpItem.respondedAt) }}</p>
+                </div>
+                <span
+                  class="rounded-full px-2.5 py-1 text-xs font-semibold"
+                  :class="{
+                    'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300': rsvpItem.status === 'yes',
+                    'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300': rsvpItem.status === 'maybe',
+                    'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300': rsvpItem.status === 'no'
+                  }"
+                >
+                  {{ rsvpItem.status.toUpperCase() }}
+                </span>
+              </div>
+              <p v-if="rsvpItem.note" class="mt-1 text-xs text-slate-600 dark:text-slate-300">Note: {{ rsvpItem.note }}</p>
+            </div>
+          </div>
+          <p v-else class="mt-2 text-sm text-slate-500 dark:text-slate-400">No RSVPs yet.</p>
         </div>
 
         <div class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
