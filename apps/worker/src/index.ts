@@ -1420,7 +1420,7 @@ new Worker(
       data: {
         status: result.status,
         sentAt: result.status === 'sent' ? new Date() : null,
-        errorMessage: result.status === 'failed' ? result.message : null
+        errorMessage: result.status === 'failed' || result.status === 'skipped' ? result.message : null
       }
     });
   },
